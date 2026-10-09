@@ -8,7 +8,7 @@ import { PROMPT_VERSION } from './prompts/interpretation.js';
 import { contextSchema,validateValue,SCHEMA_VERSION,type Context,type Operation } from './schemas/interpretation.js';
 import { ProviderError,type Provider } from './providers/interface.js';
 export const PARAMETERS_VERSION='interpretation-limits-v1';
-export type Outcome={status:'succeeded'|'unavailable'|'invalid'|'timeout'|'provider_error'|'budget_exceeded';runId:string;cached:boolean;value?:unknown};
+export type Outcome={status:'succeeded'|'unavailable'|'invalid'|'timeout'|'provider_error'|'budget_exceeded';runId:string;cached:boolean;calls:number;value?:unknown};
 export function cacheKey(context:Context,operation:Operation,provider:Provider,versions={prompt:PROMPT_VERSION,schema:SCHEMA_VERSION,parameters:PARAMETERS_VERSION}){
   return sha256(JSON.stringify({context,operation,provider:provider.name,model:provider.model,versions}));
 }
@@ -28,19 +28,21 @@ export class Interpreter{
     try{return await this.execute(context,operation,provider);}finally{const next=this.waiters.shift();if(next)next();else this.active--;}
   }
   private async execute(context:Context,operation:Operation,provider:Provider):Promise<Outcome>{
-    const key=cacheKey(context,operation,provider),inputHash=sha256(JSON.stringify(context));
+    const versions=operation==='answer_plan'||operation==='draft_plan'?{prompt:'grounded-generation-v1',schema:'fact-plan-v1',parameters:'qa-limits-v1'}:{prompt:PROMPT_VERSION,schema:SCHEMA_VERSION,parameters:PARAMETERS_VERSION};
+    const key=cacheKey(context,operation,provider,versions),inputHash=sha256(JSON.stringify(context));
     // Same key is serialized across CLI processes; locks end with this transaction.
     return this.db.transaction(async tx=>{
       await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${key},0))`);
       const successes=await tx.select().from(modelRuns).where(and(eq(modelRuns.datasetId,context.datasetId),eq(modelRuns.accountId,context.accountId),eq(modelRuns.cacheKey,key),eq(modelRuns.status,'succeeded')));
-      for(const previous of successes){try{const value=validateValue(operation,previous.output,context);this.cacheHits++;return {status:'succeeded',runId:previous.id,cached:true,value};}catch{/* Invalid persisted outputs are never reused. */}}
+      for(const previous of successes){try{const value=validateValue(operation,previous.output,context);this.cacheHits++;return {status:'succeeded',runId:previous.id,cached:true,calls:0,value};}catch{/* Invalid persisted outputs are never reused. */}}
       let last:Outcome|undefined;
+      let attempts=0;
       for(let attempt=0;attempt<2;attempt++){
         const started=Date.now();let status:Outcome['status']='unavailable',value:unknown=null,inputTokens:number|null=null,outputTokens:number|null=null,costUsd:string|null=null;let retryable=false;
         if(this.options.live&&provider.configured){
           if(this.calls>=this.options.maxCalls)status='budget_exceeded';
           else{
-            this.calls++;const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),this.options.timeoutMs);
+            this.calls++;attempts++;const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),this.options.timeoutMs);
             try{
               const result=await Promise.race([provider.invoke(operation,context,controller.signal),new Promise<never>((_resolve,reject)=>controller.signal.addEventListener('abort',()=>reject(new Error('provider_timeout')),{once:true}))]);
               inputTokens=result.inputTokens;outputTokens=result.outputTokens;
@@ -52,8 +54,8 @@ export class Interpreter{
           }
         }
         const noCall=status==='unavailable'||status==='budget_exceeded';if(noCall)costUsd='0.0000000000';
-        const runId=randomUUID();await tx.insert(modelRuns).values({id:runId,datasetId:context.datasetId,accountId:context.accountId,cacheKey:key,inputHash,operation,provider:provider.name,model:provider.model,promptVersion:PROMPT_VERSION,schemaVersion:SCHEMA_VERSION,parametersVersion:PARAMETERS_VERSION,status,output:status==='succeeded'?value:null,latencyMs:Date.now()-started,inputTokens,outputTokens,costUsd,costBasis:noCall?'no_call':costUsd===null?'unknown':'estimated_from_reported_usage'});
-        last={status,runId,cached:false,...(status==='succeeded'?{value}: {})};
+        const runId=randomUUID();await tx.insert(modelRuns).values({id:runId,datasetId:context.datasetId,accountId:context.accountId,cacheKey:key,inputHash,operation,provider:provider.name,model:provider.model,promptVersion:versions.prompt,schemaVersion:versions.schema,parametersVersion:versions.parameters,status,output:status==='succeeded'?value:null,latencyMs:Date.now()-started,inputTokens,outputTokens,costUsd,costBasis:noCall?'no_call':costUsd===null?'unknown':'estimated_from_reported_usage'});
+        last={status,runId,cached:false,calls:attempts,...(status==='succeeded'?{value}: {})};
         if(!retryable||attempt===1)break;
         await new Promise(resolve=>setTimeout(resolve,250));
       }

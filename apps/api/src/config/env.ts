@@ -22,6 +22,7 @@ export const env = z.object({
   LLM_MODEL: z.string().default(''),
   MODEL_MAX_CALLS: z.coerce.number().int().min(0).max(1000).default(20),
   MODEL_TIMEOUT_MS: z.coerce.number().int().min(10).max(60000).default(15000),
+  QA_LIVE_ENABLED:z.enum(['true','false']).default('false'),
   LLM_INPUT_USD_PER_MILLION: z.preprocess(v=>v===''?undefined:v,z.string().regex(/^\d+(\.\d+)?$/).optional()),
   LLM_OUTPUT_USD_PER_MILLION: z.preprocess(v=>v===''?undefined:v,z.string().regex(/^\d+(\.\d+)?$/).optional()),
 }).parse(process.env);

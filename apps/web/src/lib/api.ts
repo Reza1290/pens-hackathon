@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { cardSchema,datasetSchema,accountSchema,graphSchema,sourceSchema,diagnosisSchema,draftSchema } from '@kasirnusa/contracts';
+import { cardSchema,datasetSchema,accountSchema,graphSchema,sourceSchema,diagnosisSchema,draftSchema,qaResponseSchema,type QaRequest } from '@kasirnusa/contracts';
 async function request<T>(path:string,schema:z.ZodType<T>,signal?:AbortSignal,body?:unknown):Promise<T>{
   const response=await fetch('/api'+path,{signal,...(body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{})});
   if(!response.ok){const detail=await response.json().catch(()=>({}));throw new Error((detail.error??'Request failed')+' ('+response.status+')');}
@@ -7,6 +7,7 @@ async function request<T>(path:string,schema:z.ZodType<T>,signal?:AbortSignal,bo
 }
 const query=(dataset:string,options:Record<string,string>={})=>'?'+new URLSearchParams({dataset_id:dataset,...options});
 export const api={
+  qa:(body:QaRequest,signal?:AbortSignal)=>request('/qa',qaResponseSchema,signal,body),
   datasets:(signal?:AbortSignal)=>request('/datasets',z.object({items:z.array(datasetSchema)}),signal),
   accounts:(dataset:string,signal?:AbortSignal)=>request('/accounts'+query(dataset,{page_size:'100'}),z.object({items:z.array(accountSchema)}),signal),
   opportunities:(dataset:string,options:Record<string,string>,signal?:AbortSignal)=>request('/opportunities'+query(dataset,options),z.object({total:z.number(),items:z.array(cardSchema)}),signal),

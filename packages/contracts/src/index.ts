@@ -63,3 +63,22 @@ export type AccountDiagnosis=z.infer<typeof diagnosisSchema>;
 export const draftRequestSchema=z.object({language:z.enum(['en','id']).default('en')}).strict();
 export const draftSchema=z.object({dataset_id:uuidSchema,as_of:dateSchema,account_id:uuidSchema,resource_id:uuidSchema,commercial_context:z.enum(['expansion','renewal','new_sale','unknown']),language:z.enum(['en','id']),method:z.literal('template-v1'),review_status:z.literal('human_review_required'),route:z.string(),owner_id:uuidSchema,recipient_ids:z.array(uuidSchema),subject:z.string(),body:z.string(),evidence_ids:z.array(uuidSchema),unknowns:z.array(z.string())});
 export type FollowUpDraft=z.infer<typeof draftSchema>;
+export const qaRequestSchema=z.object({
+  dataset_id:uuidSchema.optional(),account_id:uuidSchema.optional(),opportunity_id:uuidSchema.optional(),
+  question:z.string().trim().min(1).max(500),language:z.enum(['en','id']).default('en'),
+  history:z.array(z.object({question:z.string().max(500)}).strict()).max(3).default([]),
+  additional_outlets:z.number().int().positive().max(10000).optional(),
+  route:z.enum(['joint','intermediary']).default('joint'),
+}).strict();
+export const qaClaimSchema=z.object({id:z.string(),kind:z.enum(['fact','check','proposed_action','source_quote']),text:z.string(),evidence_ids:z.array(uuidSchema),check:z.record(z.string(),z.unknown()).nullable()});
+export const qaResponseSchema=z.object({
+  dataset_id:uuidSchema,as_of:dateSchema,account_id:uuidSchema.nullable(),commercial_context:z.enum(['expansion','renewal','new_sale','unknown']),
+  status:z.enum(['answered','evidence_only','clarification_required','unsupported']),language:z.enum(['en','id']),answer:z.string(),
+  claims:z.array(qaClaimSchema),evidence:z.array(evidenceSchema),premise_check:premiseSchema.nullable(),
+  value_scenario:cardSchema.shape.value_scenario,draft:draftSchema.nullable(),limitations:z.array(z.string()),
+  retrieval:z.object({method:z.literal('graph-and-simple-text-v1'),source_count:z.number(),truncated:z.boolean()}),
+  generation:z.object({status:z.string(),cached:z.boolean(),run_id:uuidSchema.nullable(),calls:z.number().int(),cost_usd:z.string().nullable(),latency_ms:z.number()}),
+});
+export type QaRequest=z.infer<typeof qaRequestSchema>;
+export type QaResponse=z.infer<typeof qaResponseSchema>;
+export type QaClaim=z.infer<typeof qaClaimSchema>;

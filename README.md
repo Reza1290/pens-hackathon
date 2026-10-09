@@ -145,8 +145,8 @@ conditional on evaluation. Expansion, renewal and new-sale context stay separate
 See the [development plan](docs/README.md) for phase PRDs, definitions of done,
 acceptance checks and out-of-scope work. Phases 0–1 are locally verified;
 Phase 2 infrastructure is tested with live evaluation gates open; Phase 3's
-deterministic backend and Phase 4 workflow are locally verified; Phases 5–6
-remain planned. Run `python scripts/audit_sources.py` to
+deterministic backend and Phase 4 workflow are locally verified; Phase 5 has tested grounded Q&A with live/human gates open;
+Phase 6 optimization remains conditional. Run `python scripts/audit_sources.py` to
 regenerate the checksum manifest and inventory from the original `data/raw/` files
 with Python 3.10 or newer (verified with Python 3.14.7). This standard-library tool
 does not import or change customer records; diagnostics are stored in ignored
@@ -176,3 +176,25 @@ npm run test:e2e
 Browser journeys require the imported/analyzed/diagnosed snapshot described above.
 Playwright starts the local dev server when needed. Alternatively set
 `PLAYWRIGHT_CHANNEL=msedge` to use installed Microsoft Edge on Windows.
+
+## Account questions
+
+Detail and action views now include **Ask about this account**. Questions about
+expansion, stakeholders, follow-up, renewal concerns and outlet scenarios return
+cited facts/checks and proposed actions. Decline questions show the premise check
+alongside the useful diagnosis; they do not fabricate lower orders. General
+searches return labeled source excerpts or an explicit unsupported result.
+
+`POST /api/qa` accepts `dataset_id`, optional `account_id`/`opportunity_id`,
+`question`, `language` (`en`/`id`), bounded prior-question `history` and optional
+`additional_outlets`/`route`. Cross-account questions require clarification.
+Draft questions return an editable review-only draft. No messages are sent.
+
+The default uses backend templates. Optional model fact selection requires server
+`QA_LIVE_ENABLED=true`, `LLM_API_KEY` and an exact `LLM_MODEL`; fluent generated
+prose and live model quality remain gated. See [Phase 5 handover](docs/PHASE-5-HANDOVER.md).
+
+```powershell
+# Requires the local dev API and prepared snapshot:
+npm run eval:qa -- --dataset 93bb692a-2168-5ef3-a37d-8e929f9b6340
+```

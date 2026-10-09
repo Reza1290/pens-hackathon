@@ -1,13 +1,14 @@
 import { z } from 'zod';
 
 export const SCHEMA_VERSION='interpretation-v1';
-export const operationSchema=z.enum(['intent','role','relevance','concern_addressed','extract_details']);
+export const operationSchema=z.enum(['intent','role','relevance','concern_addressed','extract_details','answer_plan','draft_plan']);
 export type Operation=z.infer<typeof operationSchema>;
 export const contextSchema=z.object({
   datasetId:z.uuid(),accountId:z.uuid(),
   sources:z.array(z.object({id:z.uuid(),field:z.string().min(1),text:z.string().max(12000),eventDate:z.iso.date(),speakerId:z.uuid().nullable()})).min(1).max(4),
   candidates:z.array(z.object({id:z.uuid(),role:z.string(),start:z.iso.date(),end:z.iso.date().nullable()})).max(12),
   subjectId:z.uuid().nullable(),claim:z.string().max(2000).default(''),
+  grounding:z.object({question:z.string().max(2000),language:z.enum(['en','id']),facts:z.array(z.object({id:z.string(),text:z.string().max(3000),evidence_ids:z.array(z.uuid())})).min(1).max(24)}).optional(),
 });
 export type Context=z.infer<typeof contextSchema>;
 export const choices={
@@ -26,6 +27,11 @@ export const extractionSchema=z.object({
   })).max(12),
 }).strict();
 export function validateValue(operation:Operation,value:unknown,context:Context){
+  if(operation==='answer_plan'||operation==='draft_plan'){
+    const output=answerPlanSchema.parse(value);
+    if(!context.grounding||output.fact_ids.some(id=>!context.grounding!.facts.some(f=>f.id===id))||new Set(output.fact_ids).size!==output.fact_ids.length)throw new Error('unsupported_answer_fact');
+    return output;
+  }
   if(operation!=='extract_details'){
     const answer=z.object({type:z.literal('choice'),choice:z.string(),probabilities:z.record(z.string(),z.number().min(0).max(1)),confidence:z.number().min(0).max(1)}).parse(value);
     const expected:readonly string[]=choices[operation];
@@ -44,3 +50,5 @@ export function validateValue(operation:Operation,value:unknown,context:Context)
   }
   return output;
 }
+// The model may select/order validated facts; it cannot write new factual claims.
+export const answerPlanSchema=z.object({fact_ids:z.array(z.string()).min(1).max(12)}).strict();

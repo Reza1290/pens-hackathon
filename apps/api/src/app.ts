@@ -1,7 +1,11 @@
 import express from 'express';
 import { and, eq, desc, ilike, or, count, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { cardSchema,datasetSchema,accountSchema,healthSchema,sourceSchema,paginationSchema,diagnosisSchema,draftRequestSchema } from '@kasirnusa/contracts';
+import { cardSchema,datasetSchema,accountSchema,healthSchema,sourceSchema,paginationSchema,diagnosisSchema,draftRequestSchema,qaRequestSchema } from '@kasirnusa/contracts';
+import { answerQuestion,clarification,outcomeQuestion,topic,type Resource } from './modules/qa/service.js';
+import { Interpreter } from './ai/router.js';
+import { generativeProvider } from './ai/providers/generative.js';
+import type { Provider } from './ai/providers/interface.js';
 import { prepareDraft } from './modules/recommendations/drafts.js';
 import type { Database } from './db/client.js';
 import * as s from './db/schema/index.js';
@@ -13,8 +17,10 @@ import { checkPremise,selectAction,STAKEHOLDER_VERSION,type Periods } from './mo
 import { sha256 } from './modules/ingestion/manifest.js';
 
 class HttpError extends Error { constructor(public status:number,message:string){super(message);} }
-export function createApp(db:Database,allowlist=allowedDatasets) {
+export function createApp(db:Database,allowlist=allowedDatasets,qaOptions?:{runtime:Interpreter;provider:Provider}) {
   const app=express(); app.disable('x-powered-by');
+  const qaRuntime=qaOptions?.runtime??new Interpreter(db,{live:env.QA_LIVE_ENABLED==='true',maxCalls:env.MODEL_MAX_CALLS,timeoutMs:env.MODEL_TIMEOUT_MS,inputRate:env.LLM_INPUT_USD_PER_MILLION,outputRate:env.LLM_OUTPUT_USD_PER_MILLION});
+  const qaProvider=qaOptions?.provider??generativeProvider(env.LLM_API_KEY,env.LLM_MODEL);
   app.use((req,res,next)=>{
     const host=req.hostname;
     if(!['localhost','127.0.0.1','[::1]','::1'].includes(host))return res.status(403).json({error:'Local access only'});
@@ -116,6 +122,33 @@ export function createApp(db:Database,allowlist=allowedDatasets) {
   app.post('/api/accounts/:id/draft',async(req,res)=>{
     const dataset=await resolveDataset(req.query);const options=draftRequestSchema.parse(req.body??{});
     res.json(prepareDraft(await diagnosisFor(dataset,req.params.id,req.query),options.language));
+  });
+  app.post('/api/qa',async(req,res)=>{
+    const input=qaRequestSchema.parse(req.body);const dataset=await resolveDataset(input);
+    if(topic(input.question)==='value'&&(/[-−]\s*\d+\s*(?:outlet|cabang)|\d+[.,]\d+\s*(?:outlet|cabang)|\b0\s*(?:outlet|cabang)/i.test(input.question)||[...input.question.matchAll(/\b\d+\s*(?:outlet|cabang)/gi)].length>1))return res.json(clarification(dataset.id,dataset.asOf,input,input.language==='id'?'Gunakan satu jumlah outlet tambahan berupa bilangan bulat positif.':'Specify one positive whole number of additional outlets.'));
+    let card=input.opportunity_id?await cardFor(dataset.id,input.opportunity_id):undefined;
+    if(card&&input.account_id&&card.account.id!==input.account_id)throw new HttpError(404,'Opportunity not found in selected account');
+    let accountId=input.account_id??card?.account.id;
+    const accounts=await db.select().from(s.accounts).where(eq(s.accounts.datasetId,dataset.id));
+    const explicitCodes=input.question.match(/\b[CP]\d{2}\b/gi)??[];
+    if(explicitCodes.some(code=>!accounts.some(a=>a.externalId.toLowerCase()===code.toLowerCase())))return res.json(clarification(dataset.id,dataset.asOf,input,input.language==='id'?'ID akun yang disebut tidak tersedia dalam snapshot ini; pilih akun yang tersedia.':'A referenced account ID is unavailable in this snapshot; select an available account.'));
+    const mentions=(text:string)=>accounts.filter(a=>new RegExp(`\\b${a.externalId.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\b`,'i').test(text)||text.normalize('NFKC').toLowerCase().includes(a.name.normalize('NFKC').toLowerCase()));
+    const named=mentions(input.question);
+    const prior=!accountId&&!named.length?mentions(input.history.at(-1)?.question??''):[];
+    const candidates=named.length?named:prior;
+    if(candidates.length>1||accountId&&named.some(a=>a.id!==accountId))return res.json(clarification(dataset.id,dataset.asOf,input,input.language==='id'?'Pilih satu akun; pertanyaan menyebut akun lain atau lebih dari satu akun.':'Select one account; this question references another account or multiple accounts.'));
+    accountId??=candidates[0]?.id;
+    if(!accountId)return res.json(clarification(dataset.id,dataset.asOf,input,input.language==='id'?'Pilih akun atau sebutkan ID akun untuk membatasi bukti.':'Select an account or name its account ID to scope the evidence.'));
+    if(!accounts.some(a=>a.id===accountId))throw new HttpError(404,'Account not found in selected dataset');
+    let resource:Resource;
+    if(card&&!outcomeQuestion(input.question))resource=card;
+    else if(topic(input.question)==='value'){
+      const rows=await db.select({id:s.signals.id}).from(s.signals).where(and(eq(s.signals.datasetId,dataset.id),eq(s.signals.accountId,accountId),eq(s.signals.status,'active'))).limit(2);
+      if(rows.length!==1)return res.json(clarification(dataset.id,dataset.asOf,input,input.language==='id'?'Pilih peluang dengan syarat harga terverifikasi untuk skenario outlet.':'Select an opportunity with verified pricing terms for the outlet scenario.'));
+      resource=await cardFor(dataset.id,rows[0].id);
+    }else resource=await diagnosisFor(dataset,accountId,{route:input.route,...(outcomeQuestion(input.question)?{question:input.question}:{})});
+    if('signal' in resource&&resource.signal.status==='cancelled'&&topic(input.question)==='draft')throw new HttpError(409,'Request was cancelled; review account context before preparing a draft');
+    res.json(await answerQuestion(db,resource,input,qaRuntime,qaProvider));
   });
   app.get('/api/sources/:id',async(req,res)=>{
     const dataset=await resolveDataset(req.query);const id=z.uuid().parse(req.params.id);

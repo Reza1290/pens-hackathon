@@ -39,8 +39,9 @@ Every model result still requires semantic review.
 
 ## Controls and use
 
-Both adapters are CLI-only. Normal imports, analysis, APIs and UI make zero model
-calls. `--live` opts into calls; missing configuration returns `unavailable`.
+Interpretation adapters are CLI opt-in. Normal imports and analysis make zero
+model calls. Interpretation `--live` opts into calls; Q&A uses the separate server
+`QA_LIVE_ENABLED` switch (false by default). Missing configuration returns `unavailable`.
 `MODEL_MAX_CALLS` caps physical attempts per CLI process, including retries
 (default 20). `MODEL_TIMEOUT_MS` defaults to 15 seconds; concurrency is two per
 runtime, with at most one retry for retryable HTTP failures. These are call/size
@@ -76,3 +77,12 @@ records model judgments alongside rules and separates unanswered cases from
 measured answers. It neither installs filtering nor promotes model judgments.
 The live comparison, human-reviewed dataset labels, agreed thresholds, complex
 extraction benchmark and automatic fallback/promotion remain unfinished.
+
+## Grounded Q&A plans
+
+Phase 5 adds server operations `answer_plan` and `draft_plan` through the OpenAI
+adapter. They select supplied fact IDs, not new claims or unrestricted prose.
+Enable only with an explicit exact model and `QA_LIVE_ENABLED=true`; no live
+quality result is claimed. The same call budget applies per API runtime. Cached
+plans are revalidated, costs/usage are tracked, and deterministic answers/template
+drafts remain available on failure. See [Phase 5 handover](PHASE-5-HANDOVER.md).

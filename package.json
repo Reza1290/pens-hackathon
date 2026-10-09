@@ -28,7 +28,8 @@
     "data:diagnose": "tsx apps/api/src/cli/diagnose.ts",
     "data:verify-stakeholders": "tsx apps/api/src/cli/verify-stakeholders.ts",
     "eval": "tsx apps/api/src/cli/eval.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "eval:qa": "tsx apps/api/src/cli/eval-qa.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.64.0",
