@@ -1,4 +1,179 @@
-# Phase 8 — validate and selectively enable the AI workflow
+# Phase 8 - final technical verification, human gates open
+
+Continuation recorded 10 October 2026, starting from `70bd734`.
+**Non-blocked fixes and technical verification completed; results provisional.**
+No architecture/optimization phase was added. The previous handover is retained
+below as historical evidence, not the final code state.
+
+## Extraction root cause and fix
+
+The historical report `phase8-9e453391-2131-406b-8370-f540e75ceef3.json` retained
+input context but discarded invalid output and its validator error. Its exact raw
+response cannot be recovered. A one-call replay of that exact synthetic context
+saved the request/schema, raw DeepSeek response, parsed output and validator error
+in `artifacts/evaluations/phase8-extraction-diagnostic.json`. This reproduced a
+failure mechanism; it does not prove the discarded historical bytes were identical.
+
+The source was exactly `I need custom procurement documentation for expansion S1.`
+(57 JavaScript characters). DeepSeek returned the exact quote but `start:0,end:56`.
+The error was `invalid_evidence_scope_or_span`; source ID, speaker and date matched.
+It also labeled the document request EXPANSION_DETAILS. Provider response handling
+successfully parsed the response; integer schema validation passed; source-span
+validation correctly rejected the incorrect end offset.
+
+The validator now calculates offsets only for a **unique verbatim quote in the
+identified source field**. Absent, altered or ambiguous quotes still fail. Source,
+identity, event date, employment, attribution, decision scope and review authority
+checks remain. Raw output is preserved separately from the validated candidate.
+The extraction prompt distinguishes requested evidence from quantity/location/period
+expansion details. Prompt and stakeholder processing versions invalidate stale caches.
+Additive migration `0005_concerned_veda.sql` records nullable model diagnostics;
+no historical model/review/source rows are rewritten.
+
+Final live extraction returned REQUESTS_EVIDENCE but again miscounted the end (52).
+The exact source anchored it at 57. One valid candidate entered **pending_review**;
+zero candidates were promoted. This is successful candidate extraction, unlike the
+previous safe rejection. Semantic correctness still requires human review. The
+regression uses the failed replay fixture, preserves raw offsets, rejects wrong
+quotes/identity/source/speaker/date and ambiguous spans, and exercises review lifecycle.
+
+## Planner adjudication
+
+Original question: "What should we do next for the selected account?" Original
+expected operation: account_diagnosis. Actual operation: stakeholder_guidance,
+null deal/signal. No metric or periods were requested. The original adapter test
+produced no final API answer, so no historical end-to-end success is invented.
+
+Final simulated normal-path checks force each route on the same owner/intermediary
+fixture. Both return 200, include operational preparation and joint discussion,
+ROI/payback context, not_addressed assessment and evidence. Technical recommendation:
+accept either route for this generic question **only when these required outputs
+survive**. No original expectation was changed. Independent adjudication remains open.
+No further routing change was necessary; existing request-preservation guards keep
+metric/period comparisons on account_diagnosis and prevent invented decision scope.
+Final live planner chose account_diagnosis with null metric/period/signal/deal.
+
+## Final verification and commands
+
+All customer-source checks ran locally with these process flags false:
+`QA_PLANNER_ENABLED`, `QA_LIVE_ENABLED`, `QA_JEV_ENABLED`,
+`ANALYSIS_EXTRACTION_ENABLED`. `.env` was unchanged. Snapshot dataset ID:
+`93bb692a-2168-5ef3-a37d-8e929f9b6340` (analysis as of 1 October 2026).
+
+| Command | Exact result |
+| --- | --- |
+| `npm run db:generate` / `npm run db:migrate` | Additive 0005 generated and applied; disposable tests also migrated from scratch |
+| `npm run typecheck` | Root/API/web/contracts passed, final rerun passed |
+| `npm test` | 48/48 tests, six files; final 16.90 s, includes disposable PostgreSQL integration |
+| `npm run build` | API and Vite builds passed |
+| `npm run data:diagnose -- --dataset <id>` | 45 accounts, 0 reused, 4 statements, 30 decisions, 0 unresolved decisions |
+| `npm run data:verify-stakeholders -- --dataset <id> --fixture tests/fixtures/stakeholders-review.json` | C01 renewal/prerequisite, P01 new-sale/joint route, C02 expansion/prerequisite all verified |
+| `API_PORT=3002 WEB_PORT=5174 PLAYWRIGHT_CHANNEL=msedge npm run test:e2e` (PowerShell process env) | Final 7/7 passed, 14.9 s |
+| `API_PORT=3002 npx tsx apps/api/src/server.ts` then `npm run eval:qa -- --dataset <id>` | 26/26, zero missing expected evidence, zero invalid citations, zero calls; median 152 ms, p95 259 ms; isolated server stopped |
+| `npx tsx apps/api/src/cli/phase8-review-report.ts` | 28 proposals, 0 independently reviewed, acceptance_eligible=false, quality_results=null |
+| `npx tsx tests/phase8-extraction-repro.ts` | One diagnostic call before fix; reproduced invalid_evidence_scope_or_span |
+| `npx tsx tests/phase8-live.ts --live` | Final four-call normal path passed; repeat 200 with zero new calls; fallback 200 with zero calls; candidate pending, not approved |
+| `git diff --check` | Passed |
+
+First browser run was 6/7: C01 loaded a stale diagnosis after the processing-version
+change and could not show the question form. Rebuilding source diagnoses resolved
+it; final full rerun passed. Original failure trace/context retained under
+`artifacts/evaluations/phase8-stale-browser/`. Do not hide this initial failure.
+Source Q&A report: `artifacts/evaluations/qa-e716dcf5-3ad3-4e92-9415-ae555147ebf4/report.json`.
+
+Unit/DB provider-failure, retry, budget, corrupted-cache and authority acceptance/
+rejection scenarios are **simulations**. Live provider outages and live human
+acceptance were not exercised. Browser/source verification used deterministic
+providers, not live customer text. The normal live test's pending review is a test
+record, not an independent reviewer decision. Temporary synthetic DBs were removed
+only after artifacts were saved; original application data/history remain intact.
+
+## Final synthetic live usage
+
+Report: `artifacts/evaluations/phase8-eb6356f0-cb6f-427a-b37c-429d669afda2.json`.
+Includes exact synthetic request/response bodies without credentials, context,
+source hashes, raw versus normalized output, diagnostic codes, calls and actions.
+No supplied customer passage was transmitted. Budgets: two generation calls plus
+two analysis calls; the separate diagnostic budget was one call.
+
+| Operation | Physical calls | Input / output tokens | Latency | Estimated USD |
+| --- | --- | --- | --- | --- |
+| DeepSeek planner | 1 | 2501 / 29 | 772 ms | unknown |
+| DeepSeek extraction | 1 | 1290 / 158 | 898 ms | unknown |
+| Jev concern assessment | 1 | 1346 / 62 | 427 ms | 0.0000565320 |
+| DeepSeek answer selection | 1 | 2630 / 33 | 608 ms | unknown |
+| Separate pre-fix diagnostic replay | 1 | 1230 / 160 | not recorded | unknown |
+
+The diagnostic helper now requires explicit `--live` and writes a unique filename
+to prevent accidental calls or overwriting the preserved original diagnostic. This
+report-only helper guard was added after the live run; no application code changed.
+
+Final workflow totals: **4 physical calls, 7767 input / 282 output tokens**;
+summed recorded model-call latency 2705 ms (not end-to-end request latency).
+Continuation total including diagnostic: **5 calls, 8997 input / 442 output tokens**.
+DeepSeek diagnostic usage reports 640 cached input tokens; charges remain unknown
+because rates are unconfigured. Jev cost is an estimate from reported usage and
+configured pinned-model rate, not an invoice. Total monetary cost is unknown.
+Repeated request and disabled-provider fallback added zero physical calls.
+
+Jev returned not_addressed for the feature-only follow-up to ROI/payback. The
+answer selected validated fact IDs and retained ordered actions. Original raw
+invalid responses are not counted as successful extraction. One live successful
+candidate and one live judgment do not establish broader semantic quality.
+
+## Review decisions and capability recommendations
+
+The [28-row review table](PHASE-8-CASE-REVIEW.md) includes each actual question,
+source passage, original judgment/operation/action, proposed correction and decision
+needed. Original packet and reviewer fields remain unchanged. Machine-readable
+technical notes are in `tests/fixtures/phase8-technical-review.json`; their author
+is implementation-agent and independent_approval=false.
+
+Decisions needed: correct unsupported action routes; clarify reference/schedule
+sufficiency; separate approval withdrawal from authority; align bilingual conflict
+cases; supply dated speaker metadata; move comparison question into the actual
+question field; approve conditional generic-route equivalence and numerical gates.
+Proposed gate remains 100% of the finite reviewed suite/per-label expectations,
+zero cross-account leakage, unsupported authority promotion or external actions.
+The reviewed acceptance set has **not** run and must wait for actual user approval.
+
+| Capability | Recommendation | Remaining gate |
+| --- | --- | --- |
+| Planner | defer additional activation | Independent route/case/gate review; provisional alternate-route test passes |
+| Jev assessments | defer | Four-choice semantic review; one live negative case is insufficient |
+| Complex extraction | defer | Pending human semantic review, despite successful source-grounded candidate extraction |
+| Grounded answer selection | defer additional activation | Reviewed answer/action expectations and finite-suite acceptance |
+
+Existing user flags remain planner=true, answer=true, Jev=false, extraction=false;
+these are user settings, not newly certified capability decisions. Deterministic
+features remain usable. Rollback stays the existing disable/restart/rebuild procedure;
+preserve model/review history. No classifier, semantic retrieval, deployment or new
+infrastructure was added.
+
+## Data-gap correction and changed files
+
+Use existing CRM deals for recorded expansion/renewal activity, contracts for
+contracted annual value, and daily usage for product transaction counts. They are
+not interchangeable with recognized/collected revenue. Ask for extra history only
+after selecting a metric and finding the requested dates/coverage unsupported.
+Current Q&A executes only the labeled won-expansion CRM proxy comparison; other
+period-comparison handlers are an implementation limitation, not absent CSV data.
+See [metric-specific coverage](SOURCE-LIMITATIONS.md#metric-specific-coverage-clarification-phase-8).
+
+Changed runtime: `ai/prompts/interpretation.ts`, `ai/schemas/interpretation.ts`,
+`ai/router.ts`, `db/schema/index.ts`, migration 0005 plus metadata,
+`modules/stakeholders/rules.ts` and `service.ts`.
+Changed verification: `tests/providers.test.ts`, `tests/database.test.ts`,
+`tests/phase8-live.ts`, new `tests/phase8-extraction-repro.ts`, failed-span fixture,
+and separate technical-review fixture.
+Changed documentation: this handover, baseline adjudication, case-review table,
+SOURCE-LIMITATIONS, PRD-0x9, docs index and AGENTS status.
+Final code commit is recorded in the completion message and Git history; no further
+code changes are required before human review of the outstanding decisions.
+
+---
+
+# Historical handover before this continuation
 
 Recorded 10 October 2026. **Validation infrastructure complete; review/live gates open.**
 Starting commit: `1531af0073de5d0a262433b9f5aa570479108f2f`.

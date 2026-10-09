@@ -55,7 +55,7 @@ and grounded Q&A; C06 alone does not complete it.
 
 ## Current handover
 
-See [Phase 8 handover](PHASE-8-HANDOVER.md) for review tooling, independent capability validation, observed live extraction failure and defer decisions.
+See [Phase 8 handover](PHASE-8-HANDOVER.md) for review tooling, provisional capability validation, the extraction span fix, final synthetic live results and defer decisions. Review the [28 proposed cases](PHASE-8-CASE-REVIEW.md) before acceptance.
 
 See [Phase 7 handover](PHASE-7-HANDOVER.md) for the latest integration, acceptance
 checks, provider smoke discrepancy, flags and rollback. This supersedes earlier

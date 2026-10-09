@@ -93,3 +93,21 @@ boundary, decimal precision policy and handling for historical aliases. Record m
 ambiguity; no arbitrary overdue SLA is chosen. Confirm current commercial terms for
 new outlets and product remediation with future approved evidence. No model/provider
 or runtime version selection is necessary to finish source inspection.
+
+
+## Metric-specific coverage clarification (Phase 8)
+
+| Requested metric | Existing source and supported use | Limitation / next input only if needed |
+| --- | --- | --- |
+| Recorded expansion or renewal activity | `crm_deals.csv`: `tipe`, `stage`, `status`, `stage_sejak`, `dibuat`, `outlet`, `nilai_tahunan`; count and separate recorded deal types/statuses in comparable periods | Stage-entry is a labeled proxy for closing, not an order/payment date. Current snapshot does not supply every transition. |
+| Contracted annual value | `contracts_billing.csv`: `nilai_tahunan`, effective `mulai`, renewal date, rate/outlets/discount | Contracted value is not collected or recognized revenue. Historical comparisons need valid terms for both dates; do not project current contracts backward. |
+| Product transaction counts | `product_usage_daily.csv`: `tanggal`, `account_id`, `outlet_id`, `jumlah_transaksi` | Aggregate covered account/outlet-days for requested periods, checking missing days/outlets; transactions in the customer's POS are not KasirNusa subscription orders or revenue. |
+| Actual revenue / payments | These sources do not establish recognized/collected amounts by period | Request appropriate billing, payment or recognition records only when this is the chosen metric and the requested comparison lacks support. |
+
+Current Q&A has an executable `closed_expansion_deal_proxy` comparison (currently won
+expansion deals grouped by recorded stage-entry date). Other metric names do not yet
+have a validated period-comparison handler; this is an implementation limitation,
+not proof that the existing CSVs contain no usable history. Contracts and daily usage
+remain available as source records. A broad repeat-order question must clarify the
+metric and comparable periods before deciding whether more data is needed. Renewal
+friction or unrealized expansion is not evidence of a decline in actual revenue.

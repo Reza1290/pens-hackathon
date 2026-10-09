@@ -46,6 +46,13 @@ export function validateValue(operation:Operation,value:unknown,context:Context)
   if(output.status==='candidate'&&!output.assertions.length)throw new Error('empty_candidate');
   for(const a of output.assertions){
     const source=context.sources.find(s=>s.id===a.sourceId&&s.field===a.field);
+    // The quote is evidence; model arithmetic is not. Repair offsets only when
+    // that exact quote occurs once in the explicitly identified source field.
+    // Ambiguous repeats and absent quotes still fail the original strict check.
+    if(source&&(source.text.slice(a.start,a.end)!==a.quote||a.end>source.text.length)){
+      const first=source.text.indexOf(a.quote);
+      if(first>=0&&source.text.indexOf(a.quote,first+1)===-1){a.start=first;a.end=first+a.quote.length;}
+    }
     const candidate=context.candidates.find(c=>c.id===a.subjectId&&c.start<=a.eventDate&&(!c.end||c.end>=a.eventDate));
     if(!source||!candidate||source.eventDate!==a.eventDate||source.speakerId!==a.speakerId||a.end>source.text.length||source.text.slice(a.start,a.end)!==a.quote)throw new Error('invalid_evidence_scope_or_span');
     if(a.attribution==='direct'&&a.subjectId!==source.speakerId)throw new Error('invalid_direct_attribution');

@@ -1,6 +1,6 @@
 # PRD-0x9 — Phase 8: Validate and selectively enable the AI workflow
 
-Status: Validation infrastructure complete; review/live gates open. See [Phase 8 handover](PHASE-8-HANDOVER.md).
+Status: Remaining technical fixes and final provisional verification complete; independent case/gate approval and reviewed acceptance remain open. See [Phase 8 handover](PHASE-8-HANDOVER.md).
 
 Dependency: PRD-0x8 / Phase 7 integration and its handover recorded 10 October 2026. PRD-0x7 optimization remains deferred; classifier and semantic-retrieval gates are not prerequisites for this phase.
 
@@ -156,3 +156,13 @@ Rebuilding the graph, changing the FE/BE stack, unrestricted text-to-SQL, free-f
 ## First concrete task
 
 Reproduce and review the planner mismatch using its saved input/output and current routing contracts. Determine whether it lost required behavior before changing either the prompt or test expectation. In the same baseline report, enumerate which of the four capability operations still lack failure/cache/budget checks. That report determines the smallest implementation fixes for the rest of this phase.
+
+
+## Final technical continuation
+
+See [updated handover](PHASE-8-HANDOVER.md) for the reproduced extraction failure,
+unique verbatim span fix, raw diagnostics, final four-call synthetic normal workflow,
+48 passing unit/DB tests, seven browser journeys and 26/26 local source checks.
+[The 28-case table](PHASE-8-CASE-REVIEW.md) proposes corrections without altering
+original labels or claiming independent approval. Review-dependent DoD boxes stay
+open. No new phase, capability activation or optimization was introduced.

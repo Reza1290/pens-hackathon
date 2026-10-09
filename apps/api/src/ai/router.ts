@@ -45,6 +45,7 @@ export class Interpreter{
       let attempts=0;
       for(let attempt=0;attempt<2;attempt++){
         const started=Date.now();let status:Outcome['status']='unavailable',value:unknown=null,inputTokens:number|null=null,outputTokens:number|null=null,costUsd:string|null=null;let retryable=false;
+        let receivedOutput:unknown=null,validationCode:string|null=null;
         if(this.options.live&&provider.configured){
           if(this.calls>=this.options.maxCalls)status='budget_exceeded';
           else{
@@ -55,12 +56,12 @@ export class Interpreter{
               const rates=provider.name==='typesafe'&&provider.model==='jev-1.13.0'?['0.042','0']:[this.options.inputRate,this.options.outputRate];
               if(rates[0]!==undefined&&rates[1]!==undefined)costUsd=new Decimal(inputTokens).times(rates[0]).plus(new Decimal(outputTokens).times(rates[1])).div(1000000).toFixed(10);
               if(result.model!==provider.model)throw new ProviderError('invalid');
-              value=validateValue(operation,result.value,context);status='succeeded';
-            }catch(error){status=controller.signal.aborted?'timeout':error instanceof ProviderError?error.code:error instanceof TypeError?'provider_error':'invalid';retryable=error instanceof ProviderError&&error.retryable;}finally{clearTimeout(timer);}
+              receivedOutput=result.value;value=validateValue(operation,result.value,context);status='succeeded';
+            }catch(error){status=controller.signal.aborted?'timeout':error instanceof ProviderError?error.code:error instanceof TypeError?'provider_error':'invalid';validationCode=error instanceof Error&&/^[a-z_]+$/.test(error.message)?error.message:'provider_or_schema_validation';retryable=error instanceof ProviderError&&error.retryable;}finally{clearTimeout(timer);}
           }
         }
         const noCall=status==='unavailable'||status==='budget_exceeded';if(noCall)costUsd='0.0000000000';
-        const runId=randomUUID();await tx.insert(modelRuns).values({id:runId,datasetId:context.datasetId,accountId:context.accountId,cacheKey:key,inputHash,operation,provider:provider.name,model:provider.model,promptVersion:versions.prompt,schemaVersion:versions.schema,parametersVersion:versions.parameters,status,context,output:status==='succeeded'?value:null,latencyMs:Date.now()-started,inputTokens,outputTokens,costUsd,costBasis:noCall?'no_call':costUsd===null?'unknown':'estimated_from_reported_usage'});
+        const runId=randomUUID();await tx.insert(modelRuns).values({id:runId,datasetId:context.datasetId,accountId:context.accountId,cacheKey:key,inputHash,operation,provider:provider.name,model:provider.model,promptVersion:versions.prompt,schemaVersion:versions.schema,parametersVersion:versions.parameters,status,context,diagnostics:{received_output:receivedOutput,validation_code:validationCode,normalized:status==='succeeded'&&JSON.stringify(receivedOutput)!==JSON.stringify(value)},output:status==='succeeded'?value:null,latencyMs:Date.now()-started,inputTokens,outputTokens,costUsd,costBasis:noCall?'no_call':costUsd===null?'unknown':'estimated_from_reported_usage'});
         last={status,runId,cached:false,calls:attempts,...(status==='succeeded'?{value}: {})};
         if(!retryable||attempt===1||this.calls>=this.options.maxCalls)break;
         await new Promise(resolve=>setTimeout(resolve,250));

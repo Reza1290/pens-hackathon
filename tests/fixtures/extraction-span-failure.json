@@ -1,0 +1,53 @@
+{
+  "origin": "synthetic diagnostic replay; original historical response unavailable",
+  "context": {
+    "asOf": "2026-09-01",
+    "claim": "complex-requirement-extraction-v1",
+    "sources": [
+      {
+        "id": "6fb63df2-db5e-560d-af55-f06e03724de4",
+        "hash": "e0347cade7f4dbc0b086bb2b0d01f6a1ef6574902aaa02e13b52014f4921eeac",
+        "text": "I need custom procurement documentation for expansion S1.",
+        "field": "isi",
+        "eventDate": "2026-08-02",
+        "speakerId": "ad0482b9-8773-5e76-ba8f-74d90b2bde92"
+      }
+    ],
+    "accountId": "8c88a6c9-474c-5e74-adaa-ae2f29c41e34",
+    "datasetId": "3096fdd6-cc3e-538b-a7de-c9ebb9331e14",
+    "subjectId": null,
+    "candidates": [
+      {
+        "id": "ad0482b9-8773-5e76-ba8f-74d90b2bde92",
+        "end": null,
+        "role": "Owner",
+        "start": "2025-01-01"
+      },
+      {
+        "id": "f93b5d26-4134-594f-968a-1a961b21f08a",
+        "end": null,
+        "role": "Operations Lead",
+        "start": "2025-01-01"
+      }
+    ],
+    "decisionScopeId": "c3f1f981-fdf7-5996-85cc-ba83d9ebcbf5"
+  },
+  "output": {
+    "status": "candidate",
+    "assertions": [
+      {
+        "subjectId": "ad0482b9-8773-5e76-ba8f-74d90b2bde92",
+        "predicate": "EXPANSION_DETAILS",
+        "value": "Needs custom procurement documentation for expansion S1.",
+        "sourceId": "6fb63df2-db5e-560d-af55-f06e03724de4",
+        "field": "isi",
+        "quote": "I need custom procurement documentation for expansion S1.",
+        "start": 0,
+        "end": 56,
+        "eventDate": "2026-08-02",
+        "attribution": "direct",
+        "speakerId": "ad0482b9-8773-5e76-ba8f-74d90b2bde92"
+      }
+    ]
+  }
+}

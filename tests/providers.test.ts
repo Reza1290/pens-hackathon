@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { describe,it,expect } from 'vitest';
 import { validateValue,type Context,choices } from '../apps/api/src/ai/schemas/interpretation.js';
 import { cacheKey } from '../apps/api/src/ai/router.js';
@@ -9,6 +10,13 @@ import { deepseekProvider } from '../apps/api/src/ai/providers/deepseek.js';
 const person=randomUUID(),source=randomUUID();
 const context:Context={datasetId:randomUUID(),accountId:randomUUID(),sources:[{id:source,field:'isi',text:'Need ROI evidence.',eventDate:'2026-08-01',speakerId:person}],candidates:[{id:person,role:'unknown',start:'2025-01-01',end:null}],subjectId:person,claim:''};
 describe('synthetic provider contract checks (no live inference)',()=>{
+  it('resolves the reproduced exact-quote offset failure without accepting unsupported or ambiguous evidence',()=>{
+    const fixture=JSON.parse(readFileSync(new URL('./fixtures/extraction-span-failure.json',import.meta.url),'utf8'));
+    const raw=fixture.output.assertions[0];expect(raw.end).toBe(56);expect(fixture.context.sources[0].text.length).toBe(57);
+    const result=validateValue('extract_details',fixture.output,fixture.context) as {assertions:{start:number;end:number}[]};expect(result.assertions[0]).toMatchObject({start:0,end:57});expect(raw.end).toBe(56);
+    for(const change of [{quote:'Unsupported procurement authorization'},{subjectId:randomUUID()},{sourceId:randomUUID()},{speakerId:randomUUID()},{eventDate:'2027-01-01'}])expect(()=>validateValue('extract_details',{...fixture.output,assertions:[{...raw,...change}]},fixture.context)).toThrow();
+    const ambiguous={...fixture.context,sources:[{...fixture.context.sources[0],text:fixture.context.sources[0].text+' '+fixture.context.sources[0].text}]};expect(()=>validateValue('extract_details',fixture.output,ambiguous)).toThrow();
+  });
   it('uses DeepSeek JSON mode with explicit schema instructions and safe authentication',async()=>{
     const transport:typeof fetch=async(url,options)=>{
       expect(url).toBe('https://api.deepseek.com/chat/completions');expect(options?.redirect).toBe('error');

@@ -165,7 +165,7 @@ export const modelRuns = pgTable('model_runs', {
   cacheKey:text('cache_key').notNull(),inputHash:text('input_hash').notNull(),operation:text().notNull(),
   provider:text().notNull(),model:text().notNull(),promptVersion:text('prompt_version').notNull(),
   schemaVersion:text('schema_version').notNull(),parametersVersion:text('parameters_version').notNull(),
-  status:text().notNull(),output:jsonb(),context:jsonb(),latencyMs:integer('latency_ms').notNull(),
+  status:text().notNull(),output:jsonb(),context:jsonb(),diagnostics:jsonb(),latencyMs:integer('latency_ms').notNull(),
   inputTokens:integer('input_tokens'),outputTokens:integer('output_tokens'),
   costUsd:numeric('cost_usd',{precision:20,scale:10}),costBasis:text('cost_basis').notNull(),
   createdAt:timestamp('created_at',{withTimezone:true}).defaultNow().notNull(),

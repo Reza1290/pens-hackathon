@@ -42,3 +42,16 @@ a uniform per-operation failure/retry/budget matrix, a persisted extraction revi
 lifecycle, independent semantic labels, reviewed thresholds and live normal-path
 acceptance. Prior counts are historical until rerun. All capability acceptance
 decisions therefore start at defer, regardless of the user's enabled local flags.
+
+
+## Continuation adjudication (10 October 2026)
+
+The final `tests/database.test.ts` now forces both operations through `/api/qa`
+for the exact original generic question on one owner/intermediary fixture. Both
+preserve operational preparation, joint discussion, ROI/payback context, the
+not_addressed judgment and evidence. This supports conditional alternate-route
+acceptance for that generic request; it does not rewrite the historical smoke label
+or establish that all stakeholder routes equal a full account diagnosis. The existing
+metric/period preservation tests still pass. No further routing change was necessary.
+Final synthetic live normal workflow selected account_diagnosis. Independent user
+adjudication remains pending in [the case review](PHASE-8-CASE-REVIEW.md).

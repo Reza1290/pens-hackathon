@@ -15,6 +15,7 @@ import { Interpreter } from '../../ai/router.js';
 import { jevProvider } from '../../ai/providers/jev.js';
 import { selectedGenerativeProvider } from '../../ai/providers/selected.js';
 import type { Provider } from '../../ai/providers/interface.js';
+import { PROMPT_VERSION } from '../../ai/prompts/interpretation.js';
 import { extractionSchema,SCHEMA_VERSION } from '../../ai/schemas/interpretation.js';
 const runtimes=new WeakMap<Database,{judgment:Interpreter;extraction:Interpreter}>();
 const runtimeFor=(db:Database)=>{let pair=runtimes.get(db);if(!pair){pair={judgment:new Interpreter(db,{live:env.QA_JEV_ENABLED==='true',maxCalls:env.MODEL_MAX_CALLS,timeoutMs:env.MODEL_TIMEOUT_MS}),extraction:new Interpreter(db,{live:env.ANALYSIS_EXTRACTION_ENABLED==='true',maxCalls:env.MODEL_MAX_CALLS,timeoutMs:env.MODEL_TIMEOUT_MS})};runtimes.set(db,pair);}return pair;};
@@ -45,7 +46,7 @@ export async function analyzeStakeholders(db:Database,datasetId:string,accountId
   const scopeKey=diagnosisScopeKey(accountId,scope.signalId,scope.dealId);
   const relevant=rows.filter(r=>r.record.accountExternalId===account.externalId||['employees.csv','crm_contacts.csv','contact_employment_history.csv','features.csv'].includes(r.file.filename));
   const reviewed=await reviewedStatements(db,datasetId,accountId);
-  const runId=stableId(datasetId,STAKEHOLDER_VERSION,scopeKey,sha256(JSON.stringify([relevant.map(r=>[r.record.id,r.record.contentHash]),opportunityCards,dataset.asOf,reviewed.hash,env.JEV_MODEL,env.LLM_MODEL,SCHEMA_VERSION,env.QA_JEV_ENABLED,env.ANALYSIS_EXTRACTION_ENABLED,modelOptions?.jev?.model,modelOptions?.extractor?.model])));
+  const runId=stableId(datasetId,STAKEHOLDER_VERSION,scopeKey,sha256(JSON.stringify([relevant.map(r=>[r.record.id,r.record.contentHash]),opportunityCards,dataset.asOf,reviewed.hash,env.JEV_MODEL,env.LLM_MODEL,SCHEMA_VERSION,PROMPT_VERSION,env.QA_JEV_ENABLED,env.ANALYSIS_EXTRACTION_ENABLED,modelOptions?.jev?.model,modelOptions?.extractor?.model])));
   const [previous]=await db.select().from(s.analysisRuns).where(eq(s.analysisRuns.id,runId));
   if(previous?.status==='completed'){
     const [saved]=await db.select().from(s.recommendations).where(and(eq(s.recommendations.datasetId,datasetId),eq(s.recommendations.runId,runId),eq(s.recommendations.accountId,accountId)));

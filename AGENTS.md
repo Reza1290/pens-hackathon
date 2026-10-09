@@ -703,8 +703,11 @@ Model operation flags are independent, and disabled operations bypass model cach
 See [Phase 8 handover](docs/PHASE-8-HANDOVER.md). Deterministic/simulated and bounded
 synthetic live workflow checks are recorded separately. The 28-case semantic packet
 has zero independently reviewed labels. All four capability decisions remain defer;
-existing user-enabled planner/answer settings were not silently changed. A live
-extraction output failed validation and was safely retained as unresolved. No new
+existing user-enabled planner/answer settings were not silently changed. The historical live
+extraction rejection was reproduced as an incorrect quote offset. Unique verbatim
+span anchoring now yields a valid pending-review candidate in the final synthetic
+live workflow; no candidate is auto-approved. See the 28-case technical review table
+for unresolved semantic labels and gates. No new
 capability is independently accepted. PRD-0x7 optimization remains deferred.
 
 ## 21. Project provider skill

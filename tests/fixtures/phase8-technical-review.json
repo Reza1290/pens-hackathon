@@ -1,0 +1,232 @@
+{
+  "version": "phase8-technical-review-v1",
+  "original_packet_sha256": "94dc7eb31fef9d24a9976dcf5e934a52e5e7cb3cce70e6ac8636fee154261bbb",
+  "status": "pending_human_review",
+  "independently_reviewed": false,
+  "cases": [
+    {
+      "case_id": "authority-en",
+      "source_revision": "7046b7777979789469223b236458b27e2604db3adec016b5bda25ecc0ed8cf97",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "The statement supports decision-specific authority only if the speaker, date and current employment are identified. A joint meeting is not established by this passage alone.",
+      "decision_needed": "Add dated speaker/role metadata; otherwise clarify the contact route."
+    },
+    {
+      "case_id": "authority-id",
+      "source_revision": "31d399313938543efe7becf6adb4e2f3a080cb2ef1cf86ef3fe5e037a8027e22",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "The statement supports decision-specific authority only if the speaker, date and current employment are identified. A joint meeting is not established by this passage alone.",
+      "decision_needed": "Add dated speaker/role metadata; otherwise clarify the contact route."
+    },
+    {
+      "case_id": "roi-en",
+      "source_revision": "5cae3fc77774e707ad4fba80bab3675c1e32e7a7b9e9271236783ed25fd8b61e",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "Partial coverage is plausible: ROI is present, payback absent. No intermediary is evidenced.",
+      "decision_needed": "Approve partially_addressed; replace intermediary route with clarify route, or supply intermediary evidence."
+    },
+    {
+      "case_id": "roi-id",
+      "source_revision": "c12aa56f9ce41b6886f6018ceb488638989034749b7dbd5cb0e1fd075599b3cb",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "Partial coverage is plausible: ROI is present, payback absent. No intermediary is evidenced.",
+      "decision_needed": "Approve partially_addressed; replace intermediary route with clarify route, or supply intermediary evidence."
+    },
+    {
+      "case_id": "reference-en",
+      "source_revision": "adebb241f4698e9eb28c113485c0904a22ebb8b60517d4de08f8d13e854c185d",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "The reply says a reference exists but supplies no customer identity or reference contents; Indonesian wording is weaker than English. addressed overstates verified delivery.",
+      "decision_needed": "Use insufficient_evidence until reference contents are supplied; align bilingual passages."
+    },
+    {
+      "case_id": "reference-id",
+      "source_revision": "ed55ea048850253f579259374df639ab1b329a416c6a6d226553a52dc7c7067d",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "The reply says a reference exists but supplies no customer identity or reference contents; Indonesian wording is weaker than English. addressed overstates verified delivery.",
+      "decision_needed": "Use insufficient_evidence until reference contents are supplied; align bilingual passages."
+    },
+    {
+      "case_id": "pricing-en",
+      "source_revision": "a3d7486b72d1ab7d06f1cfdce1449defbbb14c0866a713b33be994e4a73be594",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "The reply does not answer pricing. There is no intermediary evidence.",
+      "decision_needed": "Approve not_addressed; request pricing and clarify route instead of assuming an intermediary."
+    },
+    {
+      "case_id": "pricing-id",
+      "source_revision": "13b1f1fea0fe8c54fac6d417d1aa02fcac38fc1d71d069966a336a4c62c214f6",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "The reply does not answer pricing. There is no intermediary evidence.",
+      "decision_needed": "Approve not_addressed; request pricing and clarify route instead of assuming an intermediary."
+    },
+    {
+      "case_id": "rollout-en",
+      "source_revision": "7bb89764d3fb417674a78ce07d825eeb7700d737a159fd08338bfa868bf6abee",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "A date may address a requested start date, but does not necessarily satisfy an implementation schedule. No route evidence.",
+      "decision_needed": "Define whether a date suffices; otherwise partially_addressed or insufficient_evidence; clarify route."
+    },
+    {
+      "case_id": "rollout-id",
+      "source_revision": "f4377fdb0241ba8ea5d7cccce73960aa3e2f16d5a450f5f710bd3601ee05a149",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "A date may address a requested start date, but does not necessarily satisfy an implementation schedule. No route evidence.",
+      "decision_needed": "Define whether a date suffices; otherwise partially_addressed or insufficient_evidence; clarify route."
+    },
+    {
+      "case_id": "integration-en",
+      "source_revision": "411b0c0b90fd667a276ac8a42b8970f79fbf1cdb701ff09735fc16fa51b163b8",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "Missing attachment prevents assessing whether the concern was answered; absence does not prove it was ignored.",
+      "decision_needed": "Approve insufficient_evidence; request attachment or verified status."
+    },
+    {
+      "case_id": "integration-id",
+      "source_revision": "3b8e0f13ceaf7292806abfd83b7b139a82217bbd717f352b1d46b5309e085f90",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "Missing attachment prevents assessing whether the concern was answered; absence does not prove it was ignored.",
+      "decision_needed": "Approve insufficient_evidence; request attachment or verified status."
+    },
+    {
+      "case_id": "negation-en",
+      "source_revision": "83bb8a6b45fdfbbc28ea835894126d4a6be3449d277b31d9c5e982815f88ef07",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "English may withdraw approval for a purchase, not purchasing authority. Indonesian also means no longer approving, not necessarily no longer authorized. No contradiction is present.",
+      "decision_needed": "Separate decision rejection from authority withdrawal; rewrite fixture explicitly before choosing a label."
+    },
+    {
+      "case_id": "negation-id",
+      "source_revision": "293cc132ccfa437c941a16f9b8a2f39d81ed49c9779e31d9361c2a28714a58c8",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "English may withdraw approval for a purchase, not purchasing authority. Indonesian also means no longer approving, not necessarily no longer authorized. No contradiction is present.",
+      "decision_needed": "Separate decision rejection from authority withdrawal; rewrite fixture explicitly before choosing a label."
+    },
+    {
+      "case_id": "cancellation-en",
+      "source_revision": "8cf1b6de120fe7be72bc140b86c00add0c908cc76ccda44466b9c8af5beb0acb",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "A cancellation request is explicit. Final cancelled state also requires linked signal, speaker authorization and event timing.",
+      "decision_needed": "Approve cancellation-intent judgment; supply linkage/timing before asserting the current signal is cancelled."
+    },
+    {
+      "case_id": "cancellation-id",
+      "source_revision": "d697a2564b0786c4509fa20b8ecbb8b7014f28abb8aa0940410e2ddf12f290ea",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "A cancellation request is explicit. Final cancelled state also requires linked signal, speaker authorization and event timing.",
+      "decision_needed": "Approve cancellation-intent judgment; supply linkage/timing before asserting the current signal is cancelled."
+    },
+    {
+      "case_id": "reported-en",
+      "source_revision": "3e24dd4abbafff303ae63b3a1ee840c7ed8db771e22460dde69c3de8e0b21cd5",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "X is the reported authority/ROI holder; Y is the reporter. A joint route needs current identity and relationship metadata.",
+      "decision_needed": "Preserve reported attribution; add dated X/Y metadata before approving joint route."
+    },
+    {
+      "case_id": "reported-id",
+      "source_revision": "d8ed9b2589d3a66f1c57a31a523844cb58ccbf5812ae1228c7da640ee8b37e66",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "X is the reported authority/ROI holder; Y is the reporter. A joint route needs current identity and relationship metadata.",
+      "decision_needed": "Preserve reported attribution; add dated X/Y metadata before approving joint route."
+    },
+    {
+      "case_id": "contradiction-en",
+      "source_revision": "585b3c8ca44f6b70586f4760a94a06fa05cabec2672bbf4dfd143ab61a5cb56c",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "English concerns approving a decision; Indonesian second sentence denies authority. They are not equivalent. Missing dates also prevent resolution.",
+      "decision_needed": "Align decision-vs-authority meaning in both languages; preserve conflict and request clarification."
+    },
+    {
+      "case_id": "contradiction-id",
+      "source_revision": "f508d178627d32fb331f4dec285ddde0342fad0e7dbda0795e6e75f494da89a3",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "English concerns approving a decision; Indonesian second sentence denies authority. They are not equivalent. Missing dates also prevent resolution.",
+      "decision_needed": "Align decision-vs-authority meaning in both languages; preserve conflict and request clarification."
+    },
+    {
+      "case_id": "role_change-en",
+      "source_revision": "999be3bf0d7ca2fc51ffb40a77b36ab2f3db8398d01c95b69734c4c9f7d515df",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "Departure supports historical role only with a year and analysis-as-of after departure; neither is in the case metadata.",
+      "decision_needed": "Add 2026-08-01 departure and 2026-09-01 as-of; confirm current approver before contact."
+    },
+    {
+      "case_id": "role_change-id",
+      "source_revision": "cd4e1ae52f21755771aff2fe535af043c025dfa846fdbccad288629f9d65e4e3",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "Departure supports historical role only with a year and analysis-as-of after departure; neither is in the case metadata.",
+      "decision_needed": "Add 2026-08-01 departure and 2026-09-01 as-of; confirm current approver before contact."
+    },
+    {
+      "case_id": "wrong_decision-en",
+      "source_revision": "39b081c0b49199bd4241ea59c8f2be8d4d1d739c6628d32e35c236a3a458091d",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "S2 is useful counterevidence, but cannot support S1 fulfillment. Blanket forbidden decision-S2 conflicts with its presence in allowed context.",
+      "decision_needed": "Forbid S2 as supporting evidence for S1, not inspection; approve insufficient_evidence for S1 fulfillment."
+    },
+    {
+      "case_id": "wrong_decision-id",
+      "source_revision": "9134201b3ae0b941badf1ede836da86c384beae3bf410af66d5002deadd7a376",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "S2 is useful counterevidence, but cannot support S1 fulfillment. Blanket forbidden decision-S2 conflicts with its presence in allowed context.",
+      "decision_needed": "Forbid S2 as supporting evidence for S1, not inspection; approve insufficient_evidence for S1 fulfillment."
+    },
+    {
+      "case_id": "missing-en",
+      "source_revision": "ec1313417bb62643c2da0a2acf6de2624abb359781bf8f21db7d7238cb251853",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "This is fixture coverage metadata, not a customer passage. No scoped search or dataset date is recorded.",
+      "decision_needed": "Represent empty records and an as-of/search scope; approve insufficient_evidence within that scope."
+    },
+    {
+      "case_id": "missing-id",
+      "source_revision": "3370cef4d4ebc5357f027587f884178db95330af1bfb094ae6c09c1bbd2334f6",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "This is fixture coverage metadata, not a customer passage. No scoped search or dataset date is recorded.",
+      "decision_needed": "Represent empty records and an as-of/search scope; approve insufficient_evidence within that scope."
+    },
+    {
+      "case_id": "comparison-en",
+      "source_revision": "e59d137e8032de7d2e9c1e2b7ea37c1c576f5e6289c408755af0624e3b5c354a",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "The actual question is generic next steps; the decline question is incorrectly embedded as evidence. Neither metric nor comparable periods is selected.",
+      "decision_needed": "Replace question with the decline question; require account_diagnosis and metric/period clarification, without asserting a decline."
+    },
+    {
+      "case_id": "comparison-id",
+      "source_revision": "e3dde2b085c91d7c15dfc1870a634162ce5af11ca560e2837dc120e378fe2e29",
+      "technical_reviewer": "implementation-agent",
+      "independent_approval": false,
+      "correction_or_ambiguity": "The actual question is generic next steps; the decline question is incorrectly embedded as evidence. Neither metric nor comparable periods is selected.",
+      "decision_needed": "Replace question with the decline question; require account_diagnosis and metric/period clarification, without asserting a decline."
+    }
+  ]
+}
