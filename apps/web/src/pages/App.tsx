@@ -1794,7 +1794,7 @@ function Opportunities({ dataset, onOpenScan }: { dataset: string; onOpenScan: (
         <div className="border border-brand-border rounded-lg p-4 bg-white shadow-2xs">
           <span className="text-xs text-brand-subtle font-medium">Peluang Ekspansi</span>
           <div className="mt-2 flex items-baseline space-x-2">
-            <span className="text-2xl font-bold font-mono text-brand-text">
+            <span className="text-2xl font-bold text-brand-text">
               {activeCount}
             </span>
           </div>
@@ -1815,7 +1815,7 @@ function Opportunities({ dataset, onOpenScan }: { dataset: string; onOpenScan: (
         {/* Metric 3: Langkah Tindak Lanjut */}
         <div className="border border-brand-border rounded-lg p-4 bg-white shadow-2xs">
           <span className="text-xs font-medium">Langkah Tindak Lanjut</span>
-          <div className="mt-2 flex items-baseline space-x-2 font-mono">
+          <div className="mt-2 flex items-baseline space-x-2">
             <span className="text-2xl font-bold text-brand-text">
               {actionCount}
             </span>
@@ -2173,23 +2173,8 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
 
   return (
     <div className="space-y-5 max-w-5xl mx-auto">
-      {/* Header Title, Badges & Context */}
+      {/* Header Title & Context */}
       <div>
-        {card && (
-          <div className="flex flex-wrap items-center gap-2 mb-1.5">
-            <span className="inline-flex items-center text-[10px] font-mono font-medium px-2 py-0.5 rounded border border-brand-border bg-gray-50 text-gray-700">
-              {resource.signal.status.toUpperCase()}
-            </span>
-            {resource.reconciliation.status === 'unmatched' && (
-              <span className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded border border-brand-border bg-gray-50 text-gray-700">
-                Belum Tercatat di CRM
-              </span>
-            )}
-            <span className="inline-flex items-center text-[10px] font-mono text-gray-500 bg-gray-50 px-2 py-0.5 rounded border border-brand-border">
-              {resource.elapsed_days} hari pending
-            </span>
-          </div>
-        )}
         <h1 className="text-2xl font-bold tracking-tight text-gray-900">
           {accountCode} · {resource.account.name}
         </h1>
@@ -2266,6 +2251,30 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
       {/* TAB 1: Rencana Tindak Lanjut & Analisis */}
       {activeTab === 'overview' && (
         <div className="space-y-5">
+          {/* Status Sinyal & Rekonsiliasi Peluang */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 bg-gray-50 border border-brand-border rounded-lg text-xs">
+            <div>
+              <span className="text-[10px] text-gray-400 font-mono uppercase block">Konteks Peluang</span>
+              <span className="font-semibold text-gray-900 mt-0.5 block">{words(resource.commercial_context)}</span>
+            </div>
+            <div>
+              <span className="text-[10px] text-gray-400 font-mono uppercase block">Status Sinyal</span>
+              <span className="font-semibold text-gray-900 mt-0.5 block">{words(card ? resource.signal.status : 'Aktif')}</span>
+            </div>
+            <div>
+              <span className="text-[10px] text-gray-400 font-mono uppercase block">Rekonsiliasi CRM</span>
+              <span className="font-semibold text-gray-900 mt-0.5 block">
+                {card ? (resource.reconciliation.status === 'unmatched' ? 'Belum Tercatat di CRM' : 'Tercatat di CRM') : 'Terdata di CRM'}
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] text-gray-400 font-mono uppercase block">Status Respon</span>
+              <span className="font-semibold text-gray-900 font-mono mt-0.5 block">
+                {card ? `${resource.elapsed_days} hari pending` : 'Tersinkronisasi'}
+              </span>
+            </div>
+          </div>
+
           {/* Section: Proposed Action Plan */}
           <section className="border border-brand-border rounded-lg p-5 bg-white space-y-4 shadow-2xs">
             <div className="flex items-center justify-between border-b border-brand-border pb-3">
