@@ -2171,56 +2171,37 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
 
   return (
     <div className="space-y-5 max-w-5xl mx-auto">
-      {/* 1. Top Breadcrumb */}
+      {/* 1. Top Navigation: Back Button & Snapshot */}
       <div className="flex items-center justify-between pb-2 border-b border-brand-border">
-        <div className="flex items-center space-x-2 text-xs">
-          <Link
-            to={scoped('/', dataset)}
-            className="text-gray-500 hover:text-gray-900 inline-flex items-center space-x-1 font-medium"
-          >
-            <span>←</span>
-            <span>Dashboard</span>
-          </Link>
-          <span className="text-gray-300">/</span>
-          <span className="text-gray-600 font-medium">
-            {card ? 'Peluang Ekspansi' : 'Diagnosis Akun'}
-          </span>
-          <span className="text-gray-300">/</span>
-          <span className="font-mono text-gray-900 font-semibold">{accountCode}</span>
-        </div>
+        <Link
+          to={scoped('/', dataset)}
+          className="text-gray-600 hover:text-gray-900 inline-flex items-center space-x-1.5 text-xs font-medium transition"
+        >
+          <span>←</span>
+          <span>Kembali</span>
+        </Link>
         <div className="text-[11px] font-mono text-gray-400">
           Snapshot: {resource.as_of} · {resource.dataset_version}
         </div>
       </div>
 
-      {/* 2. Header Eyebrow, Badges & Title */}
+      {/* 2. Header Title, Badges & Context */}
       <div>
-        <div className="flex flex-wrap items-center gap-2 mb-1.5">
-          <span className="inline-flex items-center text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-gray-100 text-gray-800 border border-brand-border">
-            {words(resource.commercial_context).toUpperCase()}
-          </span>
-          {card && (
-            <>
-              <span
-                className={`inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full border ${
-                  resource.signal.status === 'active'
-                    ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
-                    : 'text-gray-600 bg-gray-50 border-gray-200'
-                }`}
-              >
-                {resource.signal.status.toUpperCase()}
+        {card && (
+          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+            <span className="inline-flex items-center text-[10px] font-mono font-medium px-2 py-0.5 rounded border border-brand-border bg-gray-50 text-gray-700">
+              {resource.signal.status.toUpperCase()}
+            </span>
+            {resource.reconciliation.status === 'unmatched' && (
+              <span className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded border border-brand-border bg-gray-50 text-gray-700">
+                Belum Tercatat di CRM
               </span>
-              {resource.reconciliation.status === 'unmatched' && (
-                <span className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
-                  Belum Tercatat di CRM
-                </span>
-              )}
-              <span className="inline-flex items-center text-[10px] font-mono text-gray-500 bg-gray-50 px-2 py-0.5 rounded border border-gray-200">
-                {resource.elapsed_days} hari pending
-              </span>
-            </>
-          )}
-        </div>
+            )}
+            <span className="inline-flex items-center text-[10px] font-mono text-gray-500 bg-gray-50 px-2 py-0.5 rounded border border-brand-border">
+              {resource.elapsed_days} hari pending
+            </span>
+          </div>
+        )}
         <h1 className="text-2xl font-bold tracking-tight text-gray-900">
           {accountCode} · {resource.account.name}
         </h1>
@@ -2229,63 +2210,6 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
             ? `Permintaan ekspansi ${resource.signal.additional_outlets ?? ''} outlet di ${resource.signal.location ?? 'lokasi unstated'} (Target: ${resource.signal.target_period ?? 'tidak disebutkan'})`
             : `Laporan diagnosis akun komprehensif, analisis stakeholder, dan keselarasan komersial.`}
         </p>
-      </div>
-
-      {/* 3. Top 3 KPI Hero Cards (Mandatory Outputs) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {/* Card 1: Peluang Ekspansi */}
-        <div className="border border-brand-border rounded-lg p-4 bg-white shadow-2xs">
-          <div className="text-[10px] font-medium text-gray-400 uppercase font-mono">1. Peluang Ekspansi</div>
-          <div className="text-sm font-bold text-gray-900 mt-1">
-            {card
-              ? `${resource.signal.additional_outlets ?? 'Ekspansi'} outlet · ${resource.signal.location ?? 'Lokasi unstated'}`
-              : resource.account.name}
-          </div>
-          <div className="text-xs text-gray-600 mt-0.5">
-            {card
-              ? `Target: ${resource.signal.target_period ?? 'Belum ditentukan'} (${words(resource.signal.kind)})`
-              : `Konteks: ${words(resource.commercial_context)}`}
-          </div>
-          <div className="mt-2 pt-2 border-t border-gray-100 text-[10px] text-gray-400 font-mono">
-            {card ? `Tercatat: ${resource.signal.date}` : `Akun: ${accountCode}`}
-          </div>
-        </div>
-
-        {/* Card 2: Estimasi Nilai (Possible Revenue) */}
-        <div className="border border-brand-border rounded-lg p-4 bg-white shadow-2xs">
-          <div className="text-[10px] font-medium text-gray-400 uppercase font-mono">2. Estimasi Nilai (Possible Revenue)</div>
-          <div className="text-sm font-bold text-gray-900 mt-1 font-mono">
-            {resource.value_scenario ? `Rp ${amount(resource.value_scenario.amount)}` : 'Perlu Penyesuaian Paket'}
-          </div>
-          <div className="text-xs text-gray-600 mt-0.5">
-            {resource.value_scenario ? 'Inkremental tahunan (kondisional)' : 'Melampaui batas kuota paket saat ini'}
-          </div>
-          <div className="mt-2 pt-2 border-t border-gray-100 text-[10px] text-gray-400 font-mono">
-            {resource.value_scenario?.inputs
-              ? `${resource.value_scenario.inputs.additional_outlets} outlet × Rp ${amount(resource.value_scenario.inputs.monthly_rate)}/bln`
-              : 'Syarat paket baru perlu dikonfirmasi'}
-          </div>
-        </div>
-
-        {/* Card 3: Langkah Tindak Lanjut */}
-        <div className="border border-brand-border rounded-lg p-4 bg-white shadow-2xs">
-          <div className="text-[10px] font-medium text-gray-400 uppercase font-mono">3. Penanggung Jawab & Aksi</div>
-          <div className="text-sm font-bold text-gray-900 mt-1 flex items-center space-x-1.5 truncate">
-            <span>{owner.name}</span>
-            {card && resource.people.contact && (
-              <>
-                <span className="text-gray-400 font-normal">→</span>
-                <span className="text-gray-700 font-medium truncate">{resource.people.contact.name}</span>
-              </>
-            )}
-          </div>
-          <div className="text-xs text-gray-600 mt-0.5 truncate">
-            {plan.task}
-          </div>
-          <div className="mt-2 pt-2 border-t border-gray-100 text-[10px] text-gray-400 font-mono">
-            Rute: {words(plan.route)}
-          </div>
-        </div>
       </div>
 
       {/* 4. Tab Navigation Bar */}
