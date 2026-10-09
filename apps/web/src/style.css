@@ -1,1 +1,124 @@
-:root{font-family:Inter,ui-sans-serif,system-ui,sans-serif;color:#203b33;background:#f4f6f1;font-synthesis:none;line-height:1.6}*{box-sizing:border-box}body{margin:0}a{color:#17604b;text-underline-offset:4px}a:hover{color:#0a382b}h1,h2,h3{line-height:1.25;letter-spacing:-.025em}h1{font-size:clamp(2rem,4vw,3rem);margin:10px 0 14px}h2{font-size:1.35rem}h3{font-size:1.05rem}.shell{padding:22px max(24px,calc((100vw - 1160px)/2));display:flex;align-items:center;justify-content:space-between;gap:20px}header{background:#193e32;color:white}.brand{font-weight:750;letter-spacing:.12em;text-decoration:none;color:white}.brand span{display:block;font-size:.8rem;font-weight:400;letter-spacing:.03em;opacity:.8}.brand:hover{color:white}.local{font-size:.8rem;color:#d4e5dc}.toolbar{display:flex;flex-wrap:wrap;gap:18px;align-items:center;padding:16px max(24px,calc((100vw - 1160px)/2));border-bottom:1px solid #dae2d9;background:#fff}.toolbar nav{margin-right:auto}main{max-width:1160px;margin:auto;padding:24px 24px 60px}.coverage{font-size:.85rem;color:#546c61;margin-bottom:32px}.eyebrow,.tags{font-size:.78rem;letter-spacing:.065em;text-transform:uppercase;color:#466c5a;font-weight:650}.intro{max-width:800px;font-size:1.1rem;color:#53665d}.filters,.pagination,.tabs,.question{display:flex;align-items:end;gap:16px;flex-wrap:wrap}.filters{margin:28px 0}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:20px}.cards article{margin:0}.cards h2{font-size:1.5rem}.value{font-size:1.3rem;font-weight:650;color:#17604b}section{margin:28px 0;background:#fff;border:1px solid #dae2d9;border-radius:12px;padding:24px}article{padding:20px;background:#fff;border:1px solid #dae2d9;border-radius:10px;margin:14px 0}section article{background:#f9faf6}.cards article{padding:26px}label{display:flex;flex-direction:column;gap:5px;font-size:.85rem;font-weight:600}select,input,textarea,button,.button{font:inherit;border:1px solid #b9ccc0;border-radius:6px;padding:9px 12px;color:inherit;background:#fff}select{max-width:100%}button,.button{cursor:pointer;font-size:.85rem;font-weight:600}.button{display:inline-block;text-decoration:none}button:hover,.button:hover{background:#e9f2eb}button:disabled{opacity:.45;cursor:default}.primary{background:#216b57;color:white;margin:12px 0}.primary:hover{background:#174d3f}input,textarea{width:100%}textarea{font-size:.95rem;font-weight:400;line-height:1.6;resize:vertical}label:has(textarea),label:has(input){margin:14px 0}button:focus-visible,a:focus-visible,select:focus-visible,summary:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #cf901c;outline-offset:4px}.tabs{margin:24px 0;border-bottom:1px solid #d1ded2;align-items:center;padding-bottom:12px}.tabs a[aria-current=page]{font-weight:700;border-bottom:3px solid #216b57}.refs{display:inline-flex;gap:5px;flex-wrap:wrap;margin:6px 4px}.refs button{font-size:.72rem;padding:3px 7px;background:#eef5ee}.notice{border-left:5px solid #cd961f;background:#fffcef}.error{padding:18px;border:1px solid #d1968d;background:#fff4f1}.graph{height:460px;background:#fafbf8;border:1px solid #e0e7de;border-radius:8px}summary{cursor:pointer;padding:9px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.82rem;background:#eef2eb;padding:14px;border-radius:6px;max-height:500px;overflow:auto}blockquote{margin:12px 0;padding:10px 18px;border-left:3px solid #b1caba;white-space:pre-wrap;overflow-wrap:anywhere}li{margin:8px 0}.source{border:2px solid #216b57;background:#fff;padding:24px;border-radius:12px;margin-top:28px}.source dt{font-weight:650}.source dd{margin:4px 0 16px;white-space:pre-wrap;overflow-wrap:anywhere}.pagination{justify-content:center;margin:30px 0}.question{background:#eaf0e7;padding:14px;border-radius:8px}.question label{flex:1;min-width:220px}.question button{margin-bottom:14px}footer{font-size:.8rem;color:#5c7464;border-top:1px solid #d9e2d7}.skip{position:fixed;top:10px;transform:translateY(-200%);left:20px;background:white;padding:10px;z-index:10}.skip:focus{transform:none}@media(max-width:650px){main{padding:20px 16px}.shell,.toolbar{padding:16px}.local{display:none}.toolbar label{width:100%}.toolbar select{width:100%}section,article{padding:18px}.filters label{flex:1;min-width:140px}.graph{height:340px}}
+@charset "UTF-8";
+
+/* Base Resets & Typography */
+html, body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background-color: #ffffff;
+  color: #111827;
+  margin: 0;
+  line-height: 1.5;
+}
+
+pre {
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Accessible Skip Link */
+.skip {
+  position: fixed;
+  top: 10px;
+  transform: translateY(-200%);
+  left: 20px;
+  background: #ffffff;
+  color: #0051C3;
+  padding: 8px 16px;
+  border: 1px solid #0051C3;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 9999;
+  text-decoration: none;
+  transition: transform 0.15s ease-in-out;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+.skip:focus {
+  transform: translateY(0);
+  outline: 2px solid #0051C3;
+  outline-offset: 2px;
+}
+
+/* Smooth Accordion Foldable Transition using CSS Grid */
+.accordion-content {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 240ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms ease;
+  opacity: 0;
+}
+.accordion-content.open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.accordion-inner {
+  overflow: hidden;
+}
+
+/* Chevron rotation */
+.chevron-icon {
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.chevron-rotated {
+  transform: rotate(90deg);
+}
+.chevron-down-rotated {
+  transform: rotate(180deg);
+}
+
+/* Marketing Hero Glow Card & Dot Matrix */
+.hero-glow-card {
+  background: linear-gradient(135deg, #EA580C 0%, #F97316 45%, #C2410C 100%);
+  position: relative;
+}
+.hero-dot-grid {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.24) 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+
+/* Relationship Graph Canvas */
+.graph {
+  height: 460px;
+  background: #FAFAFA;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Custom Thin Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #FAFAFA;
+}
+::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}
+
+/* Focus Ring */
+button:focus-visible,
+a:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #0051C3;
+  outline-offset: 2px;
+}
