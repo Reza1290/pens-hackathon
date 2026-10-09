@@ -138,7 +138,7 @@ export function App() {
             {/* TOP LEFT SWITCH ACCOUNT: Directly functional as Customer Account Switcher */}
             <div className="relative flex-1 min-w-0">
               <div className="h-9 flex items-center space-x-2 text-xs text-brand-text bg-gray-50/80 border border-brand-border hover:border-gray-400 px-3 py-1.5 rounded-md transition min-w-0 shadow-2xs">
-                <span className="font-semibold truncate text-[12px] font-mono tracking-tight text-gray-800">
+                <span className="font-semibold text-[12px] tracking-tight text-gray-800">
                   {activeAccount ? `${activeAccount.externalId} · ${activeAccount.name}` : 'Switch Account…'}
                 </span>
                 <svg className="w-3.5 h-3.5 text-gray-400 shrink-0 ml-auto pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -170,109 +170,60 @@ export function App() {
           </div>
         </div>
 
-        {/* Right Header Tools */}
-        <div className="flex items-center space-x-2.5 md:space-x-3 text-xs font-medium text-brand-muted px-3 md:px-4 shrink-0">
-          {/* Ask Copilot Button */}
-          <button
-            onClick={() => setCopilotOpen(!copilotOpen)}
-            className="h-8 flex items-center space-x-1.5 hover:text-brand-text px-2.5 md:px-3 rounded-md hover:bg-gray-50 transition border border-brand-border"
-          >
-            <svg className="w-3.5 h-3.5 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            <span className="hidden sm:inline">Ask Copilot</span>
-          </button>
-
-          {/* AI Deep Scan Action */}
-          <button
-            onClick={handleRunDeepScan}
-            disabled={scanLoading}
-            className="h-8 flex items-center space-x-1.5 bg-orange-50 hover:bg-orange-100 text-brand-orange px-2.5 md:px-3 rounded-md transition border border-orange-200"
-            title="Scan interactions for non-regex expansion requests"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <span className="hidden sm:inline">{scanLoading ? 'Scanning…' : 'AI Deep Scan'}</span>
-          </button>
-
-          {/* Snapshot Selector Combobox */}
-          <div className="flex items-center space-x-1.5">
-            <span className="text-[11px] text-brand-subtle hidden sm:inline">Snapshot:</span>
-            <select
-              aria-label="Snapshot"
-              value={selected}
-              onChange={(e) => navigate(scoped('/', e.target.value))}
-              className="h-8 text-xs border border-brand-border rounded-md px-2.5 bg-white text-brand-text hover:border-gray-400 outline-none"
-            >
-              {datasets.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.version} · {d.asOf}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="h-3.5 w-[1px] bg-brand-border"></div>
-
-          {/* User Account Switcher Menu */}
+        {/* Right Header: Minimal User Profile */}
+        <div className="flex items-center px-3 md:px-4 shrink-0">
+          {/* User Account Menu (Minimal, Logout Only) */}
           <div className="relative">
             <button
               onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-              className="h-8 flex items-center space-x-1.5 px-2.5 rounded-md hover:bg-gray-100 border border-brand-border text-brand-text transition"
-              title="Current User"
+              className="h-8 flex items-center space-x-2 px-2.5 rounded-md hover:bg-gray-100 border border-brand-border text-brand-text transition text-xs"
+              title="User Account"
             >
-              <div className="w-4 h-4 rounded-full bg-brand-blue text-white text-[9px] flex items-center justify-center font-bold">
+              <div className="w-5 h-5 rounded-full bg-brand-blue text-white text-[10px] flex items-center justify-center font-bold">
                 {currentUser.name[0]}
               </div>
-              <span className="text-[11px] font-medium hidden md:inline">{currentUser.name}</span>
-              <span className="text-[9px] bg-blue-50 text-brand-blue px-1.5 py-0.5 rounded font-mono">
-                {currentUser.employee_external_id ?? currentUser.role}
-              </span>
+              <span className="text-[11px] font-medium hidden sm:inline">{currentUser.name}</span>
+              <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+              </svg>
             </button>
 
             {userDropdownOpen && (
-              <div className="absolute right-0 mt-1 w-60 bg-white border border-brand-border rounded-lg shadow-dropdown p-2 z-50 text-xs">
-                <div className="px-2 py-1.5 border-b border-brand-border mb-1">
-                  <div className="font-semibold text-brand-text">{currentUser.name}</div>
-                  <div className="text-[11px] text-brand-subtle">{currentUser.email}</div>
-                  <div className="text-[10px] font-mono text-emerald-600 mt-0.5">Role: {currentUser.role}</div>
-                </div>
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setUserDropdownOpen(false)} />
+                <div className="absolute right-0 mt-1 w-52 bg-white border border-brand-border rounded-lg shadow-dropdown p-1.5 z-50 text-xs">
+                  <div className="px-2.5 py-2 border-b border-brand-border mb-1">
+                    <div className="font-semibold text-brand-text truncate">{currentUser.name}</div>
+                    <div className="text-[11px] text-brand-subtle truncate">{currentUser.email}</div>
+                    <div className="text-[10px] font-mono text-brand-blue mt-0.5 capitalize">{currentUser.role.replace('_', ' ')}</div>
+                  </div>
 
-                <div className="text-[10px] font-semibold uppercase text-brand-subtle px-2 pt-1 pb-0.5">
-                  Switch Active Persona
-                </div>
-
-                {[
-                  { name: 'Wahyu Setiawan', email: 'wahyu@kasirnusa.id', id: 'E04', role: 'account_manager' },
-                  { name: 'Andi Prasetyo', email: 'andi@kasirnusa.id', id: 'E01', role: 'account_manager' },
-                  { name: 'Sari Wulandari', email: 'sari@kasirnusa.id', id: 'E02', role: 'sales_rep' },
-                  { name: 'Administrator', email: 'admin@kasirnusa.id', id: null, role: 'admin' },
-                ].map((u) => (
-                  <button
-                    key={u.email}
-                    onClick={() => {
-                      setCurrentUser({
-                        id: '00000000-0000-4000-8000-' + (u.id ?? 'admin'),
-                        email: u.email,
-                        name: u.name,
-                        employee_external_id: u.id,
-                        role: u.role as any,
-                        is_active: true,
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString(),
-                      });
-                      setUserDropdownOpen(false);
-                    }}
-                    className={`w-full text-left px-2 py-1.5 rounded hover:bg-gray-50 flex items-center justify-between transition ${
-                      currentUser.email === u.email ? 'bg-blue-50 text-brand-blue font-medium' : 'text-brand-text'
-                    }`}
+                  <Link
+                    to={scoped('/settings', selected)}
+                    onClick={() => setUserDropdownOpen(false)}
+                    className="w-full text-left px-2.5 py-1.5 rounded hover:bg-gray-50 text-brand-text flex items-center space-x-2 transition text-xs"
                   >
-                    <span>{u.name}</span>
-                    <span className="text-[10px] font-mono text-brand-subtle">{u.id ?? 'Admin'}</span>
+                    <svg className="w-3.5 h-3.5 text-brand-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Settings & Snapshot</span>
+                  </Link>
+
+                  <button
+                    onClick={() => {
+                      setUserDropdownOpen(false);
+                      alert('Signed out successfully.');
+                    }}
+                    className="w-full text-left px-2.5 py-1.5 rounded hover:bg-red-50 text-red-600 flex items-center space-x-2 transition text-xs font-medium"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span>Sign out</span>
                   </button>
-                ))}
-              </div>
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -304,7 +255,7 @@ export function App() {
             {/* Account Home / Opportunities */}
             <Link
               to={scoped('/', selected)}
-              className={`w-full h-8.5 flex items-center px-2.5 rounded-md transition text-left text-xs ${
+              className={`w-full h-9 flex items-center px-2.5 rounded-md transition text-left text-xs ${
                 isOpportunitiesRoot && !currentAccountId
                   ? 'bg-gray-200/70 text-brand-text font-medium'
                   : 'text-brand-muted hover:text-brand-text hover:bg-gray-100'
@@ -322,7 +273,7 @@ export function App() {
             <div className="pt-0.5">
               <button
                 onClick={() => setRecentsOpen(!recentsOpen)}
-                className="w-full h-8.5 flex items-center justify-between px-2.5 rounded-md text-brand-muted hover:text-brand-text hover:bg-gray-100 transition text-left text-xs group"
+                className="w-full h-9 flex items-center justify-between px-2.5 rounded-md text-brand-muted hover:text-brand-text hover:bg-gray-100 transition text-left text-xs group"
               >
                 <span className="flex items-center min-w-0">
                   <span className="w-4 h-4 flex items-center justify-center shrink-0 mr-2.5">
@@ -405,7 +356,7 @@ export function App() {
 
             <button
               onClick={handleRunDeepScan}
-              className="w-full h-8.5 flex items-center justify-between px-2.5 rounded-md text-brand-muted hover:text-brand-text hover:bg-gray-100 transition text-left text-xs"
+              className="w-full h-9 flex items-center justify-between px-2.5 rounded-md text-brand-muted hover:text-brand-text hover:bg-gray-100 transition text-left text-xs"
             >
               <span className="flex items-center">
                 <span className="w-4 h-4 flex items-center justify-center shrink-0 mr-2.5">
@@ -420,7 +371,7 @@ export function App() {
 
             <button
               onClick={() => setCopilotOpen(!copilotOpen)}
-              className="w-full h-8.5 flex items-center justify-between px-2.5 rounded-md text-brand-muted hover:text-brand-text hover:bg-gray-100 transition text-left text-xs"
+              className="w-full h-9 flex items-center justify-between px-2.5 rounded-md text-brand-muted hover:text-brand-text hover:bg-gray-100 transition text-left text-xs"
             >
               <span className="flex items-center">
                 <span className="w-4 h-4 flex items-center justify-center shrink-0 mr-2.5">
@@ -439,7 +390,7 @@ export function App() {
 
             <button
               onClick={() => setUserDropdownOpen(true)}
-              className="w-full h-8.5 flex items-center justify-between px-2.5 rounded-md text-brand-muted hover:text-brand-text hover:bg-gray-100 transition text-left text-xs"
+              className="w-full h-9 flex items-center justify-between px-2.5 rounded-md text-brand-muted hover:text-brand-text hover:bg-gray-100 transition text-left text-xs"
             >
               <span className="flex items-center">
                 <span className="w-4 h-4 flex items-center justify-center shrink-0 mr-2.5">
@@ -451,6 +402,26 @@ export function App() {
               </span>
               <span className="text-[10px] font-mono text-gray-400">4 seats</span>
             </button>
+
+            {/* Settings Menu Item */}
+            <Link
+              to={scoped('/settings', selected)}
+              className={`w-full h-8.5 flex items-center justify-between px-2.5 rounded-md transition text-left text-xs ${
+                location.pathname === '/settings'
+                  ? 'bg-gray-200/70 text-brand-text font-medium'
+                  : 'text-brand-muted hover:text-brand-text hover:bg-gray-100'
+              }`}
+            >
+              <span className="flex items-center">
+                <span className="w-4 h-4 flex items-center justify-center shrink-0 mr-2.5">
+                  <svg className="w-4 h-4 text-brand-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </span>
+                <span>Settings</span>
+              </span>
+            </Link>
           </nav>
         </aside>
 
@@ -469,6 +440,7 @@ export function App() {
               {accounts.error && <Pending error={accounts.error} />}
               <Routes>
                 <Route path="/" element={<Opportunities dataset={selected} onOpenScan={() => setScanModalOpen(true)} />} />
+                <Route path="/settings" element={<SettingsView selected={selected} datasets={datasets} />} />
                 <Route
                   path="/:kind/:id"
                   element={<Detail key={location.pathname} dataset={selected} action={false} />}
@@ -601,6 +573,218 @@ export function App() {
         <span>Proposed actions for human review · CRM writes disabled</span>
       </footer>
     </div>
+  );
+}
+
+// ================= VIEW: SYSTEM & USER SETTINGS =================
+function SettingsView({
+  selected,
+  datasets,
+}: {
+  selected: string;
+  datasets: Array<{ id: string; version: string; asOf: string; analyzedAt?: string }>;
+}) {
+  const navigate = useNavigate();
+  const currentDataset = datasets.find((d) => d.id === selected) ?? datasets[0];
+  const [copiedKey, setCopiedKey] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard?.writeText('kn_live_usr_9981f4a9b2fc7701e82844a');
+    setCopiedKey(true);
+    setTimeout(() => setCopiedKey(false), 2000);
+  };
+
+  return (
+    <section className="space-y-6 max-w-4xl mx-auto">
+      {/* Page Title & Breadcrumbs */}
+      <div>
+        <div className="flex items-center space-x-2 text-xs text-brand-subtle mb-1">
+          <Link to={scoped('/', selected)} className="hover:text-brand-text">
+            Workbench
+          </Link>
+          <span>/</span>
+          <span className="text-brand-text font-medium">Settings</span>
+        </div>
+        <h1 className="text-2xl font-semibold tracking-tight text-brand-text">Settings & Configuration</h1>
+        <p className="text-xs text-brand-subtle mt-1 leading-relaxed">
+          Configure dataset snapshots, manage developer API credentials, and review LLM inference providers.
+        </p>
+      </div>
+
+      {/* SECTION 1: DATASET SNAPSHOT SETTINGS */}
+      <div className="bg-white border border-brand-border rounded-xl p-5 shadow-2xs space-y-4">
+        <div className="flex items-center justify-between border-b border-brand-border pb-3">
+          <div>
+            <h2 className="text-sm font-semibold text-brand-text flex items-center space-x-2">
+              <svg className="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2 1.5 3 3.5 3h9c2 0 3.5-1 3.5-3V7M4 7c0-2 1.5-3 3.5-3h9c2 0 3.5 1 3.5 3M4 7h16m-8 4v6m-3-3h6" />
+              </svg>
+              <span>Dataset Snapshot Management</span>
+            </h2>
+            <p className="text-xs text-brand-muted mt-0.5">
+              Select and inspect the verified evidentiary partition used for graph traversal, deterministic rules, and AI discovery.
+            </p>
+          </div>
+          <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded font-mono font-medium">
+            Active: {currentDataset?.version ?? 'None'}
+          </span>
+        </div>
+
+        <div className="space-y-3 pt-1">
+          <div>
+            <label htmlFor="snapshot-select" className="block text-xs font-medium text-brand-text mb-1">
+              Active Snapshot Partition
+            </label>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-2xl">
+              <select
+                id="snapshot-select"
+                aria-label="Snapshot"
+                value={selected}
+                onChange={(e) => navigate(scoped('/settings', e.target.value))}
+                className="h-9 flex-1 text-xs border border-brand-border rounded-md px-3 bg-white text-brand-text hover:border-gray-400 outline-none focus:ring-1 focus:ring-brand-blue"
+              >
+                {datasets.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.version} · Cutoff: {d.asOf} (ID: {d.id})
+                  </option>
+                ))}
+              </select>
+
+              <Link
+                to={scoped('/', selected)}
+                className="h-9 px-4 bg-brand-blue hover:bg-brand-blue-hover text-white text-xs font-medium rounded-md flex items-center justify-center shrink-0 transition shadow-2xs"
+              >
+                Go to Opportunities
+              </Link>
+            </div>
+            <p className="text-[11px] text-brand-subtle mt-1.5">
+              Switching snapshots immediately recalibrates all accounts, deterministic checks, and premise calculations to that snapshot's as-of date.
+            </p>
+          </div>
+
+          {currentDataset && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+              <div className="p-3 bg-gray-50 border border-brand-border rounded-lg">
+                <div className="text-[10px] uppercase font-mono text-brand-subtle">Version Tag</div>
+                <div className="text-xs font-semibold text-brand-text font-mono mt-0.5">{currentDataset.version}</div>
+              </div>
+              <div className="p-3 bg-gray-50 border border-brand-border rounded-lg">
+                <div className="text-[10px] uppercase font-mono text-brand-subtle">Analysis Cutoff Date</div>
+                <div className="text-xs font-semibold text-brand-text font-mono mt-0.5">{currentDataset.asOf}</div>
+              </div>
+              <div className="p-3 bg-gray-50 border border-brand-border rounded-lg">
+                <div className="text-[10px] uppercase font-mono text-brand-subtle">Dataset Partition ID</div>
+                <div className="text-xs font-mono text-brand-muted mt-0.5 truncate" title={currentDataset.id}>
+                  {currentDataset.id}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* SECTION 2: USER API TOKENS & INTEGRATIONS (TODO) */}
+      <div className="bg-white border border-brand-border rounded-xl p-5 shadow-2xs space-y-4">
+        <div className="flex items-center justify-between border-b border-brand-border pb-3">
+          <div>
+            <h2 className="text-sm font-semibold text-brand-text flex items-center space-x-2">
+              <svg className="w-4 h-4 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+              </svg>
+              <span>User API Tokens & Live Integrations</span>
+            </h2>
+            <p className="text-xs text-brand-muted mt-0.5">
+              Personal API credentials and third-party connector webhooks.
+            </p>
+          </div>
+          <span className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded font-mono font-medium">
+            TODO / Coming Soon
+          </span>
+        </div>
+
+        <div className="space-y-4 pt-1">
+          {/* User API Token */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium text-brand-text">
+              Personal API Key (Scoped per user)
+            </label>
+            <div className="flex items-center space-x-2 max-w-xl">
+              <input
+                type="text"
+                readOnly
+                value="kn_live_usr_9981f4a9b2fc7701e82844a"
+                className="h-9 flex-1 text-xs font-mono bg-gray-50 border border-brand-border rounded-md px-3 text-brand-muted select-all outline-none"
+              />
+              <button
+                onClick={handleCopy}
+                className="h-9 px-3 bg-white border border-brand-border hover:bg-gray-50 text-brand-text text-xs rounded-md transition shrink-0"
+              >
+                {copiedKey ? 'Copied!' : 'Copy Key'}
+              </button>
+              <button
+                disabled
+                className="h-9 px-3 bg-gray-100 border border-brand-border text-gray-400 text-xs rounded-md cursor-not-allowed shrink-0"
+                title="TODO: Regenerate key feature coming soon"
+              >
+                Rotate Key
+              </button>
+            </div>
+            <p className="text-[11px] text-brand-subtle">
+              Authenticate programmatic inquiries, export context graph assertions, and invoke Copilot endpoints via REST API.
+            </p>
+          </div>
+
+          {/* Model Provider & Webhooks */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl pt-2">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium text-brand-text">
+                Active AI Model Provider
+              </label>
+              <select
+                disabled
+                className="h-9 w-full text-xs border border-brand-border rounded-md px-3 bg-gray-50 text-brand-text cursor-not-allowed outline-none"
+              >
+                <option>Jev AI System-1 (Zero Hallucination Classification)</option>
+                <option>Google Gemini 1.5 Pro (Fallback & Q&A Synthesis)</option>
+                <option>Anthropic Claude 3.5 Sonnet</option>
+              </select>
+              <p className="text-[10px] text-brand-subtle">
+                Currently locked to system environment defaults (`JEV_API_KEY`).
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium text-brand-text">
+                Live CRM Webhook Target
+              </label>
+              <input
+                type="text"
+                disabled
+                placeholder="https://api.kasirnusa.id/webhooks/deals"
+                value="https://api.kasirnusa.id/webhooks/deals"
+                className="h-9 w-full text-xs font-mono border border-brand-border rounded-md px-3 bg-gray-50 text-brand-muted cursor-not-allowed outline-none"
+              />
+              <p className="text-[10px] text-brand-subtle">
+                Planned outbound sync for verified expansion opportunities.
+              </p>
+            </div>
+          </div>
+
+          {/* Architectural Callout Banner */}
+          <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-lg text-xs text-blue-900 flex items-start space-x-2.5">
+            <svg className="w-4 h-4 text-brand-blue shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="space-y-1 leading-relaxed">
+              <span className="font-semibold">TODO Note for Per-User Credentials:</span>
+              <p className="text-[11px] text-blue-800">
+                Individual user API keys, custom webhook endpoints, and per-account notification preferences will be stored in the newly provisioned PostgreSQL user table in the next sprint. For now, all interactions run with tenant-level system security.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
