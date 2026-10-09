@@ -114,34 +114,34 @@ export function App() {
   const activeAccount = accounts.data?.items.find((a) => a.id === currentAccountId);
 
   return (
-    <>
+    <div className="h-screen max-h-screen flex flex-col overflow-hidden bg-white text-brand-text">
       <a className="skip" href="#main">
         Skip to content
       </a>
 
-      {/* ================= TOP GLOBAL HEADER (44px / h-11) ================= */}
-      <header className="h-11 border-b border-brand-border bg-white flex items-center justify-between sticky top-0 z-40 select-none">
+      {/* ================= TOP GLOBAL HEADER (56px / h-14) ================= */}
+      <header className="h-14 border-b border-brand-border bg-white flex items-center justify-between shrink-0 select-none z-30">
         {/* Header Left: Exactly aligns with 272px sidebar on desktop */}
-        <div className="w-auto md:w-[272px] h-full md:border-r border-brand-border flex items-center justify-between px-2.5 md:px-3.5 shrink-0 bg-white">
-          <div className="flex items-center space-x-2 md:space-x-2.5 min-w-0 flex-1">
+        <div className="w-auto md:w-[272px] h-full md:border-r border-brand-border flex items-center justify-between px-3 md:px-3.5 shrink-0 bg-white">
+          <div className="flex items-center space-x-2.5 min-w-0 flex-1">
             {/* Brand Logo: KasirNusa Triangle */}
             <Link
               to={scoped('/', selected)}
               className="flex items-center text-brand-orange hover:opacity-90 transition shrink-0"
               title="KasirNusa Expansion Workbench"
             >
-              <svg className="w-5 h-5 text-brand-orange" viewBox="0 0 24 24" fill="currentColor">
+              <svg className="w-5.5 h-5.5 text-brand-orange shrink-0" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2L2 19.5h20L12 2zm0 4.2l6.5 11.3H5.5L12 6.2z" />
               </svg>
             </Link>
 
             {/* TOP LEFT SWITCH ACCOUNT: Directly functional as Customer Account Switcher */}
-            <div className="relative flex-1 min-w-0 max-w-[170px] md:max-w-none">
-              <div className="flex items-center space-x-1 text-xs text-brand-text bg-gray-50 border border-brand-border hover:border-gray-400 px-2 py-0.5 rounded transition min-w-0">
-                <span className="font-medium truncate text-[11px] font-mono">
+            <div className="relative flex-1 min-w-0">
+              <div className="h-9 flex items-center space-x-2 text-xs text-brand-text bg-gray-50/80 border border-brand-border hover:border-gray-400 px-3 py-1.5 rounded-md transition min-w-0 shadow-2xs">
+                <span className="font-semibold truncate text-[12px] font-mono tracking-tight text-gray-800">
                   {activeAccount ? `${activeAccount.externalId} · ${activeAccount.name}` : 'Switch Account…'}
                 </span>
-                <svg className="w-3 h-3 text-brand-subtle shrink-0 ml-auto pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5 text-gray-400 shrink-0 ml-auto pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
 
@@ -171,11 +171,11 @@ export function App() {
         </div>
 
         {/* Right Header Tools */}
-        <div className="flex items-center space-x-2 md:space-x-3 text-xs font-medium text-brand-muted px-2 md:px-4 shrink-0">
+        <div className="flex items-center space-x-2.5 md:space-x-3 text-xs font-medium text-brand-muted px-3 md:px-4 shrink-0">
           {/* Ask Copilot Button */}
           <button
             onClick={() => setCopilotOpen(!copilotOpen)}
-            className="h-7 flex items-center space-x-1 hover:text-brand-text px-2 md:px-2.5 rounded hover:bg-gray-50 transition border border-transparent hover:border-brand-border"
+            className="h-8 flex items-center space-x-1.5 hover:text-brand-text px-2.5 md:px-3 rounded-md hover:bg-gray-50 transition border border-brand-border"
           >
             <svg className="w-3.5 h-3.5 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -187,7 +187,7 @@ export function App() {
           <button
             onClick={handleRunDeepScan}
             disabled={scanLoading}
-            className="h-7 flex items-center space-x-1 bg-orange-50 hover:bg-orange-100 text-brand-orange px-2 md:px-2.5 rounded transition border border-orange-200"
+            className="h-8 flex items-center space-x-1.5 bg-orange-50 hover:bg-orange-100 text-brand-orange px-2.5 md:px-3 rounded-md transition border border-orange-200"
             title="Scan interactions for non-regex expansion requests"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -197,13 +197,13 @@ export function App() {
           </button>
 
           {/* Snapshot Selector Combobox */}
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-1.5">
             <span className="text-[11px] text-brand-subtle hidden sm:inline">Snapshot:</span>
             <select
               aria-label="Snapshot"
               value={selected}
               onChange={(e) => navigate(scoped('/', e.target.value))}
-              className="h-7 text-xs border border-brand-border rounded px-2 bg-white text-brand-text hover:border-gray-400 outline-none"
+              className="h-8 text-xs border border-brand-border rounded-md px-2.5 bg-white text-brand-text hover:border-gray-400 outline-none"
             >
               {datasets.map((d) => (
                 <option key={d.id} value={d.id}>
@@ -219,14 +219,14 @@ export function App() {
           <div className="relative">
             <button
               onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-              className="h-7 flex items-center space-x-1.5 px-2 rounded hover:bg-gray-100 border border-brand-border text-brand-text transition"
+              className="h-8 flex items-center space-x-1.5 px-2.5 rounded-md hover:bg-gray-100 border border-brand-border text-brand-text transition"
               title="Current User"
             >
               <div className="w-4 h-4 rounded-full bg-brand-blue text-white text-[9px] flex items-center justify-center font-bold">
                 {currentUser.name[0]}
               </div>
               <span className="text-[11px] font-medium hidden md:inline">{currentUser.name}</span>
-              <span className="text-[9px] bg-blue-50 text-brand-blue px-1 rounded font-mono">
+              <span className="text-[9px] bg-blue-50 text-brand-blue px-1.5 py-0.5 rounded font-mono">
                 {currentUser.employee_external_id ?? currentUser.role}
               </span>
             </button>
@@ -284,16 +284,16 @@ export function App() {
         <aside className="hidden md:flex w-[272px] bg-brand-sidebar border-r border-brand-border flex-col shrink-0 overflow-y-auto text-xs select-none">
           {/* Quick Search */}
           <div className="p-2.5 pb-2">
-            <div className="h-8 flex items-center bg-white border border-brand-border rounded-md px-2.5 text-brand-subtle focus-within:border-brand-blue focus-within:ring-1 focus-within:ring-brand-blue/20 transition">
+            <div className="h-9 flex items-center bg-white border border-brand-border rounded-md px-2.5 text-brand-subtle focus-within:border-brand-blue focus-within:ring-1 focus-within:ring-brand-blue/20 transition shadow-2xs">
               <svg className="w-3.5 h-3.5 mr-2 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
                 type="text"
                 placeholder="Quick search..."
-                className="w-full bg-transparent text-xs text-brand-text placeholder-gray-400 outline-none"
+                className="w-full min-w-0 bg-transparent text-xs text-brand-text placeholder-gray-400 outline-none pr-1.5"
               />
-              <span className="text-[10px] text-gray-400 bg-gray-100 border border-gray-200 px-1 py-0.2 rounded font-mono">
+              <span className="shrink-0 whitespace-nowrap text-[10px] text-gray-400 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded font-mono leading-none">
                 Ctrl K
               </span>
             </div>
@@ -304,32 +304,36 @@ export function App() {
             {/* Account Home / Opportunities */}
             <Link
               to={scoped('/', selected)}
-              className={`w-full h-8 flex items-center px-2.5 rounded transition text-left ${
+              className={`w-full h-8.5 flex items-center px-2.5 rounded-md transition text-left text-xs ${
                 isOpportunitiesRoot && !currentAccountId
                   ? 'bg-gray-200/70 text-brand-text font-medium'
                   : 'text-brand-muted hover:text-brand-text hover:bg-gray-100'
               }`}
             >
-              <svg className="w-4 h-4 mr-2.5 text-brand-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
+              <span className="w-4 h-4 flex items-center justify-center shrink-0 mr-2.5">
+                <svg className="w-4 h-4 text-brand-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+              </span>
               <span>Opportunities</span>
             </Link>
 
-            {/* FOLDABLE RECENTS ACCORDION: Two-Line Item Architecture */}
-            <div className="pt-1">
+            {/* FOLDABLE RECENTS ACCORDION */}
+            <div className="pt-0.5">
               <button
                 onClick={() => setRecentsOpen(!recentsOpen)}
-                className="w-full px-2 py-1 flex items-center justify-between text-xs font-medium text-brand-subtle hover:text-brand-text transition group rounded"
+                className="w-full h-8.5 flex items-center justify-between px-2.5 rounded-md text-brand-muted hover:text-brand-text hover:bg-gray-100 transition text-left text-xs group"
               >
-                <span className="flex items-center">
-                  <svg className="w-3.5 h-3.5 mr-1.5 text-gray-400 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                <span className="flex items-center min-w-0">
+                  <span className="w-4 h-4 flex items-center justify-center shrink-0 mr-2.5">
+                    <svg className="w-4 h-4 text-brand-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </span>
                   <span>Recents</span>
                 </span>
                 <svg
-                  className={`w-3 h-3 text-gray-400 chevron-icon ${recentsOpen ? 'chevron-down-rotated' : ''}`}
+                  className={`w-3.5 h-3.5 text-gray-400 chevron-icon shrink-0 ${recentsOpen ? 'chevron-down-rotated' : ''}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -339,7 +343,7 @@ export function App() {
               </button>
 
               <div className={`accordion-content ${recentsOpen ? 'open' : ''}`}>
-                <div className="accordion-inner ml-3.5 pl-2.5 border-l border-brand-border space-y-1.5 py-1">
+                <div className="accordion-inner ml-4 pl-2.5 border-l border-brand-border space-y-1.5 py-1">
                   {/* Recent 1: C06 */}
                   {accounts.data?.items.find((a) => a.externalId === 'C06') && (
                     <div
@@ -401,12 +405,14 @@ export function App() {
 
             <button
               onClick={handleRunDeepScan}
-              className="w-full h-8 flex items-center justify-between px-2.5 rounded text-brand-muted hover:text-brand-text hover:bg-gray-100 transition text-left"
+              className="w-full h-8.5 flex items-center justify-between px-2.5 rounded-md text-brand-muted hover:text-brand-text hover:bg-gray-100 transition text-left text-xs"
             >
               <span className="flex items-center">
-                <svg className="w-4 h-4 mr-2.5 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
+                <span className="w-4 h-4 flex items-center justify-center shrink-0 mr-2.5">
+                  <svg className="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </span>
                 <span>AI Deep Scan</span>
               </span>
               <span className="text-[9px] bg-orange-100 text-brand-orange px-1 rounded font-medium">Auto</span>
@@ -414,12 +420,14 @@ export function App() {
 
             <button
               onClick={() => setCopilotOpen(!copilotOpen)}
-              className="w-full h-8 flex items-center justify-between px-2.5 rounded text-brand-muted hover:text-brand-text hover:bg-gray-100 transition text-left"
+              className="w-full h-8.5 flex items-center justify-between px-2.5 rounded-md text-brand-muted hover:text-brand-text hover:bg-gray-100 transition text-left text-xs"
             >
               <span className="flex items-center">
-                <svg className="w-4 h-4 mr-2.5 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                </svg>
+                <span className="w-4 h-4 flex items-center justify-center shrink-0 mr-2.5">
+                  <svg className="w-4 h-4 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  </svg>
+                </span>
                 <span>Account Copilot QA</span>
               </span>
             </button>
@@ -431,23 +439,19 @@ export function App() {
 
             <button
               onClick={() => setUserDropdownOpen(true)}
-              className="w-full h-8 flex items-center justify-between px-2.5 rounded text-brand-muted hover:text-brand-text hover:bg-gray-100 transition text-left"
+              className="w-full h-8.5 flex items-center justify-between px-2.5 rounded-md text-brand-muted hover:text-brand-text hover:bg-gray-100 transition text-left text-xs"
             >
               <span className="flex items-center">
-                <svg className="w-4 h-4 mr-2.5 text-brand-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
+                <span className="w-4 h-4 flex items-center justify-center shrink-0 mr-2.5">
+                  <svg className="w-4 h-4 text-brand-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                </span>
                 <span>Team & RBAC</span>
               </span>
               <span className="text-[10px] font-mono text-gray-400">4 seats</span>
             </button>
           </nav>
-
-          {/* Sidebar Footer */}
-          <div className="p-3 border-t border-brand-border text-[11px] text-brand-subtle flex items-center justify-between">
-            <span className="font-mono">KasirNusa v0.4</span>
-            <span className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-500">Verified</span>
-          </div>
         </aside>
 
         {/* ================= MAIN VIEW AREA ================= */}
@@ -592,11 +596,11 @@ export function App() {
       )}
 
       {/* Footer */}
-      <footer className="h-8 border-t border-brand-border bg-brand-canvas px-4 flex items-center justify-between text-[11px] text-brand-subtle select-none">
+      <footer className="h-8 border-t border-brand-border bg-brand-canvas px-4 flex items-center justify-between text-[11px] text-brand-subtle select-none shrink-0 sticky bottom-0 z-30">
         <span>KasirNusa Account Expansion Assistant · Historical snapshot</span>
         <span>Proposed actions for human review · CRM writes disabled</span>
       </footer>
-    </>
+    </div>
   );
 }
 
