@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@kasirnusa/contracts": "0.1.0",
+    "cytoscape": "3.34.3",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-router-dom": "7.18.4"

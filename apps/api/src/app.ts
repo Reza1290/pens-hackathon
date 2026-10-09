@@ -1,7 +1,8 @@
 import express from 'express';
 import { and, eq, desc, ilike, or, count, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { cardSchema,datasetSchema,accountSchema,healthSchema,sourceSchema,paginationSchema,diagnosisSchema } from '@kasirnusa/contracts';
+import { cardSchema,datasetSchema,accountSchema,healthSchema,sourceSchema,paginationSchema,diagnosisSchema,draftRequestSchema } from '@kasirnusa/contracts';
+import { prepareDraft } from './modules/recommendations/drafts.js';
 import type { Database } from './db/client.js';
 import * as s from './db/schema/index.js';
 import { allowedDatasets,env } from './config/env.js';
@@ -21,6 +22,7 @@ export function createApp(db:Database,allowlist=allowedDatasets) {
     if(origin){try{const url=new URL(origin);if(url.protocol!=='http:'||!['localhost','127.0.0.1'].includes(url.hostname)||![String(env.API_PORT),'5173','4173'].includes(url.port))return res.status(403).json({error:'Origin not allowed'});}catch{return res.status(403).json({error:'Invalid origin'});}}
     res.set('Cache-Control','no-store');res.set('X-Content-Type-Options','nosniff');next();
   });
+  app.use(express.json({limit:'8kb'}));
   const resolveDataset=async (query:unknown)=>{
     const selection=z.object({dataset_id:z.uuid().optional()}).parse(query);
     const rows=await db.select().from(s.datasets).where(eq(s.datasets.status,'ready')).orderBy(desc(s.datasets.asOf));
@@ -105,6 +107,16 @@ export function createApp(db:Database,allowlist=allowedDatasets) {
     const dataset=await resolveDataset(req.query);const maxNodes=z.coerce.number().int().min(10).max(100).parse(req.query.max_nodes??50);
     const card=await cardFor(dataset.id,req.params.id);res.json({dataset_id:dataset.id,as_of:dataset.asOf,...projectEvidence(card,maxNodes)});
   });
+  app.post('/api/opportunities/:id/draft',async(req,res)=>{
+    const dataset=await resolveDataset(req.query);const options=draftRequestSchema.parse(req.body??{});
+    const card=await cardFor(dataset.id,req.params.id);
+    if(card.signal.status==='cancelled')throw new HttpError(409,'Request was cancelled; review account context before preparing a follow-up');
+    res.json(prepareDraft(card,options.language));
+  });
+  app.post('/api/accounts/:id/draft',async(req,res)=>{
+    const dataset=await resolveDataset(req.query);const options=draftRequestSchema.parse(req.body??{});
+    res.json(prepareDraft(await diagnosisFor(dataset,req.params.id,req.query),options.language));
+  });
   app.get('/api/sources/:id',async(req,res)=>{
     const dataset=await resolveDataset(req.query);const id=z.uuid().parse(req.params.id);
     const [found]=await db.select({record:s.sourceRecords,file:s.sourceFiles}).from(s.sourceRecords).innerJoin(s.sourceFiles,and(eq(s.sourceRecords.fileId,s.sourceFiles.id),eq(s.sourceRecords.datasetId,s.sourceFiles.datasetId))).where(and(eq(s.sourceRecords.id,id),eq(s.sourceRecords.datasetId,dataset.id)));
@@ -115,6 +127,8 @@ export function createApp(db:Database,allowlist=allowedDatasets) {
   app.use((error:unknown,_req:express.Request,res:express.Response,_next:express.NextFunction)=>{
     if(error instanceof z.ZodError)return res.status(400).json({error:'Invalid request or response schema'});
     if(error instanceof HttpError)return res.status(error.status).json({error:error.message});
+    if(error instanceof SyntaxError&&'body' in error)return res.status(400).json({error:'Invalid JSON body'});
+    if(typeof error==='object'&&error!==null&&'status' in error&&error.status===413)return res.status(413).json({error:'Request body too large'});
     console.error('API operation failed; no customer payload logged.');res.status(500).json({error:'Operation unavailable'});
   });
   return app;

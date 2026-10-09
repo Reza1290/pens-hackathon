@@ -1,6 +1,6 @@
 # PRD-0x5 — Phase 4: Deliver the sales workflow
 
-Status: Planned. Dependency: PRD-0x4 and validated API DTOs.
+Status: Implemented and locally verified. Dependency: PRD-0x4 and validated API DTOs.
 Requirements: FR-05–08, FR-10–13; AGENTS.md Sections 7 and 18.
 
 ## Goal
@@ -25,17 +25,17 @@ through the three required views, including accounts with no expansion signal.
 
 ## Definition of done
 
-- [ ] User can navigate C06 opportunity → evidence → action → editable draft.
-- [ ] User can inspect C01 renewal diagnosis without inventing an expansion signal;
+- [x] User can navigate C06 opportunity → evidence → action → editable draft.
+- [x] User can inspect C01 renewal diagnosis without inventing an expansion signal;
   P01 remains labeled new sale and separate from expansion value.
-- [ ] Every material factual card/talking point resolves to readable original evidence
+- [x] Every material factual card/talking point resolves to readable original evidence
   or the corresponding calculation/check; graph edges retain source references.
-- [ ] Pricing assumptions, commercial context, as-of, coverage and unknowns are visible.
-- [ ] Dataset/account selection scopes requests and updates consistently; inaccessible
+- [x] Pricing assumptions, commercial context, as-of, coverage and unknowns are visible.
+- [x] Dataset/account selection scopes requests and updates consistently; inaccessible
   resources and API failures show appropriate states.
-- [ ] Drafts remain reviewable/editable and no send or CRM-write behavior exists.
-- [ ] Keyboard navigation and readable layouts work across the core workflow.
-- [ ] A small Playwright journey and relevant typecheck/test/build checks pass;
+- [x] Drafts remain reviewable/editable and no send or CRM-write behavior exists.
+- [x] Keyboard navigation and readable layouts work across the core workflow.
+- [x] A small Playwright journey and relevant typecheck/test/build checks pass;
   shared DoD and remaining limitations are recorded.
 
 ## Out of scope
@@ -43,3 +43,9 @@ through the three required views, including accounts with no expansion signal.
 A separate fourth chat screen, dashboard-only stakeholder guidance, full-database
 graph visualization, frontend revenue calculations, provider credentials in browser
 code, hosting rollout and automatic sending.
+
+## Verification and handover
+
+See [Phase 4 handover](PHASE-4-HANDOVER.md) for behavior, checks and limitations.
+Template framing supports English/Indonesian; action text stays verbatim.
+Grounded generative Q&A and customized drafts remain PRD-0x6.

@@ -145,10 +145,34 @@ conditional on evaluation. Expansion, renewal and new-sale context stay separate
 See the [development plan](docs/README.md) for phase PRDs, definitions of done,
 acceptance checks and out-of-scope work. Phases 0–1 are locally verified;
 Phase 2 infrastructure is tested with live evaluation gates open; Phase 3's
-deterministic backend is locally verified; Phases 4–6
+deterministic backend and Phase 4 workflow are locally verified; Phases 5–6
 remain planned. Run `python scripts/audit_sources.py` to
 regenerate the checksum manifest and inventory from the original `data/raw/` files
 with Python 3.10 or newer (verified with Python 3.14.7). This standard-library tool
 does not import or change customer records; diagnostics are stored in ignored
 `data/processed/`. See the [source review](docs/C06-SOURCE-REVIEW.md) and
 [limitations](docs/SOURCE-LIMITATIONS.md) before building the runtime.
+
+## Sales workflow and template drafts
+
+Open the local Vite URL from `npm run dev`. Select a snapshot and inspect an
+opportunity, or use **Investigate account** for independent stakeholder diagnosis.
+Evidence and context opens original sources and a bounded relationship path;
+**Action plan** shows the supported route and editable template draft. No message
+is sent and edits are not saved. English/Indonesian template framing preserves the
+selected action text in its original language.
+
+Draft preparation endpoints are `POST /api/opportunities/:id/draft` and
+`POST /api/accounts/:id/draft`, scoped by `dataset_id`. They accept
+`{"language":"en"}` or `{"language":"id"}` and use the server's prepared action;
+account drafts also support `route=intermediary`.
+See [Phase 4 handover](docs/PHASE-4-HANDOVER.md) for browser tests and limitations.
+
+```powershell
+npx playwright install chromium
+npm run test:e2e
+```
+
+Browser journeys require the imported/analyzed/diagnosed snapshot described above.
+Playwright starts the local dev server when needed. Alternatively set
+`PLAYWRIGHT_CHANNEL=msedge` to use installed Microsoft Edge on Windows.

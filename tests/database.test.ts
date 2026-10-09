@@ -53,6 +53,14 @@ describe('disposable migrated PostgreSQL slice',()=>{
     const [signals]=await db.select({n:count()}).from(s.signals).where(eq(s.signals.datasetId,imported.dataset_id));expect(signals.n).toBe(0);
     const [link]=await db.select().from(s.assertions).where(and(eq(s.assertions.datasetId,imported.dataset_id),eq(s.assertions.predicate,'CONCERN_ABOUT_COMMITMENT')));expect(link.objectId).toBe(d.internal_decisions[0].id);
     const api=createApp(db,new Set([imported.dataset_id]));const url=`/api/accounts/${accountId}/diagnosis?dataset_id=${imported.dataset_id}`;
+    const beforeDraft=await db.select({n:count()}).from(s.recommendations);
+    const draft=await request(api).post(`/api/accounts/${accountId}/draft?dataset_id=${imported.dataset_id}`).send({language:'en'});
+    expect(draft.status).toBe(200);expect(draft.body.commercial_context).toBe('renewal');expect(draft.body.review_status).toBe('human_review_required');
+    expect(draft.body.body).toContain(d.action_plan.task);expect(draft.body.recipient_ids).toEqual(d.action_plan.recipient_ids);
+    expect(draft.body.evidence_ids.every((id:string)=>d.evidence.some(e=>e.source_id===id))).toBe(true);
+    expect(await db.select({n:count()}).from(s.recommendations)).toEqual(beforeDraft);
+    expect((await request(api).post(`/api/accounts/${accountId}/draft?dataset_id=${imported.dataset_id}`).send({recipient_ids:[randomUUID()]})).status).toBe(400);
+    expect((await request(api).post(`/api/accounts/${accountId}/draft?dataset_id=${randomUUID()}`).send({})).status).toBe(404);
     const question=await request(api).get(url+'&question=Why%20are%20repeat%20orders%20lower?');expect(question.status).toBe(200);expect(question.body.premise_check.status).toBe('insufficient_data');
     expect((await request(api).get(`/api/accounts/${accountId}/stakeholders?dataset_id=${imported.dataset_id}`)).status).toBe(200);
     expect((await request(api).get(`/api/accounts/${accountId}/diagnosis/evidence?dataset_id=${imported.dataset_id}`)).body.limits.max_hops).toBe(3);
@@ -84,6 +92,11 @@ describe('disposable migrated PostgreSQL slice',()=>{
     const [signals]=await db.select({n:count()}).from(s.signals).where(eq(s.signals.datasetId,result.dataset_id));expect(signals.n).toBe(1);
     const cancelledFixture=await make({messages:[{id:'I2',body:'Rencana ekspansi dibatalkan.',parent:'I1'}]});const cancelled=await importDataset(db,cancelledFixture.manifest);await analyzeDataset(db,cancelled.dataset_id,'2026-09-01');
     expect(await card(cancelled.dataset_id)).toMatchObject({signal:{status:'cancelled'},value_scenario:null});
+    const api=createApp(db,new Set([result.dataset_id,cancelled.dataset_id]));
+    const draft=await request(api).post(`/api/opportunities/${revised.id}/draft?dataset_id=${result.dataset_id}`).send({language:'id'});
+    expect(draft.status).toBe(200);expect(draft.body.body).toContain(revised.next_action.task);expect(draft.body.body).toContain('Usulan pembahasan');expect(draft.body.method).toBe('template-v1');
+    const cancelledCard=await card(cancelled.dataset_id);
+    expect((await request(api).post(`/api/opportunities/${cancelledCard.id}/draft?dataset_id=${cancelled.dataset_id}`).send({})).status).toBe(409);
   });
   it('records unavailable/failure outcomes, reuses successes and rejects stale or invalid caches',async()=>{
     const f=await make({tag:'model-ledger'});const imported=await importDataset(db,f.manifest);
