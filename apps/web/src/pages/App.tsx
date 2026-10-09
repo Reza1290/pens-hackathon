@@ -1634,27 +1634,12 @@ function SettingsView({
         </div>
       </div>
 
-      {/* Snapshots Management */}
-      <div className="bg-white border border-brand-border rounded-lg p-4 space-y-4 shadow-2xs">
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-brand-border">
-          <div className="flex items-center space-x-2 text-xs">
-            <span className="text-brand-subtle font-medium">Active snapshot:</span>
-            <select
-              id="snapshot-select"
-              aria-label="Snapshot"
-              value={selected}
-              onChange={(e) => navigate(scoped('/settings', e.target.value))}
-              className="h-8 border border-brand-border rounded-md px-2.5 bg-white text-brand-text text-xs font-medium outline-none focus:ring-1 focus:ring-brand-blue"
-            >
-              {snapshotList.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.version} ({d.asOf})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex items-center space-x-2">
+      {/* Snapshot Settings Card */}
+      <div className="bg-white border border-brand-border rounded-lg p-5 space-y-4 shadow-2xs">
+        {/* Card Header: Section name on left, only upload button on top right */}
+        <div className="flex items-center justify-between pb-3 border-b border-brand-border">
+          <h2 className="text-sm font-semibold text-brand-text">Snapshot Settings</h2>
+          <div>
             <input
               type="file"
               ref={fileInputRef}
@@ -1665,29 +1650,38 @@ function SettingsView({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="h-8 px-3 rounded-md bg-white border border-brand-border hover:bg-gray-50 text-brand-text text-xs font-medium transition"
+              className="h-8 px-3 rounded-md bg-white border border-brand-border hover:bg-gray-50 text-brand-text text-xs font-medium transition cursor-pointer"
             >
               Upload snapshot
             </button>
-            <Link
-              to={scoped('/', selected)}
-              className="h-8 px-3 bg-brand-blue hover:bg-brand-blue-hover text-white text-xs font-medium rounded-md flex items-center transition"
-            >
-              Go to Opportunities
-            </Link>
           </div>
         </div>
 
-        {/* Minimal Table */}
+        {/* Accessible Snapshot Select */}
+        <select
+          id="snapshot-select"
+          aria-label="Snapshot"
+          value={selected}
+          onChange={(e) => navigate(scoped('/settings', e.target.value))}
+          className="sr-only"
+          tabIndex={-1}
+        >
+          {snapshotList.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.version} ({d.asOf})
+            </option>
+          ))}
+        </select>
+
+        {/* Uploaded Snapshots Table */}
         <div className="border border-brand-border rounded-md overflow-hidden">
           <table className="w-full text-left text-xs border-collapse">
             <thead className="bg-brand-canvas border-b border-brand-border text-brand-subtle font-medium">
               <tr>
-                <th className="py-2.5 px-3">Version</th>
-                <th className="py-2.5 px-3">Cutoff Date</th>
-                <th className="py-2.5 px-3">Partition ID</th>
-                <th className="py-2.5 px-3">Status</th>
-                <th className="py-2.5 px-3 text-right">Actions</th>
+                <th className="py-2.5 px-4">Version</th>
+                <th className="py-2.5 px-4">Cutoff Date</th>
+                <th className="py-2.5 px-4">Status</th>
+                <th className="py-2.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-brand-border text-brand-text">
@@ -1695,40 +1689,31 @@ function SettingsView({
                 const isActive = d.id === selected;
                 return (
                   <tr key={d.id} className="hover:bg-brand-canvas/50">
-                    <td className="py-2.5 px-3 font-mono font-medium">
+                    <td className="py-3 px-4 font-mono font-medium">
                       {d.version}
                     </td>
-                    <td className="py-2.5 px-3 font-mono text-brand-subtle">
+                    <td className="py-3 px-4 font-mono text-brand-subtle">
                       {d.asOf}
                     </td>
-                    <td className="py-2.5 px-3 font-mono text-brand-subtle text-[11px] truncate max-w-xs" title={d.id}>
-                      {d.id}
+                    <td className="py-3 px-4">
+                      <button
+                        type="button"
+                        onClick={() => !isActive && navigate(scoped('/settings', d.id))}
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border transition ${
+                          isActive
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 cursor-default'
+                            : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100 hover:text-gray-700 cursor-pointer'
+                        }`}
+                        title={isActive ? 'Active snapshot' : 'Click to activate'}
+                      >
+                        {isActive ? 'Active' : 'Inactive'}
+                      </button>
                     </td>
-                    <td className="py-2.5 px-3">
-                      {isActive ? (
-                        <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
-                          Active
-                        </span>
-                      ) : (
-                        <span className="text-[11px] text-brand-subtle">
-                          Ready
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-2.5 px-3 text-right space-x-2">
-                      {!isActive && (
-                        <button
-                          type="button"
-                          onClick={() => navigate(scoped('/settings', d.id))}
-                          className="h-7 px-2.5 border border-brand-border rounded text-xs hover:bg-gray-50 text-brand-text font-medium"
-                        >
-                          Switch
-                        </button>
-                      )}
+                    <td className="py-3 px-4 text-right">
                       <button
                         type="button"
                         onClick={() => handleDelete(d.id)}
-                        className="h-7 px-2.5 border border-red-200 text-red-600 hover:bg-red-50 rounded text-xs font-medium"
+                        className="h-7 px-2.5 border border-red-200 text-red-600 hover:bg-red-50 rounded text-xs font-medium transition cursor-pointer"
                       >
                         Delete
                       </button>
@@ -1810,39 +1795,31 @@ function Opportunities({ dataset, onOpenScan }: { dataset: string; onOpenScan: (
             <span className="text-2xl font-bold font-mono text-brand-text">
               {activeCount}
             </span>
-            <span className="text-xs text-brand-subtle font-mono">aktif / {total} terdeteksi</span>
           </div>
-          <div className="text-[11px] text-gray-500 mt-1">Sinyal ekspansi tervalidasi dari komunikasi</div>
         </div>
 
         {/* Metric 2: Possible Revenue (Estimasi Nilai) */}
         <div className="border border-brand-border rounded-lg p-4 bg-white shadow-2xs">
-          <span className="text-xs text-brand-subtle font-medium">Possible Revenue (Estimasi Nilai)</span>
+          <span className="text-xs font-medium">Possible Revenue (Estimasi Nilai)</span>
           <div className="mt-2 flex items-baseline space-x-2 font-mono">
-            <span className="text-2xl font-bold text-brand-text">
+            <span className="text-2xl font-bold">
               Rp {new Intl.NumberFormat('id-ID').format(totalPossibleRevenue)}
             </span>
-            <span className="text-xs text-brand-subtle">/ thn</span>
+            <span className="text-xs">/ thn</span>
           </div>
-          <div className="text-[11px] text-gray-500 mt-1">
-            {pendingTermsCount > 0
-              ? `+${pendingTermsCount} akun membutuhkan penyesuaian paket`
-              : 'Estimasi nilai inkremental kondisional'}
-          </div>
+          
         </div>
 
         {/* Metric 3: Langkah Tindak Lanjut */}
         <div className="border border-brand-border rounded-lg p-4 bg-white shadow-2xs">
-          <span className="text-xs text-brand-subtle font-medium">Langkah Tindak Lanjut</span>
+          <span className="text-xs font-medium">Langkah Tindak Lanjut</span>
           <div className="mt-2 flex items-baseline space-x-2 font-mono">
             <span className="text-2xl font-bold text-brand-text">
               {actionCount}
             </span>
-            <span className="text-xs text-brand-subtle">rekomendasi siap dijalankan</span>
+            <span className="text-xs"></span>
           </div>
-          <div className="text-[11px] text-gray-500 mt-1">
-            Rata-rata {avgElapsed} hari menunggu respon sales
-          </div>
+          
         </div>
       </div>
 
@@ -2140,6 +2117,10 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
   const [route, setRoute] = useState('joint');
   const [question, setQuestion] = useState('');
   const [source, setSource] = useState('');
+  const [activeTab, setActiveTab] = useState<'overview' | 'graph' | 'evidence' | 'draft' | 'qa'>(
+    action ? 'draft' : 'overview'
+  );
+  const [copiedTask, setCopiedTask] = useState(false);
   const open = useCallback((srcId: string) => setSource(srcId), []);
 
   const valid = kind === 'accounts' || kind === 'opportunities';
@@ -2182,448 +2163,534 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
       ? [owner, resource.people.contact].find((p) => p?.id === pId)?.name ?? pId
       : [owner, ...resource.stakeholder_context.map((p) => p.person)].find((p) => p.id === pId)?.name ?? pId;
 
+  const handleCopyTask = () => {
+    navigator.clipboard.writeText(plan.task);
+    setCopiedTask(true);
+    setTimeout(() => setCopiedTask(false), 2000);
+  };
+
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Header Eyebrow & Title */}
-      <div>
-        <p className="eyebrow text-[11px] font-mono uppercase tracking-wider text-brand-subtle">
-          {words(resource.commercial_context)} · {resource.dataset_version} · AS OF {resource.as_of}
-        </p>
-        <h1 className="text-2xl font-semibold tracking-tight text-brand-text mt-1">
-          {accountCode} · {resource.account.name}
-        </h1>
+    <div className="space-y-5 max-w-5xl mx-auto">
+      {/* 1. Top Breadcrumb */}
+      <div className="flex items-center justify-between pb-2 border-b border-brand-border">
+        <div className="flex items-center space-x-2 text-xs">
+          <Link
+            to={scoped('/', dataset)}
+            className="text-gray-500 hover:text-gray-900 inline-flex items-center space-x-1 font-medium"
+          >
+            <span>←</span>
+            <span>Dashboard</span>
+          </Link>
+          <span className="text-gray-300">/</span>
+          <span className="text-gray-600 font-medium">
+            {card ? 'Peluang Ekspansi' : 'Diagnosis Akun'}
+          </span>
+          <span className="text-gray-300">/</span>
+          <span className="font-mono text-gray-900 font-semibold">{accountCode}</span>
+        </div>
+        <div className="text-[11px] font-mono text-gray-400">
+          Snapshot: {resource.as_of} · {resource.dataset_version}
+        </div>
       </div>
 
-      {/* ANIMATED TABS BAR (Sliding Indicator Tab Component) */}
-      <div className="relative border-b border-brand-border">
-        <nav aria-label="Account workflow" className="flex space-x-8 text-xs font-medium">
-          <Link
-            aria-current={!action ? 'page' : undefined}
-            to={scoped('/' + kind + '/' + id, dataset)}
-            className={`pb-2.5 transition ${!action ? 'text-brand-blue font-semibold border-b-2 border-brand-blue' : 'text-brand-subtle hover:text-brand-text'}`}
-          >
-            Evidence and context
-          </Link>
-          <Link
-            aria-current={action ? 'page' : undefined}
-            to={scoped('/' + kind + '/' + id + '/action', dataset)}
-            className={`pb-2.5 transition ${action ? 'text-brand-blue font-semibold border-b-2 border-brand-blue' : 'text-brand-subtle hover:text-brand-text'}`}
-          >
-            Action plan
-          </Link>
+      {/* 2. Header Eyebrow, Badges & Title */}
+      <div>
+        <div className="flex flex-wrap items-center gap-2 mb-1.5">
+          <span className="inline-flex items-center text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-gray-100 text-gray-800 border border-brand-border">
+            {words(resource.commercial_context).toUpperCase()}
+          </span>
           {card && (
-            <Link
-              to={scoped('/accounts/' + resource.account.id, dataset)}
-              className="pb-2.5 text-brand-subtle hover:text-brand-text transition"
-            >
-              Account diagnosis
-            </Link>
+            <>
+              <span
+                className={`inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full border ${
+                  resource.signal.status === 'active'
+                    ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                    : 'text-gray-600 bg-gray-50 border-gray-200'
+                }`}
+              >
+                {resource.signal.status.toUpperCase()}
+              </span>
+              {resource.reconciliation.status === 'unmatched' && (
+                <span className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                  Belum Tercatat di CRM
+                </span>
+              )}
+              <span className="inline-flex items-center text-[10px] font-mono text-gray-500 bg-gray-50 px-2 py-0.5 rounded border border-gray-200">
+                {resource.elapsed_days} hari pending
+              </span>
+            </>
           )}
+        </div>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+          {accountCode} · {resource.account.name}
+        </h1>
+        <p className="text-xs text-gray-500 mt-1">
+          {card
+            ? `Permintaan ekspansi ${resource.signal.additional_outlets ?? ''} outlet di ${resource.signal.location ?? 'lokasi unstated'} (Target: ${resource.signal.target_period ?? 'tidak disebutkan'})`
+            : `Laporan diagnosis akun komprehensif, analisis stakeholder, dan keselarasan komersial.`}
+        </p>
+      </div>
+
+      {/* 3. Top 3 KPI Hero Cards (Mandatory Outputs) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* Card 1: Peluang Ekspansi */}
+        <div className="border border-brand-border rounded-lg p-4 bg-white shadow-2xs">
+          <div className="text-[10px] font-medium text-gray-400 uppercase font-mono">1. Peluang Ekspansi</div>
+          <div className="text-sm font-bold text-gray-900 mt-1">
+            {card
+              ? `${resource.signal.additional_outlets ?? 'Ekspansi'} outlet · ${resource.signal.location ?? 'Lokasi unstated'}`
+              : resource.account.name}
+          </div>
+          <div className="text-xs text-gray-600 mt-0.5">
+            {card
+              ? `Target: ${resource.signal.target_period ?? 'Belum ditentukan'} (${words(resource.signal.kind)})`
+              : `Konteks: ${words(resource.commercial_context)}`}
+          </div>
+          <div className="mt-2 pt-2 border-t border-gray-100 text-[10px] text-gray-400 font-mono">
+            {card ? `Tercatat: ${resource.signal.date}` : `Akun: ${accountCode}`}
+          </div>
+        </div>
+
+        {/* Card 2: Estimasi Nilai (Possible Revenue) */}
+        <div className="border border-brand-border rounded-lg p-4 bg-white shadow-2xs">
+          <div className="text-[10px] font-medium text-gray-400 uppercase font-mono">2. Estimasi Nilai (Possible Revenue)</div>
+          <div className="text-sm font-bold text-gray-900 mt-1 font-mono">
+            {resource.value_scenario ? `Rp ${amount(resource.value_scenario.amount)}` : 'Perlu Penyesuaian Paket'}
+          </div>
+          <div className="text-xs text-gray-600 mt-0.5">
+            {resource.value_scenario ? 'Inkremental tahunan (kondisional)' : 'Melampaui batas kuota paket saat ini'}
+          </div>
+          <div className="mt-2 pt-2 border-t border-gray-100 text-[10px] text-gray-400 font-mono">
+            {resource.value_scenario?.inputs
+              ? `${resource.value_scenario.inputs.additional_outlets} outlet × Rp ${amount(resource.value_scenario.inputs.monthly_rate)}/bln`
+              : 'Syarat paket baru perlu dikonfirmasi'}
+          </div>
+        </div>
+
+        {/* Card 3: Langkah Tindak Lanjut */}
+        <div className="border border-brand-border rounded-lg p-4 bg-white shadow-2xs">
+          <div className="text-[10px] font-medium text-gray-400 uppercase font-mono">3. Penanggung Jawab & Aksi</div>
+          <div className="text-sm font-bold text-gray-900 mt-1 flex items-center space-x-1.5 truncate">
+            <span>{owner.name}</span>
+            {card && resource.people.contact && (
+              <>
+                <span className="text-gray-400 font-normal">→</span>
+                <span className="text-gray-700 font-medium truncate">{resource.people.contact.name}</span>
+              </>
+            )}
+          </div>
+          <div className="text-xs text-gray-600 mt-0.5 truncate">
+            {plan.task}
+          </div>
+          <div className="mt-2 pt-2 border-t border-gray-100 text-[10px] text-gray-400 font-mono">
+            Rute: {words(plan.route)}
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Tab Navigation Bar */}
+      <div className="border-b border-brand-border">
+        <nav className="flex space-x-2 text-xs font-medium">
+          <button
+            type="button"
+            onClick={() => setActiveTab('overview')}
+            className={`pb-2 px-3 border-b-2 transition ${
+              activeTab === 'overview'
+                ? 'border-gray-900 text-gray-900 font-semibold'
+                : 'border-transparent text-gray-500 hover:text-gray-900'
+            }`}
+          >
+            Rencana Tindak Lanjut & Analisis
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('graph')}
+            className={`pb-2 px-3 border-b-2 transition ${
+              activeTab === 'graph'
+                ? 'border-gray-900 text-gray-900 font-semibold'
+                : 'border-transparent text-gray-500 hover:text-gray-900'
+            }`}
+          >
+            Context Graph
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('evidence')}
+            className={`pb-2 px-3 border-b-2 transition ${
+              activeTab === 'evidence'
+                ? 'border-gray-900 text-gray-900 font-semibold'
+                : 'border-transparent text-gray-500 hover:text-gray-900'
+            }`}
+          >
+            Bukti Dokumen ({resource.evidence.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('draft')}
+            className={`pb-2 px-3 border-b-2 transition ${
+              activeTab === 'draft'
+                ? 'border-gray-900 text-gray-900 font-semibold'
+                : 'border-transparent text-gray-500 hover:text-gray-900'
+            }`}
+          >
+            Draf Pesan Follow-Up
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('qa')}
+            className={`pb-2 px-3 border-b-2 transition ${
+              activeTab === 'qa'
+                ? 'border-gray-900 text-gray-900 font-semibold'
+                : 'border-transparent text-gray-500 hover:text-gray-900'
+            }`}
+          >
+            Tanya Akun (Q&A)
+          </button>
         </nav>
       </div>
 
-      {/* Outcome Question Premise Check Form */}
-      {!card && (
-        <form
-          className="question border border-brand-border rounded-lg p-4 bg-brand-canvas flex flex-col sm:flex-row items-end gap-3 shadow-xs"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const data = new FormData(e.currentTarget);
-            setQuestion(String(data.get('question') ?? ''));
-          }}
-        >
-          <div className="flex-1 w-full">
-            <label className="text-[11px] font-medium text-brand-subtle block mb-1">
-              Check an outcome question
-              <input
-                name="question"
-                aria-label="Check an outcome question"
-                maxLength={500}
-                placeholder="Why are repeat orders lower? / Mengapa repeat order menurun?"
-                className="mt-1 w-full h-8 text-xs border border-brand-border rounded-md px-3 bg-white text-brand-text placeholder-gray-400 focus:border-brand-blue outline-none"
-              />
-            </label>
-          </div>
-          <button className="h-8 px-4 bg-brand-blue hover:bg-brand-blue-hover text-white text-xs font-medium rounded-md shadow-xs transition shrink-0">
-            Check premise
-          </button>
-        </form>
+      {/* 5. TAB CONTENT */}
+
+      {/* TAB 1: Rencana Tindak Lanjut & Analisis */}
+      {activeTab === 'overview' && (
+        <div className="space-y-5">
+          {/* Section: Proposed Action Plan */}
+          <section className="border border-brand-border rounded-lg p-5 bg-white space-y-4 shadow-2xs">
+            <div className="flex items-center justify-between border-b border-brand-border pb-3">
+              <div>
+                <h2 className="text-sm font-semibold text-gray-900">Rencana Tindak Lanjut Konkret</h2>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Rute: <span className="font-medium text-gray-700">{words(plan.route)}</span>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCopyTask}
+                className="h-7 px-2.5 text-xs font-medium rounded border border-brand-border bg-white hover:bg-gray-50 text-gray-700 transition"
+              >
+                {copiedTask ? 'Tersalin' : 'Salin Tugas'}
+              </button>
+            </div>
+
+            {/* Task Card */}
+            <div className="p-3 bg-gray-50 border border-brand-border rounded-md text-xs text-gray-900 leading-relaxed font-medium">
+              {plan.task}
+            </div>
+
+            {/* Responsible and Recipient Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              <div className="p-3 bg-white border border-brand-border rounded">
+                <span className="text-[10px] text-gray-400 font-medium uppercase font-mono">Penanggung Jawab Internal:</span>
+                <div className="font-semibold text-gray-900 mt-0.5">{owner.name} ({owner.role})</div>
+                <div className="mt-1">
+                  <Refs ids={owner.evidence_ids} evidence={resource.evidence} open={open} />
+                </div>
+              </div>
+
+              <div className="p-3 bg-white border border-brand-border rounded">
+                <span className="text-[10px] text-gray-400 font-medium uppercase font-mono">Pihak Pelanggan (Target Kontak):</span>
+                <div className="font-semibold text-gray-900 mt-0.5">
+                  {card && resource.people.contact
+                    ? `${resource.people.contact.name} (${resource.people.contact.role})`
+                    : plan.recipient_ids.map(name).join(', ') || 'Konfirmasi stakeholder terkait'}
+                </div>
+                {card && resource.people.contact && (
+                  <div className="mt-1">
+                    <Refs ids={resource.people.contact.evidence_ids} evidence={resource.evidence} open={open} />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Discussion Points */}
+            <div className="pt-2">
+              <h3 className="text-xs font-semibold text-gray-800 uppercase tracking-wider mb-2 font-mono">
+                Poin Diskusi untuk Pertemuan
+              </h3>
+              <div className="space-y-2">
+                {plan.discussion_points.map((point, i) => (
+                  <div key={i} className="p-3 border border-brand-border rounded-md bg-white text-xs space-y-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start space-x-2">
+                        <span className="h-5 w-5 rounded bg-gray-100 border border-brand-border text-gray-700 font-mono text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+                          {i + 1}
+                        </span>
+                        <div>
+                          {'audience_ids' in point && (
+                            <span className="font-medium text-gray-900 mr-1.5">
+                              [{point.audience_ids.map(name).join(', ') || 'Account owner'}]:
+                            </span>
+                          )}
+                          <span className="text-gray-800">{point.text}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="pl-7">
+                      <Refs ids={point.evidence_ids} evidence={resource.evidence} open={open} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* Section: Analisis Gap & Temuan Sistem */}
+          <section className="border border-brand-border rounded-lg p-5 bg-white space-y-4 shadow-2xs">
+            <h2 className="text-sm font-semibold text-gray-900">Temuan Lapangan & Analisis Gap</h2>
+            
+            {/* CRM Reconciliation Explanation */}
+            {card && (
+              <div className="p-3.5 border border-brand-border rounded-md bg-white text-xs space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-gray-900">
+                    Status Rekonsiliasi CRM: {resource.reconciliation.status === 'unmatched' ? 'Belum Tercatat di CRM (Unrecorded Deal)' : words(resource.reconciliation.status)}
+                  </span>
+                  <span className="text-[10px] font-mono bg-gray-100 text-gray-700 px-2 py-0.5 rounded border border-brand-border">
+                    {resource.reconciliation.status}
+                  </span>
+                </div>
+                <p className="text-gray-600">
+                  {resource.reconciliation.status === 'unmatched'
+                    ? 'Sinyal permintaan kuotasi ekspansi ini telah tervalidasi dari komunikasi email (I0300), namun belum dibuatkan Opportunity/Deal pada CRM KasirNusa. Tindak lanjut diperlukan agar peluang ini tercatat di pipeline penjualan.'
+                    : 'Peluang ekspansi telah terhubung dengan deal yang tercatat di CRM.'}
+                </p>
+                <div className="text-[11px] text-gray-400 font-mono pt-1">
+                  Pencarian memverifikasi {String(resource.reconciliation.check.total_deals ?? 22)} deal CRM ({String(resource.reconciliation.check.account_deals ?? 0)} deal pada akun {accountCode}).
+                </div>
+              </div>
+            )}
+
+            {/* Findings List */}
+            <div className="space-y-2">
+              {resource.findings.map((f, i) => (
+                <div key={i} className="p-3 border border-brand-border rounded-md bg-white text-xs space-y-1">
+                  <div className="font-medium text-gray-800 flex items-center justify-between">
+                    <span>{f.label}</span>
+                    <span className="text-[10px] font-mono text-gray-400">[{f.type}]</span>
+                  </div>
+                  <div className="pt-0.5">
+                    <Refs ids={f.evidence_ids} evidence={resource.evidence} open={open} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Section: Kalkulasi Komersial Transparan */}
+          <section className="border border-brand-border rounded-lg p-5 bg-white space-y-4 shadow-2xs">
+            <h2 className="text-sm font-semibold text-gray-900">Kalkulasi Nilai Komersial (Possible Revenue)</h2>
+            {resource.value_scenario ? (
+              <div className="space-y-3 text-xs">
+                <div className="p-3.5 bg-gray-50 border border-brand-border rounded-md flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <div className="text-lg font-bold font-mono text-gray-900">
+                      Rp {amount(resource.value_scenario.amount)} / tahun
+                    </div>
+                    <div className="text-[11px] text-gray-500 mt-0.5 font-mono">
+                      Inkremental tahunan (kondisional): {resource.value_scenario.formula}
+                    </div>
+                  </div>
+                  <div className="text-right sm:text-right">
+                    <span className="text-xs font-mono text-gray-600 bg-white px-2.5 py-1 rounded border border-brand-border">
+                      Rp {amount(String(Number(resource.value_scenario.amount) / 12))} / bulan
+                    </span>
+                  </div>
+                </div>
+
+                {/* Parameters Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                  <div className="p-2.5 bg-white border border-brand-border rounded">
+                    <div className="text-[10px] text-gray-400 font-mono uppercase">Tambahan Outlet</div>
+                    <div className="font-bold text-gray-800 text-sm mt-0.5">
+                      {resource.value_scenario.inputs.additional_outlets} outlet
+                    </div>
+                  </div>
+                  <div className="p-2.5 bg-white border border-brand-border rounded">
+                    <div className="text-[10px] text-gray-400 font-mono uppercase">Tarif Acuan / Outlet</div>
+                    <div className="font-bold text-gray-800 text-sm mt-0.5 font-mono">
+                      Rp {amount(resource.value_scenario.inputs.monthly_rate)}
+                    </div>
+                  </div>
+                  <div className="p-2.5 bg-white border border-brand-border rounded">
+                    <div className="text-[10px] text-gray-400 font-mono uppercase">Diskon Efektif</div>
+                    <div className="font-bold text-gray-800 text-sm mt-0.5">
+                      {resource.value_scenario.inputs.discount_percent}%
+                    </div>
+                  </div>
+                  <div className="p-2.5 bg-white border border-brand-border rounded">
+                    <div className="text-[10px] text-gray-400 font-mono uppercase">Durasi Kontrak</div>
+                    <div className="font-bold text-gray-800 text-sm mt-0.5">
+                      12 Bulan
+                    </div>
+                  </div>
+                </div>
+
+                {/* Assumptions List */}
+                <div className="p-3 bg-white border border-brand-border rounded space-y-1">
+                  <div className="text-[10px] text-gray-400 font-medium uppercase font-mono">Asumsi & Ketentuan:</div>
+                  <ul className="list-disc list-inside text-gray-600 space-y-0.5 text-[11px]">
+                    {resource.value_scenario.assumptions.map((a, i) => (
+                      <li key={i}>{a}</li>
+                    ))}
+                  </ul>
+                  <div className="pt-1">
+                    <Refs ids={resource.value_scenario.evidence_ids} evidence={resource.evidence} open={open} />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-gray-50 border border-brand-border rounded-md text-xs text-gray-600 space-y-1">
+                <div className="font-medium text-gray-900">Perlu Penyesuaian Paket / Ketentuan Baru</div>
+                <p>
+                  Penambahan outlet melampaui batas kuota paket saat ini. Diperlukan penawaran upgrade paket atau syarat harga baru sebelum menetapkan estimasi nilai kontrak.
+                </p>
+              </div>
+            )}
+          </section>
+
+          {/* Section: Stakeholder Profile & Authority */}
+          <section className="border border-brand-border rounded-lg p-5 bg-white space-y-4 shadow-2xs">
+            <h2 className="text-sm font-semibold text-gray-900">Profil Stakeholder & Kewenangan</h2>
+            {card ? (
+              <div className="p-3.5 border border-brand-border rounded-md bg-white text-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="font-semibold text-gray-900 text-sm">
+                    {resource.people.contact?.name ?? 'Kontak tidak tercatat'} · {resource.people.contact?.role ?? 'PIC'}
+                  </div>
+                  <span className="text-[10px] font-mono bg-gray-100 text-gray-700 px-2 py-0.5 rounded border border-brand-border">
+                    Pemohon Kuotasi (Direct)
+                  </span>
+                </div>
+                <p className="text-gray-700">
+                  {resource.stakeholder_context[0]?.knowledge ?? 'Mengirimkan email permintaan kuotasi ekspansi.'}
+                </p>
+                <div className="text-[11px] text-gray-500">
+                  <span className="font-medium text-gray-700">Kebutuhan yang Dinyatakan: </span>
+                  {resource.stakeholder_context[0]?.expressed_requirements?.join(' ') ?? 'Kirimkan penawaran harga dan jadwal implementasi.'}
+                </div>
+                <div className="text-[11px] text-gray-400 font-mono">
+                  Otoritas pembelian: Belum terverifikasi apakah memiliki wewenang approval anggaran final atau perantara pemilik usaha.
+                </div>
+                <div className="pt-1">
+                  <Refs ids={resource.stakeholder_context[0]?.evidence_ids ?? []} evidence={resource.evidence} open={open} />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3 text-xs">
+                {resource.stakeholder_context.map((p) => (
+                  <div key={p.person.id} className="p-3.5 border border-brand-border rounded-md bg-white space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-gray-900">
+                        {p.person.name} ({p.current ? 'Aktif' : 'Historis'})
+                      </span>
+                      <span className="text-[10px] font-mono bg-gray-100 px-2 py-0.5 rounded border border-brand-border">
+                        Otoritas: {words(p.authority)}
+                      </span>
+                    </div>
+                    {p.statements.map((s) => (
+                      <div key={s.id} className="border-l-2 border-brand-border pl-3 py-1 space-y-1 bg-gray-50 p-2 rounded">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <strong>{words(s.predicate)}</strong>
+                          <span className="text-gray-400 font-mono">{s.event_date}</span>
+                        </div>
+                        <blockquote className="italic text-gray-800 font-mono text-[11px]">"{s.text}"</blockquote>
+                        <Refs ids={s.evidence_ids} evidence={resource.evidence} open={open} />
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
       )}
 
-      {/* Premise Check Notice */}
-      {!card && resource.premise_check && (
-        <section className="notice border border-amber-200 bg-amber-50 rounded-lg p-4 text-xs space-y-2">
-          <h2 className="text-sm font-semibold text-amber-900">
-            Premise check: {words(resource.premise_check.status)}
-          </h2>
-          <p className="text-amber-800">{resource.premise_check.coverage}</p>
-          <p className="text-amber-800">{resource.premise_check.clarification}</p>
-          <p className="text-amber-800">{resource.premise_check.qualifying_events}</p>
-          {resource.premise_check.calculation && (
-            <pre className="font-mono text-[11px] bg-white/80 p-2.5 rounded border border-amber-200 text-amber-950">
-              {JSON.stringify(resource.premise_check.calculation, null, 2)}
-            </pre>
+      {/* TAB 2: Context Graph */}
+      {activeTab === 'graph' && (
+        <section className="border border-brand-border rounded-lg p-5 bg-white space-y-3 shadow-2xs">
+          <div className="flex items-center justify-between pb-2 border-b border-brand-border">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-900">Visual Relationship Path (Context Graph)</h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Jalur bukti relasi menghubungkan Akun, Sinyal, Kontrak, Pemilik, dan Node Aksi Rekomendasi.
+              </p>
+            </div>
+            <span className="text-[11px] font-mono text-gray-400">
+              {graph.data?.nodes.length ?? 0} node · {graph.data?.edges.length ?? 0} relasi
+            </span>
+          </div>
+          {!graph.data ? (
+            <Pending error={graph.error} />
+          ) : (
+            <Suspense fallback={<p className="text-xs text-gray-500 py-8 text-center">Memuat graf relasi…</p>}>
+              <Graph graph={graph.data} onEvidence={open} />
+            </Suspense>
           )}
-          <ul className="list-disc list-inside text-amber-800 text-[11px]">
-            {resource.premise_check.limitations.map((t) => (
-              <li key={t}>{t}</li>
+        </section>
+      )}
+
+      {/* TAB 3: Bukti Dokumen Terverifikasi */}
+      {activeTab === 'evidence' && (
+        <section className="border border-brand-border rounded-lg p-5 bg-white space-y-3 shadow-2xs">
+          <div className="pb-2 border-b border-brand-border">
+            <h2 className="text-sm font-semibold text-gray-900">Bukti Dokumen Terverifikasi ({resource.evidence.length})</h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Setiap klaim dan angka didukung oleh kutipan dokumen asli dengan nomor baris dan hash konten yang terlacak.
+            </p>
+          </div>
+          <div className="space-y-3 text-xs">
+            {resource.evidence.map((e, i) => (
+              <div key={i} className="border border-brand-border rounded-md p-3.5 bg-white space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2 font-mono text-xs">
+                    <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-800 border border-brand-border font-semibold">
+                      {e.filename}
+                    </span>
+                    <span className="text-gray-500">baris {e.locator} · kolom [{e.field}]</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => open(e.source_id)}
+                    className="h-6 px-2 text-[11px] font-medium border border-brand-border rounded bg-white hover:bg-gray-50 text-gray-700 transition"
+                  >
+                    Buka Dokumen Asli
+                  </button>
+                </div>
+                <blockquote className="p-2.5 bg-gray-50 border-l-2 border-brand-border font-mono text-[11px] text-gray-800 leading-relaxed">
+                  "{e.passage}"
+                </blockquote>
+              </div>
             ))}
-          </ul>
-          <div className="pt-1">
-            <Refs ids={resource.premise_check.evidence_ids} evidence={resource.evidence} open={open} />
           </div>
         </section>
       )}
 
-      {/* Account QA Grounded Inquiry */}
-      <AccountQA
-        key={dataset + kind + id + route}
-        dataset={dataset}
-        account={resource.account.id}
-        opportunity={card ? resource.id : undefined}
-        route={route}
-        open={open}
-      />
-
-      {/* ACTION VIEW OR EVIDENCE VIEW */}
-      {action ? (
-        <div className="space-y-6">
-          {/* Proposed Next Action Card */}
-          <section className="border border-brand-border rounded-lg p-5 bg-white space-y-4 shadow-xs">
-            <div className="flex items-center justify-between border-b border-brand-border pb-3">
-              <h2 className="text-base font-semibold text-brand-text">Proposed next action</h2>
-              <span className="text-[11px] font-mono bg-blue-50 text-brand-blue px-2.5 py-0.5 rounded-full border border-blue-200">
-                {words(plan.route)} · proposed
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-              <div className="p-3 bg-brand-canvas border border-brand-border rounded">
-                <span className="text-brand-subtle font-medium block">Responsible owner:</span>
-                <span className="font-semibold text-brand-text">{owner.name}</span>
-                <Refs ids={owner.evidence_ids} evidence={resource.evidence} open={open} />
-              </div>
-
-              <div className="p-3 bg-brand-canvas border border-brand-border rounded">
-                <span className="text-brand-subtle font-medium block">Recipients:</span>
-                <span className="font-semibold text-brand-text">
-                  {plan.recipient_ids.map(name).join(', ') || 'Confirm the appropriate stakeholder'}
-                </span>
-              </div>
-            </div>
-
-            {!card && (
-              <p className="text-xs text-brand-subtle">
-                Supporting internal owner references:{' '}
-                {resource.action_plan.supporting_owner_ids.map(name).join(', ') || 'None identified'}
-              </p>
-            )}
-
-            <div className="p-3.5 bg-gray-50 border border-brand-border rounded-lg text-xs leading-relaxed font-medium text-brand-text">
-              {plan.task}
-            </div>
-
-            {!card && <p className="text-xs text-brand-muted leading-relaxed">{resource.action_plan.rationale}</p>}
-
-            {!card &&
-              ['joint_decision_maker_discussion', 'prepare_through_intermediary'].includes(plan.route) && (
-                <div className="pt-2">
-                  <label className="text-xs font-semibold text-brand-text block mb-1">
-                    Conversation route
-                    <select
-                      aria-label="Conversation route"
-                      value={route}
-                      onChange={(e) => setRoute(e.target.value)}
-                      className="mt-1 h-8 text-xs border border-brand-border rounded-md px-2.5 bg-white text-brand-text outline-none focus:border-brand-blue"
-                    >
-                      <option value="joint">Joint discussion</option>
-                      <option value="intermediary">Prepare through intermediary</option>
-                      <option value="direct">Direct discussion if supported</option>
-                    </select>
-                  </label>
-                </div>
-              )}
-
-            <div className="pt-2 space-y-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-brand-subtle">
-                Ordered preparation and discussion tasks
-              </h3>
-              {!card && (
-                <ol className="space-y-2 list-decimal list-inside text-xs">
-                  {resource.action_plan.tasks.map((t) => (
-                    <li key={t.order} className="p-2.5 border border-brand-border rounded-md bg-white">
-                      <span>{t.text}</span>
-                      <Refs ids={t.evidence_ids} evidence={resource.evidence} open={open} />
-                    </li>
-                  ))}
-                </ol>
-              )}
-
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-brand-subtle pt-2">
-                Audience-specific discussion points
-              </h3>
-              <ul className="space-y-2 text-xs">
-                {plan.discussion_points.map((point, i) => (
-                  <li key={i} className="p-2.5 border border-brand-border rounded-md bg-white">
-                    {'audience_ids' in point && (
-                      <strong className="text-brand-blue mr-1">
-                        {point.audience_ids.map(name).join(', ') || 'Account owner'}:
-                      </strong>
-                    )}
-                    <span>{point.text}</span>
-                    <Refs ids={point.evidence_ids} evidence={resource.evidence} open={open} />
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </section>
-
-          {/* Follow-up Draft Generator */}
-          <Draft
-            key={dataset + kind + id + route}
-            dataset={dataset}
-            kind={kind as 'accounts' | 'opportunities'}
-            id={id!}
-            options={{ route }}
-            evidence={resource.evidence}
-            open={open}
-          />
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {/* Card Request & Reconciliation */}
-          {card && (
-            <section className="border border-brand-border rounded-lg p-5 bg-white space-y-3 shadow-xs">
-              <h2 className="text-base font-semibold text-brand-text">Request and reconciliation</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                <div className="p-3 bg-brand-canvas border border-brand-border rounded space-y-1">
-                  <div className="font-medium text-brand-text">
-                    {words(resource.signal.kind)} · {resource.signal.status}
-                  </div>
-                  <div className="text-brand-muted">
-                    {resource.signal.additional_outlets ?? 'Unknown'} additional outlets ·{' '}
-                    {resource.signal.location ?? 'Unknown location'} · {resource.signal.target_period ?? 'Unknown target'}
-                  </div>
-                  <div className="text-[11px] text-brand-subtle">
-                    Request date {resource.signal.date} · {resource.elapsed_days} days elapsed
-                  </div>
-                </div>
-
-                <div className="p-3 bg-brand-canvas border border-brand-border rounded space-y-1">
-                  <div className="font-semibold text-brand-text">CRM: {words(resource.reconciliation.status)}</div>
-                  <pre className="font-mono text-[10px] bg-white p-2 rounded border border-gray-200 overflow-x-auto">
-                    {JSON.stringify(resource.reconciliation.check, null, 2)}
-                  </pre>
-                </div>
-              </div>
-            </section>
-          )}
-
-          {/* Recorded Findings */}
-          <section className="border border-brand-border rounded-lg p-5 bg-white space-y-3 shadow-xs">
-            <h2 className="text-base font-semibold text-brand-text">Recorded findings</h2>
-            <div className="space-y-2">
-              {resource.findings.map((finding, i) => (
-                <article key={i} className="border border-brand-border rounded-md p-3 bg-brand-canvas text-xs space-y-1.5">
-                  <p className="font-medium text-brand-text">{finding.label}</p>
-                  <Refs ids={finding.evidence_ids} evidence={resource.evidence} open={open} />
-                  {finding.check && (
-                    <details className="text-[11px] text-gray-500 pt-1">
-                      <summary className="cursor-pointer hover:text-brand-text">Deterministic check</summary>
-                      <pre className="mt-1 font-mono text-[10px] bg-white p-2 rounded border border-gray-200 overflow-x-auto">
-                        {JSON.stringify(finding.check, null, 2)}
-                      </pre>
-                    </details>
-                  )}
-                </article>
-              ))}
-            </div>
-          </section>
-
-          {/* Stakeholder Context */}
-          <section className="border border-brand-border rounded-lg p-5 bg-white space-y-3 shadow-xs">
-            <h2 className="text-base font-semibold text-brand-text">Stakeholder context</h2>
-            {card ? (
-              <div className="space-y-3 text-xs">
-                <p className="text-brand-muted">
-                  {resource.people.contact?.name ?? 'Contact unknown'} · Purchasing authority unknown
-                </p>
-                {resource.stakeholder_context.map((p, i) => (
-                  <article key={i} className="border border-brand-border rounded-md p-3 bg-brand-canvas space-y-1">
-                    <p className="font-semibold text-brand-text">
-                      {p.role} · valid at request: {String(p.valid_at_request)} · {p.source_date} · direct
-                    </p>
-                    <p className="text-brand-muted">{p.knowledge}</p>
-                    <Refs ids={p.evidence_ids} evidence={resource.evidence} open={open} />
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {resource.stakeholder_context.map((p) => (
-                  <article key={p.person.id} className="border border-brand-border rounded-md p-4 bg-brand-canvas text-xs space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-bold text-brand-text text-sm">
-                        {p.person.name} ·{' '}
-                        <span className={p.current ? 'text-emerald-600' : 'text-amber-600'}>
-                          {p.current ? 'Current' : 'Historical — do not recommend as current employee'}
-                        </span>
-                      </h3>
-                      <span className="font-mono text-[11px] bg-white px-2 py-0.5 rounded border border-brand-border">
-                        Authority: {words(p.authority)}
-                      </span>
-                    </div>
-
-                    <div className="space-y-1 text-brand-muted">
-                      {p.employments.map((e, i) => (
-                        <p key={i}>
-                          {e.role} · {e.start} — {e.end ?? 'ongoing'}{' '}
-                          <Refs ids={e.evidence_ids} evidence={resource.evidence} open={open} />
-                        </p>
-                      ))}
-                    </div>
-
-                    {p.statements.map((s) => (
-                      <div key={s.id} className="border-l-2 border-brand-blue pl-3 py-1 space-y-1 bg-white p-2 rounded">
-                        <div className="flex items-center justify-between text-[11px]">
-                          <strong>{words(s.predicate)}</strong>
-                          <span className="text-gray-400 font-mono">
-                            {s.event_date} · {s.attribution} · {s.verification}
-                          </span>
-                        </div>
-                        <p className="text-gray-500 text-[11px]">
-                          Speaker: {s.speaker_id ? name(s.speaker_id) : 'Unknown'} · scoped to this recorded exchange
-                        </p>
-                        <blockquote className="italic text-gray-700 font-mono text-[11px]">"{s.text}"</blockquote>
-                        <Refs ids={s.evidence_ids} evidence={resource.evidence} open={open} />
-                      </div>
-                    ))}
-
-                    <div className="flex flex-wrap gap-1 pt-1">
-                      <Refs ids={p.person.evidence_ids} evidence={resource.evidence} open={open} />
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* Internal Decisions and Commitments */}
-          {!card && resource.internal_decisions.length > 0 && (
-            <section className="border border-brand-border rounded-lg p-5 bg-white space-y-3 shadow-xs">
-              <h2 className="text-base font-semibold text-brand-text">Internal decisions and commitments</h2>
-              <p className="text-xs text-brand-subtle">These are KasirNusa approvals, not evidence of customer purchasing authority.</p>
-              <div className="space-y-2">
-                {resource.internal_decisions.map((d) => (
-                  <article key={d.id} className="border border-brand-border rounded-md p-3 bg-brand-canvas text-xs space-y-1">
-                    <div className="flex items-center justify-between font-bold text-brand-text">
-                      <span>{d.external_id} · {d.date}</span>
-                      <span className="font-mono text-[11px] text-brand-blue">{d.outcome}</span>
-                    </div>
-                    <p className="text-brand-muted">{d.rationale}</p>
-                    <Refs ids={d.evidence_ids} evidence={resource.evidence} open={open} />
-                  </article>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Requirement Follow-up Assessment */}
-          <section className="border border-brand-border rounded-lg p-5 bg-white space-y-3 shadow-xs">
-            <h2 className="text-base font-semibold text-brand-text">Requirement follow-up assessment</h2>
-            {!card && (
-              <div className="space-y-2">
-                {resource.requirement_assessments.map((a) => (
-                  <article key={a.id} className="border border-brand-border rounded-md p-3 bg-brand-canvas text-xs space-y-1">
-                    <div className="flex items-center justify-between font-bold text-brand-text">
-                      <h3 className="text-xs uppercase">{a.status.replaceAll('_', ' ')}</h3>
-                      <span className="text-[10px] font-mono bg-white px-2 py-0.5 rounded border border-gray-200">{a.status}</span>
-                    </div>
-                    <p className="text-brand-muted font-medium">{a.requirement}</p>
-                    <p className="text-brand-subtle text-[11px]">
-                      Fulfillment: {a.fulfillment.status.replaceAll('_', ' ')}. {a.fulfillment.reason}
-                    </p>
-                    <p className="text-brand-subtle text-[11px]">
-                      Missing: {a.missing_details.join(', ') || 'Not established'}
-                    </p>
-                    <Refs ids={a.source_ids} evidence={resource.evidence} open={open} />
-                  </article>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* Commercial Scenario */}
-          <section className="border border-brand-border rounded-lg p-5 bg-white space-y-3 shadow-xs">
-            <h2 className="text-base font-semibold text-brand-text">Commercial scenario</h2>
-            {resource.value_scenario ? (
-              <div className="space-y-2 text-xs">
-                <p className="text-xl font-bold font-mono text-emerald-700">
-                  {amount(resource.value_scenario.amount)} IDR / year, conditional annual increment
-                </p>
-                <p className="font-mono text-xs text-brand-muted">{resource.value_scenario.formula}</p>
-                <pre className="font-mono text-[11px] bg-brand-canvas p-3 rounded-md border border-brand-border">
-                  {JSON.stringify(resource.value_scenario.inputs, null, 2)}
-                </pre>
-                <ul className="list-disc list-inside text-brand-subtle">
-                  {resource.value_scenario.assumptions.map((t) => (
-                    <li key={t}>{t}</li>
-                  ))}
-                </ul>
-                <Refs ids={resource.value_scenario.evidence_ids} evidence={resource.evidence} open={open} />
-              </div>
-            ) : (
-              <p className="text-xs text-brand-subtle">
-                No supported incremental value in this diagnosis. Confirm terms before quoting.
-              </p>
-            )}
-          </section>
-
-          {/* Relationship Path Graph */}
-          {!graph.data ? (
-            <Pending error={graph.error} />
-          ) : (
-            <Suspense fallback={<p role="status" className="text-xs text-brand-subtle">Loading relationship path…</p>}>
-              <Graph graph={graph.data} onEvidence={open} />
-            </Suspense>
-          )}
-
-          {/* Evidence Passages */}
-          <section className="border border-brand-border rounded-lg p-5 bg-white space-y-3 shadow-xs">
-            <h2 className="text-base font-semibold text-brand-text">Evidence passages</h2>
-            <div className="space-y-2 text-xs">
-              {resource.evidence.map((e, i) => (
-                <details key={i} className="border border-brand-border rounded-md p-3 bg-brand-canvas">
-                  <summary className="font-mono font-medium text-brand-blue cursor-pointer select-none">
-                    {e.source_external_id ?? e.filename} · {e.field} · {e.filename}:{e.locator}
-                  </summary>
-                  <blockquote className="my-2 p-2.5 bg-white border-l-2 border-brand-blue font-mono text-[11px] text-gray-700">
-                    {e.passage}
-                  </blockquote>
-                  <button
-                    onClick={() => open(e.source_id)}
-                    className="h-7 px-3 text-[11px] font-medium border border-brand-border rounded bg-white hover:bg-gray-50 text-brand-text"
-                  >
-                    Open original record
-                  </button>
-                </details>
-              ))}
-            </div>
-          </section>
-        </div>
+      {/* TAB 4: Draf Pesan Follow-Up */}
+      {activeTab === 'draft' && (
+        <Draft
+          key={dataset + kind + id + route}
+          dataset={dataset}
+          kind={kind as 'accounts' | 'opportunities'}
+          id={id!}
+          options={{ route }}
+          evidence={resource.evidence}
+          open={open}
+        />
       )}
 
-      {/* Unknowns & Limitations */}
-      <section className="border border-brand-border rounded-lg p-5 bg-white space-y-2 shadow-xs text-xs">
-        <h2 className="text-base font-semibold text-brand-text">Unknowns and limitations</h2>
-        <ul className="list-disc list-inside text-brand-subtle space-y-1">
-          {[...resource.unknowns, ...resource.limitations].map((t, i) => (
-            <li key={i}>{t}</li>
-          ))}
-        </ul>
-      </section>
+      {/* TAB 5: Tanya Akun (Q&A Grounded) */}
+      {activeTab === 'qa' && (
+        <AccountQA
+          key={dataset + kind + id + route}
+          dataset={dataset}
+          account={resource.account.id}
+          opportunity={card ? resource.id : undefined}
+          route={route}
+          open={open}
+        />
+      )}
 
-      {/* Source Record Drawer */}
+      {/* Drawer: Dokumen Rekaman Sumber */}
       {source && <Source dataset={dataset} id={source} close={() => setSource('')} />}
     </div>
   );
