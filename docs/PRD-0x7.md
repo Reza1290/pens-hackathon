@@ -1,6 +1,7 @@
 # PRD-0x7 — Phase 6: Evaluate conditional optimization
 
-Status: Planned, optional after MVP. Dependency: PRD-0x6 and reviewed evaluation set.
+Status: Assessment implemented; optimization deferred, reviewed/live gates open.
+Optional after MVP. Dependency: PRD-0x6 and reviewed evaluation set.
 Requirements: AGENTS.md Sections 3, 8, 11, 14 and 17.
 
 ## Goal
@@ -26,15 +27,15 @@ preserving agreed evidence quality. Keeping the current implementation is valid.
 
 ## Definition of done
 
-- [ ] Benchmark datasets, labels, splits, versions and sample sizes are documented.
+- [x] Benchmark datasets, labels, splits, versions and sample sizes are documented.
 - [ ] Cost/latency and quality comparisons use the same reviewed evaluation scope.
 - [ ] Selected gates and thresholds have recorded rationale; no invented savings.
 - [ ] Any enabled optimization passes the agreed recall/support gates and fallback checks.
 - [ ] If a classifier is enabled, vectorizer/classifier and manifest capture labels,
   training-data hash, dependencies, thresholds and metrics; stale outputs are rejected.
-- [ ] Enable or defer decision records limitations and rollback; optional components
+- [x] Enable or defer decision records limitations and rollback; optional components
   are not declared necessary to complete the MVP.
-- [ ] Relevant checks and shared DoD are satisfied.
+- [x] Relevant checks and shared DoD are satisfied for the assessment tooling.
 
 ## Out of scope
 
@@ -42,3 +43,13 @@ Apriori, purchase-probability models, unreviewed labels, a Python HTTP service,
 mandatory classifier training, personal performance rankings and causal closure claims.
 Reference introductions and response-time analytics need separate scoped PRDs and
 adequate evidence; they are not implicitly authorized by this optimization phase.
+
+## Implemented assessment and pending gates
+
+See [Phase 6 handover](PHASE-6-HANDOVER.md) and the
+[review checklist](EVALUATION-REVIEW.md). The offline 25-case synthetic assessment
+retains the baseline: 15/15 intent labels and 6/6 quantity/period cases match, but
+Jev has no live answers and independent review is pending. Numerical gates remain
+unset, rather than invented. Classifier/semantic retrieval are disabled; their
+artifact and enabled-optimization checkboxes are not applicable until justified.
+The reviewed/live comparison checkboxes remain open.

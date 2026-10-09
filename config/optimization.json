@@ -1,0 +1,14 @@
+{
+  "version": "optimization-policy-v1",
+  "routing": "rules_with_explicit_model_opt_in",
+  "retrieval": "graph_and_simple_text",
+  "classifier_enabled": false,
+  "semantic_retrieval_enabled": false,
+  "review": { "status": "pending", "reviewer": null, "dataset_hash": null },
+  "gates": {
+    "minimum_signal_recall": null,
+    "minimum_signal_precision": null,
+    "maximum_unsupported_claims": null,
+    "maximum_authority_errors": null
+  }
+}

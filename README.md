@@ -146,7 +146,7 @@ See the [development plan](docs/README.md) for phase PRDs, definitions of done,
 acceptance checks and out-of-scope work. Phases 0–1 are locally verified;
 Phase 2 infrastructure is tested with live evaluation gates open; Phase 3's
 deterministic backend and Phase 4 workflow are locally verified; Phase 5 has tested grounded Q&A with live/human gates open;
-Phase 6 optimization remains conditional. Run `python scripts/audit_sources.py` to
+Phase 6 assessment is implemented; optimization is deferred. Run `python scripts/audit_sources.py` to
 regenerate the checksum manifest and inventory from the original `data/raw/` files
 with Python 3.10 or newer (verified with Python 3.14.7). This standard-library tool
 does not import or change customer records; diagnostics are stored in ignored
@@ -198,3 +198,14 @@ prose and live model quality remain gated. See [Phase 5 handover](docs/PHASE-5-H
 # Requires the local dev API and prepared snapshot:
 npm run eval:qa -- --dataset 93bb692a-2168-5ef3-a37d-8e929f9b6340
 ```
+
+## Optimization assessment
+
+`npm run eval -- --dataset <uuid>` also produces `optimization.json` and
+`label-review.json` beside its evaluation report under ignored artifacts. It
+compares rules, provider-only and provider-with-rules-fallback on identical cases;
+unanswered positives stay in recall denominators. The current decision is **defer**:
+labels are unreviewed, live comparison is unavailable and numerical gates are not
+agreed. No classifier, embeddings or additional infrastructure is enabled.
+See [Phase 6 handover](docs/PHASE-6-HANDOVER.md) and
+[review checklist](docs/EVALUATION-REVIEW.md).
