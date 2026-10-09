@@ -1,0 +1,56 @@
+# PRD-0x2 — Phase 1: Build the deterministic C06 path
+
+Status: Planned. Dependency: PRD-0x1 source mappings and reviewed evidence.
+Requirements: FR-01–08; AGENTS.md Sections 15–19.
+
+## Goal
+
+Turn retained evidence into one reproducible expansion action card using a
+repeatable PostgreSQL import, deterministic reconciliation and code calculations.
+
+## In scope and deliverables
+
+- Scaffold npm workspaces, React/Vite/TypeScript frontend, Express/TypeScript API,
+  shared Zod DTOs, Drizzle/node-postgres, Vitest and local PostgreSQL Compose.
+  Verify current official compatibility, pin supported versions/runtime and commit
+  a shared lockfile. Add `.env.example` with placeholders and real setup commands.
+- Add database client, loopback API, Vite proxy and process/database health route.
+  Define the authorization boundary for dataset-scoped local data access.
+- Create reviewed migrations for dataset/source retention, C06 domain tables,
+  graph identities/assertions, runs, matches, findings and recommendations.
+- Stage all supplied source records with raw payloads and row/line locators.
+  Normalize mapped entities in transactions; resolve references in a second pass.
+  Report duplicates/quarantines and reconcile counts before marking a dataset ready.
+- Implement deterministic keys, composite snapshot constraints, evidence references,
+  decimal money strings and repeatable imports; changed content is a new snapshot.
+- Implement generic request/deal matching, follow-through checks, transparent priority,
+  elapsed days and conditional outlet-value calculation. Use manually reviewed
+  C06 facts to validate the path; never hardcode account-specific business answers.
+- Expose dataset/account/opportunity/source/evidence endpoints with pagination,
+  validation and freshness. Graph projection combines typed joins and supported
+  assertions, with account/dataset scope, cycle prevention and bounded traversal.
+- Establish `dev`, `db:generate`, `db:migrate`, `data:import`, `data:analyze`,
+  `typecheck`, `test` and `build` scripts only when implemented and verified.
+
+## Definition of done
+
+- [ ] A fresh setup can migrate and import using documented commands.
+- [ ] Re-importing an identical manifest creates no duplicate entities or signals.
+- [ ] Missing/unusable deal inputs prevent a false unmatched-deal conclusion.
+- [ ] Reviewed C06 evidence produces one card meeting every Section 7 card field;
+  unknowns remain null/explicit and recommendations remain proposed actions.
+- [ ] A valid matching deal suppresses the absence finding while retaining the request.
+- [ ] Missing-record findings retain scope, criteria, rule version, dataset and as-of.
+- [ ] Every material claim opens its source or deterministic check; synthetic fixtures
+  cover matching, ambiguous/missing terms, decimals and snapshot isolation.
+- [ ] Revenue shows quantity × monthly rate × 12 × (1 − discount), assumptions,
+  currency and annualized basis; elapsed time uses verified snapshot/source dates.
+- [ ] Disposable database tests cover idempotency, cross-snapshot FK rejection,
+  rollback/quarantine and evidence resolution without touching imported demo data.
+- [ ] Typecheck, relevant tests and production build pass; shared DoD is recorded.
+
+## Out of scope
+
+Model interpretation, stakeholder diagnosis release, full workflow UI, Q&A,
+autonomous writes, deployment and optional ML. A shell frontend is sufficient
+here; final workflow acceptance belongs to PRD-0x5.

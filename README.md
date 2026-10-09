@@ -47,3 +47,6 @@ Verify sources first; build a deterministic C06 evidence path, automate validate
 interpretation, implement C01 stakeholder diagnosis with the supporting P01 case,
 deliver the three product views, and then add grounded Q&A. Optimization is
 conditional on evaluation. Expansion, renewal and new-sale context stay separate.
+
+See the [development plan](docs/README.md) for phase PRDs, definitions of done,
+acceptance checks and out-of-scope work. All implementation phases remain planned.

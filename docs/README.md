@@ -1,0 +1,60 @@
+# Development plan
+
+Authority: [AGENTS.md](../AGENTS.md), v0.3. All phases below are **planned**;
+the committed baseplate is folder initialization only. A checkbox is completed
+only when its supporting validation is recorded. PRD numbering starts at `0x1`
+while implementation phase numbering starts at 0, matching AGENTS.md.
+
+| PRD | Phase | Exit deliverable | Dependency |
+| --- | --- | --- | --- |
+| [PRD-0x1](PRD-0x1.md) | 0: Source verification | Inventory, mappings, reviewed C06 source path | Baseplate |
+| [PRD-0x2](PRD-0x2.md) | 1: Deterministic evidence path | Runnable workspace, repeatable import, C06 card API | 0x1 |
+| [PRD-0x3](PRD-0x3.md) | 2: Interpretation | Validated rules/provider outputs and evaluation | 0x2 |
+| [PRD-0x4](PRD-0x4.md) | 3: Stakeholder guidance | C01 diagnosis, P01 route, C02 constraints, premise checks | 0x2; automated judgments depend on 0x3 |
+| [PRD-0x5](PRD-0x5.md) | 4: Product workflow | Three views, evidence inspection, editable template drafts | 0x4 |
+| [PRD-0x6](PRD-0x6.md) | 5: Grounded Q&A | Cited bilingual answers and customized drafts | 0x3, 0x5 |
+| [PRD-0x7](PRD-0x7.md) | 6: Conditional optimization | Measured quality/cost decision | 0x6 and reviewed evaluation set |
+
+## Shared definition of done
+
+Every phase must satisfy its own checklist and these shared requirements:
+
+- Record implemented behavior, changed files, checks run and actual results,
+  known limitations, unresolved decisions, and the next concrete task in a handover.
+- Keep planned, implemented, tested and source-verified status distinct.
+- Material factual claims resolve to source evidence or recorded code checks.
+  Unknowns, conflicts, dates, dataset version and commercial context stay explicit.
+- Run checks appropriate to the changes. Once runtime scripts exist, record
+  typecheck, relevant tests and build results; documentation work uses link and
+  consistency checks. Never report unrun commands or fabricated performance.
+- Commit no raw customer records, secrets, generated reports or trained binaries.
+  Fixtures are synthetic/redacted; provider fixtures contain no real customer data.
+- Keep deterministic arithmetic, identity resolution and access scoping in code.
+  Models interpret evidence; they cannot authorize commercial action.
+- Customer text remains untrusted data. Retrieval is bounded to the authorized
+  dataset/account; no model-generated SQL or browser-supplied filesystem paths.
+
+## Out of scope for MVP development
+
+Autonomous messages, CRM writes, discount approvals, contract changes, live
+connectors, automatic web enrichment, multi-agent orchestration, Apriori,
+purchase-probability prediction and custom expansion-outcome models are excluded.
+No personality scoring, causal claims about individual contacts, or blended
+unexplained priority scores. No Neo4j, Redis, vector database, separate Python
+service or microservice architecture. Hosting is undecided; remote exposure of
+customer data requires an authentication/access design before deployment.
+
+Classifier training, semantic retrieval, reference introductions and response-time
+analytics are conditional later work, not required MVP delivery. A complete MVP
+requires both expansion discovery and stakeholder guidance, plus the workflow
+and grounded Q&A; C06 alone does not complete it.
+
+## Current handover
+
+Initialized the Section 15 folder layout with placeholders and Git ignore rules.
+Read AGENTS.md and the dataset README. The latter states a 1 October 2026
+snapshot; actual coverage, schema integrity and case evidence remain unverified.
+Existing raw inputs were left in place. The challenge PDF was not found in the
+file inventory. No runtime dependencies, schema, data import or evaluation exist.
+Next task: execute PRD-0x1, without claiming the existing case expectations are
+already verified.
