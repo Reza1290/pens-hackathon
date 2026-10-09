@@ -22,6 +22,7 @@ import { interpretationContext } from '../apps/api/src/ai/context.js';
 import { analyzeStakeholders } from '../apps/api/src/modules/stakeholders/service.js';
 import { diagnosisSchema } from '@kasirnusa/contracts';
 import { qaResponseSchema } from '@kasirnusa/contracts';
+import { recordReview,reviewedStatements } from '../apps/api/src/modules/stakeholders/review.js';
 
 // Never migrate/truncate/drop the imported developer database. Only a freshly
 // created random database owned by this test run is eligible for teardown.
@@ -44,6 +45,61 @@ afterAll(async()=>{
   for(const path of paths){const target=inside(root,await realpath(path));if(!basename(target).startsWith('phase1-test-'))throw new Error('Unsafe fixture cleanup');await rm(target,{recursive:true});}
 });
 describe('disposable migrated PostgreSQL slice',()=>{
+  it('runs individual capabilities and the combined normal API workflow, then restores the disabled baseline',async()=>{
+    const imported=await importDataset(db,(await make({ownerIntermediary:true,messages:[{id:'I2',body:'I approve this purchase for expansion S1. I require ROI and payback evidence.',parent:'I1'},{id:'I3',body:'I handle operational inputs and prepare the proposal for X.',parent:'I2',sender:'operator@example.test'},{id:'I4',body:'Our features include stock controls.',parent:'I3',sender:'manager@example.test',date:'2026-08-03'},{id:'I5',body:'I need custom procurement documentation for expansion S1.',parent:'I2'}]})).manifest);
+    const datasetId=imported.dataset_id,accountId=stableId(datasetId,'account','A1');await analyzeDataset(db,datasetId,'2026-09-01');
+    const provider:Provider={name:'normal-path-simulator',model:'normal-path-v1',configured:true,async invoke(operation,context){const source=context.sources[0];const value=operation==='query_plan'?{operation:'stakeholder_guidance',args:{deal_id:null,signal_id:null}}:operation==='concern_addressed'?{type:'choice',choice:'not_addressed',confidence:1,probabilities:{addressed:0,partially_addressed:0,not_addressed:1,insufficient_evidence:0}}:operation==='extract_details'?{status:'candidate',assertions:[{subjectId:source.speakerId!,predicate:'REQUESTS_EVIDENCE',value:source.text,sourceId:source.id,field:source.field,quote:source.text,start:0,end:source.text.length,eventDate:source.eventDate,attribution:'direct',speakerId:source.speakerId}]}:{fact_ids:[context.grounding!.facts[0].id]};return {model:this.model,value,inputTokens:12,outputTokens:4};}};
+    for(const [planner,jev,extractor,answer] of [[true,false,false,false],[false,true,false,false],[false,false,true,false],[false,false,false,true],[true,true,true,true],[false,false,false,false]]){
+      const plannerRuntime=new Interpreter(db,{live:planner,maxCalls:1,timeoutMs:200});
+      const runtime=new Interpreter(db,{live:answer,maxCalls:1,timeoutMs:200}),analysis=new Interpreter(db,{live:jev||extractor,maxCalls:2,timeoutMs:200});
+      const app=createApp(db,new Set([datasetId]),{runtime,provider,planner,plannerRuntime,analysis:{runtime:analysis,...(jev?{jev:provider}:{}),...(extractor?{extractor:provider}:{})}});
+      const body={dataset_id:datasetId,account_id:accountId,question:'What should we do next for this account?'};
+      const first=await request(app).post('/api/qa').send(body);expect(first.status).toBe(200);expect(JSON.stringify(first.body.claims)).toContain('Gather operational inputs');expect(first.body.requirement_assessments[0].status).toBe('not_addressed');
+      expect(first.body.generation.status).toBe(answer?'succeeded':'unavailable');
+      const calls=runtime.calls+analysis.calls+plannerRuntime.calls;const again=await request(app).post('/api/qa').send(body);expect(again.status).toBe(200);expect(runtime.calls+analysis.calls+plannerRuntime.calls).toBe(calls);
+      const [saved]=await db.select().from(s.diagnoses).where(eq(s.diagnoses.datasetId,datasetId));expect(diagnosisSchema.parse(saved.diagnosis).stakeholder_context.flatMap(p=>p.statements).some(a=>a.method==='reviewed-extraction-v1')).toBe(false);
+      if(!planner&&!answer&&!jev&&!extractor){expect(first.body.generation.status).toBe('unavailable');expect(first.body.requirement_assessments[0].model_run_id).toBeNull();}
+    }
+  });
+  it('enforces failures, retries, budgets and cache boundaries for every integrated operation',async()=>{
+    const imported=await importDataset(db,(await make()).manifest);const accountId=stableId(imported.dataset_id,'account','A1'),person=stableId(imported.dataset_id,'contact','K1');
+    const source=randomUUID();const base:Context={datasetId:imported.dataset_id,accountId,asOf:'2026-09-01',decisionScopeId:randomUUID(),subjectId:person,candidates:[{id:person,role:'unknown',start:'2025-01-01',end:null}],sources:[{id:source,field:'isi',text:'Need ROI evidence.',hash:'source-v1',eventDate:'2026-08-01',speakerId:person},{id:randomUUID(),field:'isi',text:'Here is ROI 20%.',eventDate:'2026-08-02',speakerId:null}],grounding:{question:'What next?',language:'en',facts:[{id:'fact',text:'Prepare evidence.',evidence_ids:[source]}]},claim:'matrix'};
+    for(const operation of ['query_plan','concern_addressed','extract_details','answer_plan'] as const){
+      const value=operation==='query_plan'?{operation:'account_diagnosis',args:{deal_id:null,signal_id:null,metric:null,periods:null}}:operation==='concern_addressed'?{type:'choice',choice:'addressed',confidence:1,probabilities:{addressed:1,partially_addressed:0,not_addressed:0,insufficient_evidence:0}}:operation==='extract_details'?{status:'candidate',assertions:[{subjectId:person,predicate:'REQUESTS_EVIDENCE',value:'ROI evidence',sourceId:source,field:'isi',quote:base.sources[0].text,start:0,end:base.sources[0].text.length,eventDate:'2026-08-01',attribution:'direct',speakerId:person}]}:{fact_ids:['fact']};
+      const good:Provider={name:'matrix',model:`matrix-${operation}`,configured:true,async invoke(){return {model:this.model,value,inputTokens:8,outputTokens:3};}};
+      const runtime=new Interpreter(db,{live:true,maxCalls:5,timeoutMs:20});const first=await runtime.run(base,operation,good);expect(first.status).toBe('succeeded');expect((await runtime.run(base,operation,good))).toMatchObject({cached:true,calls:0});
+      expect(await new Interpreter(db,{live:false,maxCalls:0,timeoutMs:20}).run(base,operation,good)).toMatchObject({status:'unavailable',cached:false,calls:0});
+      for(const changed of [{...base,asOf:'2026-09-02'},{...base,decisionScopeId:randomUUID()},{...base,sources:[{...base.sources[0],hash:'source-v2'},base.sources[1]]}])expect((await runtime.run(changed,operation,good))).toMatchObject({cached:false,calls:1});
+      await db.update(s.modelRuns).set({output:{unsupported:true}}).where(eq(s.modelRuns.id,first.runId));expect((await runtime.run(base,operation,good))).toMatchObject({cached:false,calls:1});
+      expect((await runtime.run({...base,claim:'exhausted'},operation,good))).toMatchObject({status:'budget_exceeded',calls:0});
+      for(const failure of ['timeout','connection','rate_limit','server','malformed','disabled'] as const){
+        const provider:Provider={...good,model:`${good.model}-${failure}`,configured:failure!=='disabled',async invoke(){if(failure==='timeout')return new Promise(()=>{});if(failure==='connection')throw new TypeError('Injected connection failure');if(failure==='rate_limit'||failure==='server')throw new ProviderError('provider_error',true);return {model:this.model,value:{unsupported:true},inputTokens:1,outputTokens:1};}};
+        const failed=new Interpreter(db,{live:true,maxCalls:2,timeoutMs:20});const result=await failed.run(base,operation,provider);
+        expect(result.status).toBe(failure==='timeout'?'timeout':failure==='malformed'?'invalid':failure==='disabled'?'unavailable':'provider_error');expect(result.calls).toBe(failure==='rate_limit'||failure==='server'?2:failure==='disabled'?0:1);expect(failed.calls).toBeLessThanOrEqual(2);
+      }
+    }
+  });
+  it('reviews a normal extraction, recomputes authority, supersedes rejection and invalidates changed source evidence',async()=>{
+    const f=await make({messages:[{id:'I2',body:'I need custom approval materials. The final purchasing decision for S1 is mine.'}]});const imported=await importDataset(db,f.manifest);const datasetId=imported.dataset_id,accountId=stableId(datasetId,'account','A1');
+    const provider:Provider={name:'review-test',model:'review-test-v1',configured:true,async invoke(_op,context){const source=context.sources[0];return {model:this.model,inputTokens:15,outputTokens:20,value:{status:'candidate',assertions:[{subjectId:source.speakerId!,predicate:'APPROVER_FOR',value:'The final purchasing decision for S1 is mine.',sourceId:source.id,field:source.field,quote:source.text,start:0,end:source.text.length,eventDate:source.eventDate,attribution:'direct',speakerId:source.speakerId}]}};}};
+    await analyzeStakeholders(db,datasetId,accountId,{}, {runtime:new Interpreter(db,{live:true,maxCalls:1,timeoutMs:200}),extractor:provider});
+    const diagnosis=async()=>diagnosisSchema.parse((await db.select().from(s.diagnoses).where(eq(s.diagnoses.datasetId,datasetId)))[0].diagnosis);
+    expect((await diagnosis()).stakeholder_context[0].authority).toBe('unknown');
+    const [run]=await db.select().from(s.modelRuns).where(and(eq(s.modelRuns.datasetId,datasetId),eq(s.modelRuns.operation,'extract_details')));
+    const requestReview={model_run_id:run.id,candidate_index:0,state:'accepted',reviewer:'synthetic-test-reviewer',rationale:'Synthetic fixture explicitly states purchasing decision authority; this is a test, not independent review.'};
+    const accepted=await recordReview(db,requestReview);expect((await recordReview(db,requestReview)).reused).toBe(true);
+    const candidate=(run.output as {assertions:any[]}).assertions[0];await expect(recordReview(db,{...requestReview,supersedes:accepted.review.id,correction:{...candidate,subjectId:randomUUID()}})).rejects.toThrow();
+    await analyzeStakeholders(db,datasetId,accountId);expect((await diagnosis()).stakeholder_context[0].authority).toBe('supported_scoped');expect((await diagnosis()).stakeholder_context[0].statements[0].verification).toBe('manually_verified');
+    const rejected=await recordReview(db,{...requestReview,state:'rejected',supersedes:accepted.review.id,rationale:'Synthetic review revokes the prior interpretation for this decision.'});
+    const regenerated=await new Interpreter(db,{live:true,maxCalls:1,timeoutMs:200}).run(run.context as Context,'extract_details',provider);expect(regenerated.cached).toBe(false);expect(regenerated.calls).toBe(1);
+    await analyzeStakeholders(db,datasetId,accountId);expect((await diagnosis()).stakeholder_context[0].authority).toBe('unknown');
+    const restored=await recordReview(db,{...requestReview,supersedes:rejected.review.id,correction:{...candidate,value:'The documented final purchasing decision for S1 belongs to this speaker.'}});await analyzeStakeholders(db,datasetId,accountId);expect((await reviewedStatements(db,datasetId,accountId)).statements).toHaveLength(1);expect(restored.review.supersedes).toBe(rejected.review.id);
+    await db.update(s.sourceRecords).set({contentHash:'changed-source-revision'}).where(eq(s.sourceRecords.id,restored.review.sourceId));
+    expect((await reviewedStatements(db,datasetId,accountId)).statements).toHaveLength(0);
+    expect((await request(createApp(db,new Set([datasetId]))).get(`/api/accounts/${accountId}/diagnosis?dataset_id=${datasetId}`)).status).toBe(409);
+    await analyzeStakeholders(db,datasetId,accountId);expect((await diagnosis()).stakeholder_context[0].authority).toBe('unknown');
+    await expect(recordReview(db,{...requestReview,supersedes:restored.review.id,rationale:'Attempt stale reacceptance after source revision changed.'})).rejects.toThrow('Source revision');
+  });
   it('lists only selected-account expansion and labels commercial exceptions as historical precedents',async()=>{
     const f=await make({stakeholderSlice:true});const imported=await importDataset(db,f.manifest);await analyzeDataset(db,imported.dataset_id,'2026-09-01');const accountId=stableId(imported.dataset_id,'account','A1');await analyzeStakeholders(db,imported.dataset_id,accountId);const api=createApp(db,new Set([imported.dataset_id]));
     const ask=(question:string)=>request(api).post('/api/qa').send({dataset_id:imported.dataset_id,account_id:accountId,question});
@@ -98,7 +154,7 @@ describe('disposable migrated PostgreSQL slice',()=>{
     const f=await make();const imported=await importDataset(db,f.manifest);const accountId=stableId(imported.dataset_id,'account','A1');await analyzeStakeholders(db,imported.dataset_id,accountId);
     const runtime=new Interpreter(db,{live:true,maxCalls:4,timeoutMs:200});
     const provider:Provider={name:'planner-test',model:'planner-test-v1',configured:true,async invoke(op,context){return {model:'planner-test-v1',value:op==='query_plan'?{operation:'account_diagnosis',args:{metric:'closed_expansion_deal_proxy',periods:{previous_start:'2026-07-01',previous_end:'2026-07-31',current_start:'2026-08-01',current_end:'2026-08-31'},signal_id:null,deal_id:null}}:{fact_ids:[context.grounding!.facts[0].id]},inputTokens:10,outputTokens:5};}};
-    const api=createApp(db,new Set([imported.dataset_id]),{runtime,provider,planner:true});const response=await request(api).post('/api/qa').send({dataset_id:imported.dataset_id,account_id:accountId,question:'Compare recorded won expansion deals'});expect(response.status).toBe(200);expect(response.body.plan.operation).toBe('account_diagnosis');expect(response.body.premise_check.periods.current_start).toBe('2026-08-01');expect(response.body.capabilities.planner.status).toBe('succeeded');
+    const api=createApp(db,new Set([imported.dataset_id]),{runtime,provider,planner:true});const response=await request(api).post('/api/qa').send({dataset_id:imported.dataset_id,account_id:accountId,question:'Compare recorded won expansion deals',metric:'closed_expansion_deal_proxy',periods:{previous_start:'2026-07-01',previous_end:'2026-07-31',current_start:'2026-08-01',current_end:'2026-08-31'}});expect(response.status).toBe(200);expect(response.body.plan.operation).toBe('account_diagnosis');expect(response.body.premise_check.periods.current_start).toBe('2026-08-01');expect(response.body.capabilities.planner.status).toBe('succeeded');
     const bad:Provider={...provider,model:'bad-planner',async invoke(){return {model:'bad-planner',value:{operation:'sql',args:{query:'SELECT *'}},inputTokens:2,outputTokens:2};}};
     const badApi=createApp(db,new Set([imported.dataset_id]),{runtime,provider:bad,planner:true});const fallback=await request(badApi).post('/api/qa').send({dataset_id:imported.dataset_id,account_id:accountId,question:'why?'});expect(fallback.body.status).toBe('clarification_required');expect(fallback.body.capabilities.planner.status).toBe('invalid');
   });

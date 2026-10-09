@@ -2,15 +2,15 @@ import { randomUUID } from 'node:crypto';
 import Decimal from 'decimal.js';
 import { and,eq,sql } from 'drizzle-orm';
 import type { Database } from '../db/client.js';
-import { modelRuns,accounts } from '../db/schema/index.js';
+import { modelRuns,accounts,extractionReviews } from '../db/schema/index.js';
 import { sha256 } from '../modules/ingestion/manifest.js';
 import { PROMPT_VERSION } from './prompts/interpretation.js';
-import { contextSchema,validateValue,SCHEMA_VERSION,type Context,type Operation } from './schemas/interpretation.js';
+import { contextSchema,validateValue,SCHEMA_VERSION,choices,type Context,type Operation } from './schemas/interpretation.js';
 import { ProviderError,type Provider } from './providers/interface.js';
 export const PARAMETERS_VERSION='interpretation-limits-v1';
 export type Outcome={status:'succeeded'|'unavailable'|'invalid'|'timeout'|'provider_error'|'budget_exceeded';runId:string;cached:boolean;calls:number;value?:unknown};
 export function cacheKey(context:Context,operation:Operation,provider:Provider,versions={prompt:PROMPT_VERSION,schema:SCHEMA_VERSION,parameters:PARAMETERS_VERSION}){
-  return sha256(JSON.stringify({context,operation,provider:provider.name,model:provider.model,versions}));
+  return sha256(JSON.stringify({context,operation,choices:operation in choices?choices[operation as keyof typeof choices]:null,provider:provider.name,model:provider.model,versions}));
 }
 export class Interpreter{
   calls=0;cacheHits=0;
@@ -33,8 +33,14 @@ export class Interpreter{
     // Same key is serialized across CLI processes; locks end with this transaction.
     return this.db.transaction(async tx=>{
       await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${key},0))`);
-      const successes=await tx.select().from(modelRuns).where(and(eq(modelRuns.datasetId,context.datasetId),eq(modelRuns.accountId,context.accountId),eq(modelRuns.cacheKey,key),eq(modelRuns.status,'succeeded')));
-      for(const previous of successes){try{const value=validateValue(operation,previous.output,context);this.cacheHits++;return {status:'succeeded',runId:previous.id,cached:true,calls:0,value};}catch{/* Invalid persisted outputs are never reused. */}}
+      const successes=this.options.live&&provider.configured?await tx.select().from(modelRuns).where(and(eq(modelRuns.datasetId,context.datasetId),eq(modelRuns.accountId,context.accountId),eq(modelRuns.cacheKey,key),eq(modelRuns.status,'succeeded'))):[];
+      for(const previous of successes){try{
+        if(operation==='extract_details'){
+          const reviews=await tx.select().from(extractionReviews).where(eq(extractionReviews.modelRunId,previous.id));const superseded=new Set(reviews.map(r=>r.supersedes));
+          if(reviews.some(r=>!superseded.has(r.id)&&r.state==='rejected'))continue;
+        }
+        const value=validateValue(operation,previous.output,context);this.cacheHits++;return {status:'succeeded',runId:previous.id,cached:true,calls:0,value};
+      }catch{/* Invalid persisted outputs are never reused. */}}
       let last:Outcome|undefined;
       let attempts=0;
       for(let attempt=0;attempt<2;attempt++){
@@ -54,7 +60,7 @@ export class Interpreter{
           }
         }
         const noCall=status==='unavailable'||status==='budget_exceeded';if(noCall)costUsd='0.0000000000';
-        const runId=randomUUID();await tx.insert(modelRuns).values({id:runId,datasetId:context.datasetId,accountId:context.accountId,cacheKey:key,inputHash,operation,provider:provider.name,model:provider.model,promptVersion:versions.prompt,schemaVersion:versions.schema,parametersVersion:versions.parameters,status,output:status==='succeeded'?value:null,latencyMs:Date.now()-started,inputTokens,outputTokens,costUsd,costBasis:noCall?'no_call':costUsd===null?'unknown':'estimated_from_reported_usage'});
+        const runId=randomUUID();await tx.insert(modelRuns).values({id:runId,datasetId:context.datasetId,accountId:context.accountId,cacheKey:key,inputHash,operation,provider:provider.name,model:provider.model,promptVersion:versions.prompt,schemaVersion:versions.schema,parametersVersion:versions.parameters,status,context,output:status==='succeeded'?value:null,latencyMs:Date.now()-started,inputTokens,outputTokens,costUsd,costBasis:noCall?'no_call':costUsd===null?'unknown':'estimated_from_reported_usage'});
         last={status,runId,cached:false,calls:attempts,...(status==='succeeded'?{value}: {})};
         if(!retryable||attempt===1||this.calls>=this.options.maxCalls)break;
         await new Promise(resolve=>setTimeout(resolve,250));

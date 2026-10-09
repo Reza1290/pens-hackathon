@@ -1,6 +1,6 @@
 import { actionPlanSchema,premiseSchema,type StakeholderStatement } from '@kasirnusa/contracts';
 import { stableId } from '../ingestion/service.js';
-export const STAKEHOLDER_VERSION='stakeholder-rules-v1.4-scoped';
+export const STAKEHOLDER_VERSION='stakeholder-rules-v1.5-reviewed';
 export type Candidate={id:string;name:string;email:string;role:string;start:string;end:string|null;current:boolean;evidenceIds:string[]};
 export type StatementInput={id:string;date:string;text:string;sourceId:string;speakerId:string|null;attendeeIds:string[]};
 const escape=(text:string)=>text.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');

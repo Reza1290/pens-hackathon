@@ -14,6 +14,7 @@ dotenv.config({ path: resolve(root, '.env'), quiet: true });
 export const env = z.object({
   DATABASE_URL: z.string().url().default('postgresql://kasirnusa:local_dev_only@127.0.0.1:54329/kasirnusa'),
   API_PORT: z.coerce.number().int().min(1024).max(65535).default(3001),
+  WEB_PORT: z.coerce.number().int().min(1024).max(65535).default(5173),
   DATA_ROOT: z.string().default('data/raw'),
   ALLOWED_DATASET_IDS: z.string().default(''),
   JEV_API_KEY: z.string().default(''),

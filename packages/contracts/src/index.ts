@@ -44,7 +44,7 @@ export const sourceSchema = z.object({ id:uuidSchema,dataset_id:uuidSchema,as_of
 export const stakeholderStatementSchema=z.object({
   id:uuidSchema,person_id:uuidSchema,predicate:z.enum(['APPROVER_FOR','EVALUATES_TECHNICAL_FOR','INTERMEDIARY_FOR','REQUESTS_EVIDENCE','RAISES_CONCERN']),
   text:z.string(),event_date:dateSchema,speaker_id:uuidSchema.nullable(),attribution:z.enum(['direct','reported']),
-  scope_id:uuidSchema,scope_type:z.literal('interaction'),method:z.string(),verification:z.literal('unreviewed_rules_candidate'),
+  scope_id:uuidSchema,scope_type:z.literal('interaction'),method:z.string(),verification:z.enum(['unreviewed_rules_candidate','manually_verified']),
   current:z.boolean(),polarity:z.enum(['affirmed','denied']),evidence_ids:z.array(uuidSchema).min(1),
   decision_scope_id:uuidSchema.nullable().default(null),
 });
@@ -75,7 +75,7 @@ export const diagnosisSchema=z.object({
   action_plan:actionPlanSchema,premise_check:premiseSchema.nullable(),value_scenario:cardSchema.shape.value_scenario,
   internal_decisions:z.array(z.object({id:uuidSchema,external_id:z.string(),date:dateSchema,requester_id:uuidSchema,approver_id:uuidSchema,outcome:z.string(),rationale:z.string(),commitment_status:z.string().nullable(),evidence_ids:z.array(uuidSchema)})),
   evidence:z.array(evidenceSchema),unknowns:z.array(z.string()),limitations:z.array(z.string()),method:z.string(),
-  dependencies:z.object({opportunity_hash:z.string()}),
+  dependencies:z.object({opportunity_hash:z.string(),review_hash:z.string().default('')}),
   requirement_assessments:z.array(requirementAssessmentSchema).default([]),
 });
 export type AccountDiagnosis=z.infer<typeof diagnosisSchema>;

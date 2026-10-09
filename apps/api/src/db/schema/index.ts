@@ -165,7 +165,7 @@ export const modelRuns = pgTable('model_runs', {
   cacheKey:text('cache_key').notNull(),inputHash:text('input_hash').notNull(),operation:text().notNull(),
   provider:text().notNull(),model:text().notNull(),promptVersion:text('prompt_version').notNull(),
   schemaVersion:text('schema_version').notNull(),parametersVersion:text('parameters_version').notNull(),
-  status:text().notNull(),output:jsonb(),latencyMs:integer('latency_ms').notNull(),
+  status:text().notNull(),output:jsonb(),context:jsonb(),latencyMs:integer('latency_ms').notNull(),
   inputTokens:integer('input_tokens'),outputTokens:integer('output_tokens'),
   costUsd:numeric('cost_usd',{precision:20,scale:10}),costBasis:text('cost_basis').notNull(),
   createdAt:timestamp('created_at',{withTimezone:true}).defaultNow().notNull(),
@@ -173,3 +173,15 @@ export const modelRuns = pgTable('model_runs', {
   index('model_cache_idx').on(t.datasetId,t.accountId,t.cacheKey,t.status),
   check('model_run_status',sql`${t.status} in ('succeeded','unavailable','invalid','timeout','provider_error','budget_exceeded')`),
   check('model_run_usage',sql`${t.latencyMs} >= 0 and (${t.inputTokens} is null or ${t.inputTokens} >= 0) and (${t.outputTokens} is null or ${t.outputTokens} >= 0) and (${t.costUsd} is null or ${t.costUsd} >= 0)`) ]);
+
+// Append-only reviewer decisions; supersession is explicit and never erases history.
+export const extractionReviews=pgTable('extraction_reviews',{
+  id:uuid().primaryKey(),datasetId:uuid('dataset_id').notNull(),accountId:uuid('account_id').notNull(),
+  modelRunId:uuid('model_run_id').notNull().references(()=>modelRuns.id),candidateIndex:integer('candidate_index').notNull(),
+  sourceId:uuid('source_id').notNull(),sourceHash:text('source_hash').notNull(),claim:jsonb().notNull(),
+  decisionScopeId:uuid('decision_scope_id'),state:text().notNull(),reviewer:text().notNull(),rationale:text().notNull(),
+  supersedes:uuid(),versions:jsonb().notNull(),createdAt:timestamp('created_at',{withTimezone:true}).defaultNow().notNull(),
+},t=>[foreignKey({columns:[t.datasetId,t.accountId],foreignColumns:[accounts.datasetId,accounts.id]}),
+  foreignKey({columns:[t.datasetId,t.sourceId],foreignColumns:[sourceRecords.datasetId,sourceRecords.id]}),
+  unique().on(t.supersedes),check('review_state',sql`${t.state} in ('pending_review','accepted','rejected')`),
+  check('review_candidate_index',sql`${t.candidateIndex} >= 0`)]);

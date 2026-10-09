@@ -690,6 +690,23 @@ Evaluate authority attribution, requirement extraction, temporal validity, conce
 
 v0.3 handover: product scope, data model, model responsibilities, API/read models, UI behavior, acceptance cases and implementation phases now include stakeholder guidance. Architecture remains React/Vite + Express/TypeScript + PostgreSQL. No code, migrations, imports, model calls or trained models have been implemented by this document update.
 
+## Phase 8 validation status (10 October 2026)
+
+Extraction review is implemented as a local CLI with append-only decisions,
+reviewer/rationale, captured source/model versions and corrections/supersession.
+Only valid accepted model candidates enter authoritative stakeholder claims;
+pending/rejected/stale candidates do not. Validate identity, event/current employment,
+source hash, attribution, decision scope and contradictions on acceptance and reuse.
+Review changes invalidate dependent read models; preserve history and recompute.
+Model operation flags are independent, and disabled operations bypass model caches.
+
+See [Phase 8 handover](docs/PHASE-8-HANDOVER.md). Deterministic/simulated and bounded
+synthetic live workflow checks are recorded separately. The 28-case semantic packet
+has zero independently reviewed labels. All four capability decisions remain defer;
+existing user-enabled planner/answer settings were not silently changed. A live
+extraction output failed validation and was safely retained as unresolved. No new
+capability is independently accepted. PRD-0x7 optimization remains deferred.
+
 ## 21. Project provider skill
 
 For TypeSafe/Jev provider work, use the installed

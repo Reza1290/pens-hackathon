@@ -8,6 +8,8 @@ import { sha256 } from '../ingestion/manifest.js';
 import { extractStatements,authority,selectAction,STAKEHOLDER_VERSION,type Candidate } from './rules.js';
 import { retrieveConnected } from '../qa/retrieval.js';
 import { assessRequirement } from './requirements.js';
+import { reviewedStatements } from './review.js';
+import { decisionScope } from './scope.js';
 import { env } from '../../config/env.js';
 import { Interpreter } from '../../ai/router.js';
 import { jevProvider } from '../../ai/providers/jev.js';
@@ -42,7 +44,8 @@ export async function analyzeStakeholders(db:Database,datasetId:string,accountId
   if(selected&&deal&&(selected.reconciliation.status!=='matched'||!selected.reconciliation.candidate_ids.includes(deal.id)))throw new Error('Signal/deal combination needs a verified same-request link');
   const scopeKey=diagnosisScopeKey(accountId,scope.signalId,scope.dealId);
   const relevant=rows.filter(r=>r.record.accountExternalId===account.externalId||['employees.csv','crm_contacts.csv','contact_employment_history.csv','features.csv'].includes(r.file.filename));
-  const runId=stableId(datasetId,STAKEHOLDER_VERSION,scopeKey,sha256(JSON.stringify([relevant.map(r=>[r.record.id,r.record.contentHash]),opportunityCards,SCHEMA_VERSION,env.QA_JEV_ENABLED,env.ANALYSIS_EXTRACTION_ENABLED,modelOptions?.jev?.model,modelOptions?.extractor?.model])));
+  const reviewed=await reviewedStatements(db,datasetId,accountId);
+  const runId=stableId(datasetId,STAKEHOLDER_VERSION,scopeKey,sha256(JSON.stringify([relevant.map(r=>[r.record.id,r.record.contentHash]),opportunityCards,dataset.asOf,reviewed.hash,env.JEV_MODEL,env.LLM_MODEL,SCHEMA_VERSION,env.QA_JEV_ENABLED,env.ANALYSIS_EXTRACTION_ENABLED,modelOptions?.jev?.model,modelOptions?.extractor?.model])));
   const [previous]=await db.select().from(s.analysisRuns).where(eq(s.analysisRuns.id,runId));
   if(previous?.status==='completed'){
     const [saved]=await db.select().from(s.recommendations).where(and(eq(s.recommendations.datasetId,datasetId),eq(s.recommendations.runId,runId),eq(s.recommendations.accountId,accountId)));
@@ -75,19 +78,10 @@ export async function analyzeStakeholders(db:Database,datasetId:string,accountId
     const speakers=[...employees,...contacts].filter(p=>p.email.toLowerCase()===message.sender.toLowerCase());
     const raw=source.record.payload;
     const result=extractStatements({id:message.id,date:message.eventDate,text:message.body,sourceId:source.record.id,speakerId:speakers.length===1?speakers[0].id:null,attendeeIds:people.filter(p=>raw.peserta.split(';').includes(contacts.find(c=>c.id===p.id)!.externalId)).map(p=>p.id)},people);
-    const root=(id:string)=>{const seen=new Set<string>();let current=messages.find(m=>m.id===id);while(current?.parentId&&!seen.has(current.id)){seen.add(current.id);const parent=messages.find(m=>m.id===current!.parentId&&m.accountId===accountId&&m.eventDate<=dataset.asOf);if(!parent)return null;current=parent;}return seen.has(current?.id??'')?null:current?.id??null;};
-    const threadRoot=root(message.id);let decisionScope=threadRoot;
-    if(threadRoot){
-      let cursor:typeof message|undefined=message;const seen=new Set<string>();
-      while(cursor&&!seen.has(cursor.id)){
-        seen.add(cursor.id);const tokens=[...new Set(cursor.body.match(/\b(?:DL\d+|DL-[\w-]+|DEAL-[\w-]+|S\d+|S-[\w-]+)\b/g)??[])];
-        if(tokens.length){decisionScope=tokens.length===1?stableId(accountId,'thread-decision-scope',threadRoot,tokens[0]):null;break;}
-        cursor=cursor.parentId?messages.find(m=>m.id===cursor!.parentId):undefined;
-      }
-    }
-    for(const statement of result){statement.decision_scope_id=decisionScope;addEvidence(source,'isi',statement.text);}
+    for(const statement of result){statement.decision_scope_id=decisionScope(messages,message.id,accountId,dataset.asOf);addEvidence(source,'isi',statement.text);}
     return result;
   });
+  for(const statement of reviewed.statements){if(sourceSubset&&!statement.evidence_ids.some(id=>sourceSubset.has(id)))continue;statements.push(statement);const row=rows.find(r=>r.record.id===statement.evidence_ids[0]);if(row)addEvidence(row,'isi');}
   const stakeholders=[...new Set(people.map(p=>p.id))].map(id=>{
     const person=contacts.find(c=>c.id===id)!;const episodes=people.filter(p=>p.id===id),current=episodes.some(p=>p.current);
     const claims=statements.filter(a=>a.person_id===id).map(a=>({...a,current:a.current&&episodes.some(e=>e.current&&e.start<=a.event_date&&(!e.end||e.end>=a.event_date))}));
@@ -99,7 +93,7 @@ export async function analyzeStakeholders(db:Database,datasetId:string,accountId
     const candidates=people.slice(0,12).map(p=>({id:p.id,role:p.role,start:p.start,end:p.end}));
     for(const message of messages.filter(m=>m.eventDate<=dataset.asOf&&(!sourceSubset||sourceSubset.has(find('interactions.jsonl',m.externalId)!.record.id))&&!statements.some(a=>a.scope_id===m.id)&&/require|need|memerlukan|membutuhkan|syarat/i.test(m.body)).slice(0,2)){
       const record=find('interactions.jsonl',message.externalId)!;const speaker=[...contacts,...employees].find(p=>p.email.toLowerCase()===message.sender.toLowerCase());
-      const result=await (modelOptions?.runtime??runtimeFor(db).extraction).run({datasetId,accountId,sources:[{id:record.record.id,field:'isi',text:message.body.slice(0,12000),eventDate:message.eventDate,speakerId:speaker?.id??null}],candidates,subjectId:null,claim:'complex-requirement-extraction-v1'},'extract_details',modelOptions?.extractor??selectedGenerativeProvider());
+      const result=await (modelOptions?.runtime??runtimeFor(db).extraction).run({datasetId,accountId,asOf:dataset.asOf,decisionScopeId:decisionScope(messages,message.id,accountId,dataset.asOf),sources:[{id:record.record.id,hash:record.record.contentHash,field:'isi',text:message.body.slice(0,12000),eventDate:message.eventDate,speakerId:speaker?.id??null}],candidates,subjectId:null,claim:'complex-requirement-extraction-v1'},'extract_details',modelOptions?.extractor??selectedGenerativeProvider());
       const item=addEvidence(record,'isi');
       const [usage]=await db.select().from(s.modelRuns).where(eq(s.modelRuns.id,result.runId));
       // Span/identity validation precedes persistence. Candidate semantics still
@@ -169,7 +163,7 @@ export async function analyzeStakeholders(db:Database,datasetId:string,accountId
       const requirement=bundle.sources.find(s=>s.interaction_id===statement.scope_id);
       const followups=bundle.sources.filter(s=>assessment.source_ids.includes(s.id)&&s.interaction_id!==statement.scope_id);
       if(requirement&&followups.length>0&&followups.length<=3){
-        const result=await (modelOptions?.runtime??runtimeFor(db).judgment).run({datasetId,accountId,subjectId:statement.person_id,candidates:people.slice(0,12).map(p=>({id:p.id,role:p.role,start:p.start,end:p.end})),claim:JSON.stringify({requirement_id:statement.id,decision_scope:statement.decision_scope_id,hashes:[requirement,...followups].map(s=>s.hash)}),sources:[requirement,...followups].map(s=>({id:s.id,field:'isi',text:s.text.slice(0,12000),eventDate:s.date,speakerId:s.interaction_id===statement.scope_id?statement.speaker_id:null}))},'concern_addressed',modelOptions?.jev??jevProvider(env.JEV_API_KEY,env.JEV_MODEL));
+        const result=await (modelOptions?.runtime??runtimeFor(db).judgment).run({datasetId,accountId,asOf:dataset.asOf,decisionScopeId:statement.decision_scope_id,subjectId:statement.person_id,candidates:people.slice(0,12).map(p=>({id:p.id,role:p.role,start:p.start,end:p.end})),claim:JSON.stringify({requirement_id:statement.id,decision_scope:statement.decision_scope_id,hashes:[requirement,...followups].map(s=>s.hash)}),sources:[requirement,...followups].map(s=>({id:s.id,field:'isi',text:s.text.slice(0,12000),eventDate:s.date,speakerId:s.interaction_id===statement.scope_id?statement.speaker_id:null}))},'concern_addressed',modelOptions?.jev??jevProvider(env.JEV_API_KEY,env.JEV_MODEL));
         if(result.status==='succeeded'){assessment.status=(result.value as {choice:typeof assessment.status}).choice;assessment.method='jev-four-choice-v2';assessment.limitations.push('Fallible model interpretation; not fulfillment or customer acceptance.');}
         const [usage]=await db.select().from(s.modelRuns).where(eq(s.modelRuns.id,result.runId));
         assessment.model_run_id=result.runId;assessment.calls=result.calls;assessment.cost_usd=result.cached?'0':result.calls>1?null:usage.costUsd;assessment.prompt_version=usage.promptVersion;assessment.schema_version=usage.schemaVersion;
@@ -193,7 +187,7 @@ export async function analyzeStakeholders(db:Database,datasetId:string,accountId
   for(const card of scopedCards)for(const point of card.next_action.discussion_points)action.discussion_points.push({audience_ids:card.people.contact&&currentIds.includes(card.people.contact.id)?[card.people.contact.id]:[],text:point.text,evidence_ids:point.evidence_ids});
   const diagnosis=diagnosisSchema.parse({id:stableId(datasetId,'diagnosis',scopeKey),dataset_id:datasetId,dataset_version:dataset.version,as_of:dataset.asOf,account_id:accountId,account,signal_id:scope.signalId??null,deal_id:scope.dealId??null,commercial_context:commercialContext,
     owner:{id:owner.id,external_id:owner.externalId,name:owner.name,role:owner.title,evidence_ids:[ownerSource.source_id,accountSource.source_id]},findings,stakeholder_context:stakeholders,action_plan:action,premise_check:null,value_scenario:selected?.value_scenario??null,internal_decisions:internal,evidence,
-    requirement_assessments:requirementAssessments,unknowns:['Current stakeholder requirements and authority must be confirmed in this decision scope.','No complete repeat-order or revenue ledger establishes a decline.'],limitations:['Deterministic statement candidates, not live model judgments or verified personality facts.','Internal decisions are KasirNusa approvals; they never establish customer purchasing authority.','No activity outside the supplied snapshot is established.','Requirements from another organization are not transferred into this account.'],method:STAKEHOLDER_VERSION,dependencies:{opportunity_hash:sha256(JSON.stringify(opportunityCards))}});
+    requirement_assessments:requirementAssessments,unknowns:['Current stakeholder requirements and authority must be confirmed in this decision scope.','No complete repeat-order or revenue ledger establishes a decline.'],limitations:['Deterministic statement candidates, not live model judgments or verified personality facts.','Internal decisions are KasirNusa approvals; they never establish customer purchasing authority.','No activity outside the supplied snapshot is established.','Requirements from another organization are not transferred into this account.'],method:STAKEHOLDER_VERSION,dependencies:{review_hash:reviewed.hash,opportunity_hash:sha256(JSON.stringify(opportunityCards))}});
   await db.transaction(async tx=>{
     await tx.insert(s.analysisRuns).values({id:runId,datasetId,asOf:dataset.asOf,ruleVersion:STAKEHOLDER_VERSION,status:'running'});
     for(const decision of normalizedDecisions){await tx.insert(s.entities).values({id:decision.id!,datasetId,kind:'decision',externalId:decision.externalId}).onConflictDoNothing();await tx.insert(s.decisions).values(decision).onConflictDoNothing();await tx.insert(s.entitySources).values({datasetId,entityId:decision.id!,sourceId:decision.sourceId}).onConflictDoNothing();}

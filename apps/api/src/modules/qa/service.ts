@@ -11,7 +11,7 @@ import type { Provider } from '../../ai/providers/interface.js';
 
 export const QA_VERSION='grounded-qa-v1';
 export type Resource=AccountDiagnosis|OpportunityCard;
-export const outcomeQuestion=(text:string)=>/repeat|(?:revenue|pendapatan|renewal|perpanjangan).*(?:menurun|turun|lower|declin)|(?:menurun|turun|lower|declin).*(?:revenue|pendapatan|renewal|perpanjangan)/i.test(text);
+export const outcomeQuestion=(text:string)=>/repeat|pesanan ulang|pembelian ulang|(?:revenue|pendapatan|renewal|perpanjangan).*(?:menurun|turun|lower|declin)|(?:menurun|turun|lower|declin).*(?:revenue|pendapatan|renewal|perpanjangan)/i.test(text);
 export function topic(text:string){
   if(/draft|draf|follow.up.*(?:write|buat)|tulis.*pesan/i.test(text))return 'draft';
   if(/(?:\d+\s*(?:outlet|cabang))|berapa|nilai|value|annual|how much/i.test(text))return 'value';

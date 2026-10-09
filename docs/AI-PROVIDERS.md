@@ -1,5 +1,12 @@
 # Interpretation providers
 
+Current status: [Phase 8 handover](PHASE-8-HANDOVER.md) supersedes older global
+implementation statements below. Candidate review is operational; independent
+semantic review and capability acceptance remain open. The normal-path synthetic
+live check preserved actions and cache reuse but rejected one invalid extraction.
+Disabled operations bypass model caches. The user's existing enabled flags were
+left unchanged; no new capability was activated by Phase 8.
+
 Verified against official documentation on 9 October 2026. Jev passed a live
 synthetic connectivity check; Gemini generation is blocked by HTTP 402. Dataset-wide
 live quality remains unmeasured. HTTP transport tests use synthetic responses.

@@ -17,6 +17,7 @@ while implementation phase numbering starts at 0, matching AGENTS.md.
 | [PRD-0x6](PRD-0x6.md) | 5: Grounded Q&A (local regression verified) | Cited bilingual answers and customized drafts | 0x3, 0x5 |
 | [PRD-0x7](PRD-0x7.md) | 6: Conditional optimization (deferred) | Measured quality/cost decision | 0x6 and reviewed evaluation set |
 | [PRD-0x8](PRD-0x8.md) | 7: Stakeholder/Q&A integration (review gates open) | Connected evidence, scoped ordered actions, validated planner | 0x6; 0x7 optimization remains optional |
+| [PRD-0x9](PRD-0x9.md) | 8: AI validation (review/live gates open) | Extraction review lifecycle, failure matrix and capability decisions | 0x8 |
 
 ## Shared definition of done
 
@@ -53,6 +54,8 @@ requires both expansion discovery and stakeholder guidance, plus the workflow
 and grounded Q&A; C06 alone does not complete it.
 
 ## Current handover
+
+See [Phase 8 handover](PHASE-8-HANDOVER.md) for review tooling, independent capability validation, observed live extraction failure and defer decisions.
 
 See [Phase 7 handover](PHASE-7-HANDOVER.md) for the latest integration, acceptance
 checks, provider smoke discrepancy, flags and rollback. This supersedes earlier

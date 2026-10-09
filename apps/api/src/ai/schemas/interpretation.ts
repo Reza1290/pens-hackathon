@@ -5,8 +5,8 @@ export const SCHEMA_VERSION='interpretation-v2-four-choice';
 export const operationSchema=z.enum(['intent','role','relevance','concern_addressed','extract_details','answer_plan','draft_plan','query_plan']);
 export type Operation=z.infer<typeof operationSchema>;
 export const contextSchema=z.object({
-  datasetId:z.uuid(),accountId:z.uuid(),
-  sources:z.array(z.object({id:z.uuid(),field:z.string().min(1),text:z.string().max(12000),eventDate:z.iso.date(),speakerId:z.uuid().nullable()})).min(1).max(4),
+  datasetId:z.uuid(),accountId:z.uuid(),asOf:z.iso.date().optional(),decisionScopeId:z.uuid().nullable().optional(),
+  sources:z.array(z.object({id:z.uuid(),field:z.string().min(1),text:z.string().max(12000),eventDate:z.iso.date(),speakerId:z.uuid().nullable(),hash:z.string().optional()})).min(1).max(4),
   candidates:z.array(z.object({id:z.uuid(),role:z.string(),start:z.iso.date(),end:z.iso.date().nullable()})).max(12),
   subjectId:z.uuid().nullable(),claim:z.string().max(2000).default(''),
   grounding:z.object({question:z.string().max(2000),language:z.enum(['en','id']),facts:z.array(z.object({id:z.string(),text:z.string().max(3000),evidence_ids:z.array(z.uuid())})).min(1).max(24)}).optional(),

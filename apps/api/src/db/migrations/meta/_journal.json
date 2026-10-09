@@ -22,6 +22,20 @@
       "when": 1791553663645,
       "tag": "0002_smooth_hawkeye",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791571127809,
+      "tag": "0003_gigantic_tarot",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791571160497,
+      "tag": "0004_bent_young_avengers",
+      "breakpoints": true
     }
   ]
 }
