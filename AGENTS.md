@@ -719,3 +719,15 @@ role and independent evaluation gates above. The skill does not authorize new
 databases, autonomous messages, orchestration or automatic acceptance of judgments.
 The user selected DeepSeek as the current generative provider; credentials stay
 in ignored server configuration and never in committed code or browser bundles.
+
+
+### Phase 8 review-packet correction
+
+Distinguish specific-reply response coverage, requirement fulfillment, customer
+acceptance and supported next tasks. A reference pointer may address a broad
+request without proving delivery/suitability; an explicit S2 reply does not address
+S1. Missing authority prevents unsupported approver selection, not AM preparation
+of documented pricing/ROI evidence. Revised v2 and frozen held-out fixtures remain
+implementation-authored, unapproved and provisional. See the updated Phase 8 review
+table/handover for per-dimension results and original-version preservation. Finite
+checklist success is not general accuracy; existing feature flags stay unchanged.

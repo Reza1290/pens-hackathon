@@ -1,6 +1,6 @@
 import { actionPlanSchema,premiseSchema,type StakeholderStatement } from '@kasirnusa/contracts';
 import { stableId } from '../ingestion/service.js';
-export const STAKEHOLDER_VERSION='stakeholder-rules-v1.6-verified-spans';
+export const STAKEHOLDER_VERSION='stakeholder-rules-v1.7-separated-assessments';
 export type Candidate={id:string;name:string;email:string;role:string;start:string;end:string|null;current:boolean;evidenceIds:string[]};
 export type StatementInput={id:string;date:string;text:string;sourceId:string;speakerId:string|null;attendeeIds:string[]};
 const escape=(text:string)=>text.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
@@ -13,7 +13,9 @@ export function extractStatements(message:StatementInput,people:Candidate[]):Sta
   const add=(person:Candidate,predicate:StakeholderStatement['predicate'],text:string,polarity:StakeholderStatement['polarity']='affirmed')=>out.push({id:stableId(message.id,person.id,predicate,text,STAKEHOLDER_VERSION),person_id:person.id,predicate,text,event_date:message.date,speaker_id:message.speakerId,attribution:person.id===message.speakerId?'direct':'reported',scope_id:message.id,scope_type:'interaction',method:STAKEHOLDER_VERSION,verification:'unreviewed_rules_candidate',current:person.current,polarity,evidence_ids:[message.sourceId,...person.evidenceIds],decision_scope_id:null});
   if(direct){
     for(const sentence of message.text.split(/(?<=[.!?])\s+/)){
-      if(/\bsaya\b.*(?:menyetujui|memutuskan).*(?:pembelian|pengadaan)|\bI approve this purchase\b/i.test(sentence))add(direct,'APPROVER_FOR',sentence,/tidak|bukan|no longer/i.test(sentence)?'denied':'affirmed');
+      const explicitAuthority=/\bI am (?:no longer |not )?authorized to (?:approve|decide)|\bsaya (?:tidak lagi |tidak )?berwenang (?:menyetujui|memutuskan)/i.test(sentence);
+      const purchaseRejection=/\bI (?:do not approve|reject)|\bsaya (?:tidak (?:lagi )?menyetujui|menolak)/i.test(sentence);
+      if(explicitAuthority||!purchaseRejection&&/\bsaya\b.*(?:menyetujui|memutuskan).*(?:pembelian|pengadaan)|\bI approve this purchase\b/i.test(sentence))add(direct,'APPROVER_FOR',sentence,/tidak|bukan|not authorized|no longer/i.test(sentence)?'denied':'affirmed');
       if(/\bsaya\b.*(?:menilai sisi teknis|evaluasi teknis|mengevaluasi aspek teknis)|\bI evaluate technical\b/i.test(sentence))add(direct,'EVALUATES_TECHNICAL_FOR',sentence);
       if(/(?:proposal.*saya teruskan|saya.*(?:menyiapkan|siapkan).*business case|I (?:prepare|handle).*?(?:business case|operational inputs|proposal))/i.test(sentence))add(direct,'INTERMEDIARY_FOR',sentence);
       if(/\b(?:saya|I)\b.*(?:memerlukan|membutuhkan|minta|need|require).*(?:ROI|referensi|reference|integrasi|integration|payback|pricing|harga|rollout|jadwal)/i.test(sentence))add(direct,'REQUESTS_EVIDENCE',sentence,/tidak lagi|no longer/i.test(sentence)?'denied':'affirmed');
@@ -60,7 +62,7 @@ export function selectAction(input:{ownerId:string;statements:StakeholderStateme
   for(const statement of input.statements.filter(s=>s.current&&s.predicate==='REQUESTS_EVIDENCE'&&s.polarity==='denied'))points.push({audience_ids:[statement.person_id],text:'Clarify which requirements still apply; retained evidence includes a denied or changed requirement.',evidence_ids:input.statements.filter(s=>s.person_id===statement.person_id&&s.predicate==='REQUESTS_EVIDENCE').flatMap(s=>s.evidence_ids)});
   return actionPlanSchema.parse({route,owner_id:input.ownerId,recipient_ids:targetIds,supporting_owner_ids:input.productOwnerIds??[],review_status:'proposed',
     task:route==='resolve_prerequisite_first'?'Obtain a verified prerequisite/remediation plan before requesting a purchasing or renewal decision.':route==='prepare_through_intermediary'?'Equip the intermediary with the documented decision-maker evidence and business case.':route==='direct_decision_maker_discussion'?'Use the recorded direct customer contact path to discuss this scoped decision and its documented requirements.':route==='joint_decision_maker_discussion'?'Ask the existing contact to arrange a joint discussion with the scoped decision-maker.':'Clarify current authority and decision requirements.',
-    rationale:'Route follows dated, scoped statements and documented prerequisites; all action is proposed for human review.',discussion_points:points,unknowns:['Confirm current authority for this scoped decision.','Confirm current requirements and any undocumented follow-up.']});
+    rationale:'Route follows dated, scoped statements and documented prerequisites; all action is proposed for human review.',discussion_points:points,tasks:route==='clarify_authority_or_requirement'?requirements.map((s,i)=>({order:i+1,owner_ids:[input.ownerId],text:`Prepare or obtain the documented requirement evidence while confirming decision authority: ${s.text}`,requirement_ids:[s.id],evidence_ids:s.evidence_ids,status:'proposed'})):[],unknowns:['Confirm current authority for this scoped decision.','Confirm current requirements and any undocumented follow-up.']});
 }
 export type Periods={previous_start:string;previous_end:string;current_start:string;current_end:string};
 export function checkPremise(metric:'ambiguous_repeat_orders'|'repeat_expansion'|'renewal'|'revenue'|'closed_expansion_deal_proxy',periods:Periods|null,events:{date:string;evidenceId:string}[],asOf:string,coverageComplete:boolean){

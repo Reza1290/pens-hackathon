@@ -2,13 +2,14 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { projectRoot } from '../config/env.js';
 import { sha256 } from '../modules/ingestion/manifest.js';
-const text=await readFile(resolve(projectRoot,'tests/fixtures/phase8-review.json'),'utf8');
+const text=await readFile(resolve(projectRoot,'tests/fixtures/phase8-review-v2.json'),'utf8');
 const packet=JSON.parse(text);const families=new Map<string,string>();const counts:Record<string,number>={};
 let reviewed=0;
 for(const c of packet.cases){
   if(families.has(c.family)&&families.get(c.family)!==c.split)throw new Error('Related family crosses splits');families.set(c.family,c.split);
-  if(sha256(c.allowed_context[0].passage)!==c.source_revision)throw new Error('Source revision mismatch');
-  for(const key of [c.language,c.split,`${c.language}:${c.proposed_expectation}`])counts[key]=(counts[key]??0)+1;
+  const ids=new Set([...c.sources.map((s:{id:string})=>s.id),c.dataset_metadata.id]);
+  for(const dimension of Object.values(c.expectations) as {evidence_ids:string[]}[])if(dimension.evidence_ids.some(id=>!ids.has(id)))throw new Error('Unbound expectation evidence');
+  for(const key of [c.language,c.split,`${c.language}:${c.expectations.response_coverage.applicable?c.expectations.response_coverage.status:'not_applicable'}`])counts[key]=(counts[key]??0)+1;
   if(c.review_status==='reviewed'&&c.reviewer&&c.reviewer!==c.author&&!/agent|codex|model/i.test(c.reviewer))reviewed++;
 }
 const eligible=reviewed===packet.cases.length&&packet.gates.status==='approved'&&!!packet.gates.reviewer;

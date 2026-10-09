@@ -3,7 +3,7 @@ import { describe,it,expect } from 'vitest';
 import { operationPlanSchema,qaRequestSchema } from '@kasirnusa/contracts';
 import { deterministicPlan,preserveRequest } from '../apps/api/src/modules/qa/planner.js';
 import { assessRequirement } from '../apps/api/src/modules/stakeholders/requirements.js';
-import { extractStatements,type Candidate } from '../apps/api/src/modules/stakeholders/rules.js';
+import { extractStatements,selectAction,type Candidate } from '../apps/api/src/modules/stakeholders/rules.js';
 import type { EvidenceBundle } from '../apps/api/src/modules/qa/retrieval.js';
 const person=randomUUID(),requestId=randomUUID(),sourceId=randomUUID();
 const candidate:Candidate={id:person,name:'Owner X',role:'Owner',email:'x@example.test',start:'2025-01-01',end:null,current:true,evidenceIds:[sourceId]};
@@ -26,6 +26,21 @@ describe('phase 7 contracts',()=>{
     expect(()=>operationPlanSchema.parse({operation:'source_search',args:{query:'ROI',url:'https://example.test'}})).toThrow();
     expect(deterministicPlan(qaRequestSchema.parse({question:'why?'})).operation).toBe('clarify');
     expect(deterministicPlan(qaRequestSchema.parse({question:'berapa?'})).operation).toBe('clarify');
+  });
+  it('separates the specific reply, fulfillment and supported preparation without authority',()=>{
+    const broad={...statement,text:'For S1 I require a reference.'};
+    const reference=bundle('For S1 here is the requested reference.',false,true);reference.sources[0].text=broad.text;
+    const checked=assessRequirement(broad,reference);expect(checked.status).toBe('addressed');expect(checked.fulfillment.status).toBe('insufficient_evidence');expect(checked.fulfillment.customer_acceptance).toBe('not_established');
+    expect(assessRequirement({...broad,text:'For S1 I require a named retail reference with contact details.'},reference).status).toBe('insufficient_evidence');
+    const scoped={...statement,text:'For S1 I require ROI and payback evidence.'};const other=bundle('For S2 here is ROI 20% and payback 12 months.');other.sources[0].text=scoped.text;
+    const wrong=assessRequirement(scoped,other);expect(wrong.status).toBe('not_addressed');expect(wrong.fulfillment.status).toBe('insufficient_evidence');
+    const history=bundle('Here is ROI 20%.');const firstId=history.sources[1].id;history.sources.push({...history.sources[1],id:randomUUID(),interaction_id:randomUUID(),date:'2026-08-03',text:'Here is ROI 20% and payback 12 months.',hash:'later'});
+    expect(assessRequirement(statement,history,firstId).status).toBe('partially_addressed');expect(assessRequirement(statement,history).status).toBe('addressed');
+    const action=selectAction({ownerId:randomUUID(),statements:[statement],currentIds:[person],prerequisites:[],baseEvidenceIds:[sourceId],preferred:'joint'});expect(action.route).toBe('clarify_authority_or_requirement');expect(action.tasks[0].text).toContain('Prepare or obtain');expect(action.tasks[0].owner_ids).toEqual([action.owner_id]);expect(action.discussion_points.some(p=>p.text.includes('titles alone'))).toBe(true);
+  });
+  it('does not turn purchase rejection into withdrawal of purchasing authority',()=>{
+    for(const text of ['I reject the purchase for S1.','Saya tidak menyetujui pembelian untuk S1.'])expect(extractStatements({id:requestId,date:'2026-08-01',text,speakerId:person,sourceId,attendeeIds:[]},[candidate]).some(s=>s.predicate==='APPROVER_FOR')).toBe(false);
+    for(const text of ['I am no longer authorized to approve purchases for S1.','Saya tidak lagi berwenang menyetujui pembelian untuk S1.','Saya tidak lagi memutuskan pengadaan untuk S1.'])expect(extractStatements({id:requestId,date:'2026-08-01',text,speakerId:person,sourceId,attendeeIds:[]},[candidate]).find(s=>s.predicate==='APPROVER_FOR')?.polarity).toBe('denied');
   });
   it('distinguishes complete, partial, unrelated and unavailable follow-ups',()=>{
     expect(assessRequirement(statement,bundle('Here is ROI 20% and payback 12 months.')).status).toBe('addressed');

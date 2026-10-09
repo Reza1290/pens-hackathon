@@ -1,3 +1,103 @@
+# Phase 8 review-packet correction (current)
+
+This addendum supersedes the earlier review-label proposals, not their recorded
+history. Starting code commit `a7ebced`; packet/held-out label freeze `8a40632`.
+[Revised review table and decisions](PHASE-8-CASE-REVIEW.md).
+Original v1 packet/table and review/model history remain preserved.
+
+Implemented separation:
+
+- Coverage refers to one identified reply (`reply_source_id`), with the existing
+  four-choice status. Explicit S2 text is not_addressed for an S1 requirement;
+  no conclusion is made about other communications. Assessors can select a reply;
+  default selection is deterministic date/ID order, not evidence of within-day
+  chronology. Existing scoped retrieval still excludes unrelated-decision material;
+  it cannot claim a negative about a reply it did not retrieve. The S2 regression
+  supplies that specific linked reply explicitly to the assessor.
+- Fulfillment has independent evidence IDs, reason and status. Reference pointers
+  can address broad requests but do not prove contents/delivery/suitability or
+  acceptance. Only explicit narrow numeric-value requests have a deterministic
+  established path here; that means provision of the value, not correctness.
+- Next actions can prepare/obtain requirement evidence through the assigned AM and
+  clarify with the requester while authority is unknown. No unsupported approver,
+  joint meeting or intermediary route is inferred. Explicit authority withdrawal
+  is distinct from purchase rejection in bilingual rule controls.
+
+Contracts, coverage prompt (bounded-interpretation-v4), literal assessment
+(requirement-assessment-v2-separated), stakeholder version (v1.7), service and UI
+were updated. Jev may update coverage only; its choice never grants fulfillment or
+customer acceptance. The TypeSafe skill and current
+[Choice guidance](https://docs.typesafe.ai/primitives/choice) informed the single-
+judgment prompt scope; no provider API or infrastructure changed.
+
+## Corrected-packet results (provisional)
+
+| Dimension | Revised 28-case packet | Eight frozen held-out cases |
+| --- | --- | --- |
+| Response coverage | 12/12; 16 not applicable | 8/8 |
+| Fulfillment | 12/12; 16 not applicable | 8/8 |
+| Next actions | 28/28 | 8/8 |
+
+All 12 revised fulfillment results correctly remain insufficient_evidence. In the
+held-out set two narrow numeric-value requirements are established and six remain
+insufficient_evidence; none establishes customer acceptance. Non-requirement rows
+are not counted as coverage/fulfillment successes. These are deterministic
+regression/checklist matches, not measured live-model semantic accuracy.
+
+The original eight development/20 acceptance split is retained; bilingual families
+remain together. Acceptance-named cases ran only as provisional technical checks,
+not approved acceptance. Eight fresh bilingual variants were frozen before execution
+with SHA-256 `1c9fe7de0eae7f30996fe609a743692d699bcba72494799e86ac15138f489a6f`.
+They were authored by the implementer and share some requirement categories with
+existing cases, so they are not a statistically independent/blind generalization set.
+
+First held-out report: `phase8-heldout-6c0726ce-af3a-429e-b451-2148b7fc928d.json`.
+Later regression confirmation: `phase8-heldout-012ecdeb-a09f-4140-91c9-a2bd9282de3f.json`.
+Both are under `artifacts/evaluations/`, with full inputs available in frozen fixtures.
+The separate execution journal preserves both results. Labels did not change.
+After first exposure, an explicit authority-withdrawal fix/control was added to meet
+this request. It exposed a legacy test that used ambiguous purchase rejection wording;
+that fixture was corrected to say authority was withdrawn. Neither change was driven
+by a held-out failure. No tuning against held-out outcomes occurred.
+
+## Commands and results
+
+All database/browser checks use process flags false for QA_PLANNER_ENABLED,
+QA_LIVE_ENABLED, QA_JEV_ENABLED and ANALYSIS_EXTRACTION_ENABLED. User `.env` unchanged.
+
+- `npm run typecheck` and `npm run build`: passed. An initial string-array inference
+  error was corrected before packet execution; final typecheck passed.
+- `npm test`: 78/78 passed in seven files, 15.88 seconds; includes new 28-case checks, single-reply
+  history, scope mismatch, unknown-authority preparation and bilingual authority tests.
+  Intermediate run: 77/78 passed; the old ambiguous withdrawal fixture failed and
+  was corrected as described above, not relabeled to hide a model error.
+- `npm run data:diagnose -- --dataset 93bb692a-2168-5ef3-a37d-8e929f9b6340`:
+  45 accounts, four statements, 30 decisions, zero unresolved; no provider calls.
+- `API_PORT=3002 WEB_PORT=5174 PLAYWRIGHT_CHANNEL=msedge npm run test:e2e`
+  (PowerShell process env): seven passed, 16.9 seconds, including the revised display.
+- `npx tsx scripts/evaluate-phase8-review.ts`: 12/12, 12/12, 28/28;
+  report `phase8-review-v2-401ad583-b947-45bf-9aac-5c40a2a571bc.json`.
+- `npx tsx scripts/evaluate-phase8-review.ts --heldout`: first and repeat 8/8 in
+  each dimension; repeated output is not an additional fresh holdout sample.
+- `npx tsx apps/api/src/cli/phase8-review-report.ts`: revised 28 cases,
+  independently reviewed=0, acceptance_eligible=false; all four capability decisions defer.
+
+Provider calls/tokens/cost for this correction: **0 / 0 / USD 0**. No live inference
+or new live-latency result. Historical live runs below predate the changed prompt;
+they are not acceptance of the revised prompt. No extra live test budget was assumed.
+
+## Open gates
+
+Independent approval of revised and held-out labels; precise fulfillment criteria
+(reference suitability, full schedule and numeric-provision meaning); approved finite
+release checklist and adequacy; reviewed acceptance; live validation of the changed
+coverage prompt. Recommend all agreed finite checks passing with zero leakage,
+unsupported authority promotion or external actions, without calling this general
+100% accuracy. Existing flags and defer decisions remain unchanged. Classifier
+optimization, semantic retrieval and deployment are outside this correction.
+
+---
+
 # Phase 8 - final technical verification, human gates open
 
 Continuation recorded 10 October 2026, starting from `70bd734`.

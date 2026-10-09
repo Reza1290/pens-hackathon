@@ -166,3 +166,13 @@ unique verbatim span fix, raw diagnostics, final four-call synthetic normal work
 [The 28-case table](PHASE-8-CASE-REVIEW.md) proposes corrections without altering
 original labels or claiming independent approval. Review-dependent DoD boxes stay
 open. No new phase, capability activation or optimization was introduced.
+
+
+## Review-packet correction within Phase 8
+
+Coverage, fulfillment and next actions now have independent expectations/evidence
+in the versioned v2 packet. Original labels remain preserved. A fresh eight-case
+bilingual set was frozen before execution; provisional deterministic results are
+reported separately by dimension in the handover. A 100% finite checklist is not
+general accuracy. No unseen labels or thresholds are approved by this correction;
+independent review and reviewed/live acceptance boxes remain open.

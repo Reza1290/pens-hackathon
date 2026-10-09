@@ -31,7 +31,7 @@ describe('dated stakeholder guidance and premise checks',()=>{
   it('does not derive authority from a title and surfaces negative/outdated evidence',()=>{
     expect(extractStatements(message(ownerId,'Saya pemilik perusahaan.'),people)).toHaveLength(0);
     const positive=extractStatements(message(ownerId,'Saya menyetujui pembelian ini.'),people);
-    const negative=extractStatements(message(ownerId,'Saya tidak lagi menyetujui pembelian ini.'),people);
+    const negative=extractStatements(message(ownerId,'Saya tidak lagi berwenang menyetujui pembelian ini.'),people);
     expect(authority([...positive,...negative])).toBe('conflicting_or_outdated');
     expect(authority(positive.map(s=>({...s,current:false})))).toBe('conflicting_or_outdated');
     expect(selectAction({ownerId:employee,statements:[...positive,...negative],currentIds:[ownerId],prerequisites:[],baseEvidenceIds:[randomUUID()],preferred:'joint'}).route).toBe('clarify_authority_or_requirement');

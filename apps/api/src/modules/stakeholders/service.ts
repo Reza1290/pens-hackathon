@@ -7,7 +7,7 @@ import { stableId } from '../ingestion/service.js';
 import { sha256 } from '../ingestion/manifest.js';
 import { extractStatements,authority,selectAction,STAKEHOLDER_VERSION,type Candidate } from './rules.js';
 import { retrieveConnected } from '../qa/retrieval.js';
-import { assessRequirement } from './requirements.js';
+import { assessRequirement,requirementNextAction } from './requirements.js';
 import { reviewedStatements } from './review.js';
 import { decisionScope } from './scope.js';
 import { env } from '../../config/env.js';
@@ -162,15 +162,17 @@ export async function analyzeStakeholders(db:Database,datasetId:string,accountId
     const assessment=assessRequirement(statement,bundle);
     if((env.QA_JEV_ENABLED==='true'||modelOptions?.jev)&&!bundle.coverage.truncated&&!bundle.coverage.unresolved_links.length&&!bundle.sources.some(s=>s.attachment_unavailable)){
       const requirement=bundle.sources.find(s=>s.interaction_id===statement.scope_id);
-      const followups=bundle.sources.filter(s=>assessment.source_ids.includes(s.id)&&s.interaction_id!==statement.scope_id);
+      const followups=bundle.sources.filter(s=>s.id===assessment.reply_source_id);
       if(requirement&&followups.length>0&&followups.length<=3){
         const result=await (modelOptions?.runtime??runtimeFor(db).judgment).run({datasetId,accountId,asOf:dataset.asOf,decisionScopeId:statement.decision_scope_id,subjectId:statement.person_id,candidates:people.slice(0,12).map(p=>({id:p.id,role:p.role,start:p.start,end:p.end})),claim:JSON.stringify({requirement_id:statement.id,decision_scope:statement.decision_scope_id,hashes:[requirement,...followups].map(s=>s.hash)}),sources:[requirement,...followups].map(s=>({id:s.id,field:'isi',text:s.text.slice(0,12000),eventDate:s.date,speakerId:s.interaction_id===statement.scope_id?statement.speaker_id:null}))},'concern_addressed',modelOptions?.jev??jevProvider(env.JEV_API_KEY,env.JEV_MODEL));
-        if(result.status==='succeeded'){assessment.status=(result.value as {choice:typeof assessment.status}).choice;assessment.method='jev-four-choice-v2';assessment.limitations.push('Fallible model interpretation; not fulfillment or customer acceptance.');}
+        if(result.status==='succeeded'){assessment.status=(result.value as {choice:typeof assessment.status}).choice;assessment.method='jev-response-coverage-v3';assessment.limitations.push('Fallible model interpretation; not fulfillment or customer acceptance.');}
         const [usage]=await db.select().from(s.modelRuns).where(eq(s.modelRuns.id,result.runId));
         assessment.model_run_id=result.runId;assessment.calls=result.calls;assessment.cost_usd=result.cached?'0':result.calls>1?null:usage.costUsd;assessment.prompt_version=usage.promptVersion;assessment.schema_version=usage.schemaVersion;
         assessment.limitations.push(`Judgment ${result.status}; run ${result.runId}; calls ${result.calls}.`);
       }
     }
+    const preparation=requirementNextAction(assessment,owner.id,currentIds.includes(statement.person_id));
+    for(const task of action.tasks.filter(t=>t.requirement_ids.includes(statement.id)))task.text=preparation.text;
     requirementAssessments.push(assessment);
     for(const src of bundle.sources){const row=find('interactions.jsonl',src.external_id!);if(row)addEvidence(row,'isi',src.text);}
     findings.push({type:'requirement_coverage',label:`Recorded requirement: ${assessment.status}. ${assessment.missing_details.length?'Missing requested details: '+assessment.missing_details.join(', '):''}`,evidence_ids:assessment.source_ids,check:{...assessment}});
@@ -188,7 +190,7 @@ export async function analyzeStakeholders(db:Database,datasetId:string,accountId
   for(const card of scopedCards)for(const point of card.next_action.discussion_points)action.discussion_points.push({audience_ids:card.people.contact&&currentIds.includes(card.people.contact.id)?[card.people.contact.id]:[],text:point.text,evidence_ids:point.evidence_ids});
   const diagnosis=diagnosisSchema.parse({id:stableId(datasetId,'diagnosis',scopeKey),dataset_id:datasetId,dataset_version:dataset.version,as_of:dataset.asOf,account_id:accountId,account,signal_id:scope.signalId??null,deal_id:scope.dealId??null,commercial_context:commercialContext,
     owner:{id:owner.id,external_id:owner.externalId,name:owner.name,role:owner.title,evidence_ids:[ownerSource.source_id,accountSource.source_id]},findings,stakeholder_context:stakeholders,action_plan:action,premise_check:null,value_scenario:selected?.value_scenario??null,internal_decisions:internal,evidence,
-    requirement_assessments:requirementAssessments,unknowns:['Current stakeholder requirements and authority must be confirmed in this decision scope.','No complete repeat-order or revenue ledger establishes a decline.'],limitations:['Deterministic statement candidates, not live model judgments or verified personality facts.','Internal decisions are KasirNusa approvals; they never establish customer purchasing authority.','No activity outside the supplied snapshot is established.','Requirements from another organization are not transferred into this account.'],method:STAKEHOLDER_VERSION,dependencies:{review_hash:reviewed.hash,opportunity_hash:sha256(JSON.stringify(opportunityCards))}});
+    requirement_assessments:requirementAssessments,unknowns:['Current stakeholder requirements and authority must be confirmed in this decision scope.','Select the outcome metric and comparable periods; recorded CRM activity, contracted value, product transactions and actual revenue are distinct.'],limitations:['Deterministic statement candidates, not live model judgments or verified personality facts.','Internal decisions are KasirNusa approvals; they never establish customer purchasing authority.','No activity outside the supplied snapshot is established.','Requirements from another organization are not transferred into this account.'],method:STAKEHOLDER_VERSION,dependencies:{review_hash:reviewed.hash,opportunity_hash:sha256(JSON.stringify(opportunityCards))}});
   await db.transaction(async tx=>{
     await tx.insert(s.analysisRuns).values({id:runId,datasetId,asOf:dataset.asOf,ruleVersion:STAKEHOLDER_VERSION,status:'running'});
     for(const decision of normalizedDecisions){await tx.insert(s.entities).values({id:decision.id!,datasetId,kind:'decision',externalId:decision.externalId}).onConflictDoNothing();await tx.insert(s.decisions).values(decision).onConflictDoNothing();await tx.insert(s.entitySources).values({datasetId,entityId:decision.id!,sourceId:decision.sourceId}).onConflictDoNothing();}

@@ -1,0 +1,68 @@
+{
+  "version": "phase8-heldout-execution-history-v1",
+  "frozen_labels_sha256": "1c9fe7de0eae7f30996fe609a743692d699bcba72494799e86ac15138f489a6f",
+  "independent_approval": false,
+  "runs": [
+    {
+      "run_at": "2026-10-09T19:31:14.339Z",
+      "report": "artifacts/evaluations/phase8-heldout-6c0726ce-af3a-429e-b451-2148b7fc928d.json",
+      "code_commit": "8a4063271f7cc4f3d362f990ddac0f3437973bca",
+      "working_diff_sha256": "6463a3d1a3984e650ddf143db5205b8aa11daac421294f2dafd1862a66687f94",
+      "dimensions": {
+        "response_coverage": {
+          "passed": 8,
+          "failed": 0,
+          "not_applicable": 0
+        },
+        "fulfillment": {
+          "passed": 8,
+          "failed": 0,
+          "not_applicable": 0
+        },
+        "next_action": {
+          "passed": 8,
+          "failed": 0,
+          "not_applicable": 0
+        }
+      },
+      "kind": "first_exposure"
+    },
+    {
+      "run_at": "2026-10-09T19:35:12.712Z",
+      "report": "artifacts/evaluations/phase8-heldout-012ecdeb-a09f-4140-91c9-a2bd9282de3f.json",
+      "code_commit": "8a4063271f7cc4f3d362f990ddac0f3437973bca",
+      "working_diff_sha256": "19f27f5ed70507fb080890d7719c94075bfaffb094c8d7000afeeb3a8920d4d6",
+      "dimensions": {
+        "response_coverage": {
+          "passed": 8,
+          "failed": 0,
+          "not_applicable": 0
+        },
+        "fulfillment": {
+          "passed": 8,
+          "failed": 0,
+          "not_applicable": 0
+        },
+        "next_action": {
+          "passed": 8,
+          "failed": 0,
+          "not_applicable": 0
+        }
+      },
+      "kind": "repeat_regression_not_fresh"
+    }
+  ],
+  "later_changes": [
+    {
+      "reason": "Explicit authority withdrawal versus purchase rejection requested by user; legacy test used ambiguous purchase rejection wording.",
+      "heldout_failure_driven": false,
+      "labels_changed": false,
+      "files": [
+        "apps/api/src/modules/stakeholders/rules.ts",
+        "tests/stakeholders.test.ts",
+        "tests/phase7.test.ts"
+      ]
+    }
+  ],
+  "tuning_against_heldout_results": false
+}
