@@ -7,8 +7,8 @@ export interface Provider{
 export class ProviderError extends Error{
   constructor(public readonly code:'invalid'|'provider_error',public readonly retryable=false){super(code);}
 }
-export async function jsonPost(url:string,key:string,payload:unknown,signal:AbortSignal,fetcher:typeof fetch=fetch):Promise<unknown>{
-  const response=await fetcher(url,{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify(payload),signal,redirect:'error'});
+export async function jsonPost(url:string,key:string,payload:unknown,signal:AbortSignal,fetcher:typeof fetch=fetch,auth:'bearer'|'google'='bearer'):Promise<unknown>{
+  const response=await fetcher(url,{method:'POST',headers:{...(auth==='google'?{'x-goog-api-key':key}:{Authorization:`Bearer ${key}`}), 'Content-Type':'application/json'},body:JSON.stringify(payload),signal,redirect:'error'});
   if(!response.ok){await response.body?.cancel();throw new ProviderError('provider_error',[429,500,502,503,504,529].includes(response.status));}
   // Bound output before JSON parsing. Provider error text is deliberately never logged.
   const reader=response.body?.getReader();if(!reader)throw new ProviderError('invalid');

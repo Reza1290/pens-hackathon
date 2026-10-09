@@ -56,7 +56,7 @@ export class Interpreter{
         const noCall=status==='unavailable'||status==='budget_exceeded';if(noCall)costUsd='0.0000000000';
         const runId=randomUUID();await tx.insert(modelRuns).values({id:runId,datasetId:context.datasetId,accountId:context.accountId,cacheKey:key,inputHash,operation,provider:provider.name,model:provider.model,promptVersion:versions.prompt,schemaVersion:versions.schema,parametersVersion:versions.parameters,status,output:status==='succeeded'?value:null,latencyMs:Date.now()-started,inputTokens,outputTokens,costUsd,costBasis:noCall?'no_call':costUsd===null?'unknown':'estimated_from_reported_usage'});
         last={status,runId,cached:false,calls:attempts,...(status==='succeeded'?{value}: {})};
-        if(!retryable||attempt===1)break;
+        if(!retryable||attempt===1||this.calls>=this.options.maxCalls)break;
         await new Promise(resolve=>setTimeout(resolve,250));
       }
       return last!;

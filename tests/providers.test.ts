@@ -4,9 +4,28 @@ import { validateValue,type Context,choices } from '../apps/api/src/ai/schemas/i
 import { cacheKey } from '../apps/api/src/ai/router.js';
 import { jevProvider } from '../apps/api/src/ai/providers/jev.js';
 import { generativeProvider } from '../apps/api/src/ai/providers/generative.js';
+import { geminiProvider } from '../apps/api/src/ai/providers/gemini.js';
 const person=randomUUID(),source=randomUUID();
 const context:Context={datasetId:randomUUID(),accountId:randomUUID(),sources:[{id:source,field:'isi',text:'Need ROI evidence.',eventDate:'2026-08-01',speakerId:person}],candidates:[{id:person,role:'unknown',start:'2025-01-01',end:null}],subjectId:person,claim:''};
 describe('synthetic provider contract checks (no live inference)',()=>{
+  it('uses Gemini structured JSON and header auth while including thinking usage',async()=>{
+    const transport:typeof fetch=async(url,options)=>{
+      expect(url).toBe('https://generativelanguage.googleapis.com/v1beta/models/gemini-test-model:generateContent');
+      const headers=options?.headers as Record<string,string>;expect(headers['x-goog-api-key']).toBe('synthetic-secret');expect(headers.Authorization).toBeUndefined();expect(String(url)).not.toContain('synthetic-secret');
+      const payload=JSON.parse(String(options?.body));expect(payload.generationConfig.responseFormat.text.mimeType).toBe('APPLICATION_JSON');expect(payload.systemInstruction.parts[0].text).toContain('untrusted data');
+      return Response.json({modelVersion:'gemini-test-model',candidates:[{finishReason:'STOP',content:{parts:[{text:'private reasoning',thought:true},{text:'{"fact_ids":["one"]}'}]}}],usageMetadata:{promptTokenCount:10,candidatesTokenCount:3,thoughtsTokenCount:2}});
+    };
+    const result=await geminiProvider('synthetic-secret','gemini-test-model',transport).invoke('answer_plan',context,new AbortController().signal);
+    expect(result.value).toEqual({fact_ids:['one']});expect(result.outputTokens).toBe(5);expect(geminiProvider('test','gemini-flash-latest').configured).toBe(false);
+  });
+  it('rejects Gemini refusal, truncation, malformed JSON, model drift and redirects',async()=>{
+    for(const change of [{modelVersion:'gemini-other'},{candidates:[{finishReason:'MAX_TOKENS',content:{parts:[{text:'{}'}]}}]},{candidates:[{finishReason:'SAFETY',content:{parts:[]}}]},{candidates:[{finishReason:'STOP',content:{parts:[{text:'not JSON'}]}}]}]){
+      const transport:typeof fetch=async()=>Response.json({modelVersion:'gemini-test-model',candidates:[{finishReason:'STOP',content:{parts:[{text:'{}'}]}}],usageMetadata:{promptTokenCount:10,candidatesTokenCount:2},...change});
+      await expect(geminiProvider('test','gemini-test-model',transport).invoke('extract_details',context,new AbortController().signal)).rejects.toThrow();
+    }
+    const failed:typeof fetch=async(_url,options)=>{expect(options?.redirect).toBe('error');return Response.json({error:'not logged'},{status:401});};
+    await expect(geminiProvider('test','gemini-test-model',failed).invoke('answer_plan',context,new AbortController().signal)).rejects.toThrow('provider_error');
+  });
   it('allows only supplied facts and rejects new prose/citations in grounded plans',async()=>{
     const grounded={...context,grounding:{question:'Who approves?',language:'en' as const,facts:[{id:'fact-1',text:'Authority unknown',evidence_ids:[source]}]}};
     expect(validateValue('answer_plan',{fact_ids:['fact-1']},grounded)).toEqual({fact_ids:['fact-1']});

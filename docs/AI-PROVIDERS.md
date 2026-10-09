@@ -1,8 +1,9 @@
 # Interpretation providers
 
-Verified against official documentation on 9 October 2026. No live provider
-requests or provider quality measurements have been made in this implementation.
-HTTP transport tests use explicitly synthetic responses.
+Verified against official documentation on 9 October 2026. Jev passed a live
+synthetic connectivity check; Gemini generation is blocked by HTTP 402. Dataset-wide
+live quality remains unmeasured. HTTP transport tests use synthetic responses.
+See [provider setup handover](PROVIDER-SETUP-HANDOVER.md).
 
 ## Jev
 
@@ -80,9 +81,27 @@ extraction benchmark and automatic fallback/promotion remain unfinished.
 
 ## Grounded Q&A plans
 
-Phase 5 adds server operations `answer_plan` and `draft_plan` through the OpenAI
-adapter. They select supplied fact IDs, not new claims or unrestricted prose.
+Phase 5 adds server operations `answer_plan` and `draft_plan` through the selected generative
+adapter (Gemini or OpenAI). They select supplied fact IDs, not new claims or unrestricted prose.
 Enable only with an explicit exact model and `QA_LIVE_ENABLED=true`; no live
 quality result is claimed. The same call budget applies per API runtime. Cached
 plans are revalidated, costs/usage are tracked, and deterministic answers/template
 drafts remain available on failure. See [Phase 5 handover](PHASE-5-HANDOVER.md).
+
+## Gemini configuration
+
+Set `LLM_PROVIDER=gemini`, `LLM_API_KEY` and a supported exact `LLM_MODEL` in the
+ignored server `.env`. Local setup selected `gemini-3.8-flash`. Google REST uses
+header authentication and typed JSON with the `APPLICATION_JSON` format enum;
+model version, JSON and evidence/fact plans are checked. Thinking usage is included
+in output tokens. No default Gemini price is assumed. Live Q&A stays disabled
+until a successful check and explicit enablement.
+
+```powershell
+npm run providers:check -- --dataset <uuid> --live
+```
+
+This command uses synthetic text, at most one attempt per provider, and prints
+safe status/usage references. Model listing succeeded, but actual Gemini generation
+returned HTTP 402. Resolve the Google billing/prepay condition before retesting.
+See [setup results](PROVIDER-SETUP-HANDOVER.md).

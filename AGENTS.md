@@ -664,3 +664,13 @@ The MVP is incomplete if it only detects missing deals or displays contact names
 Evaluate authority attribution, requirement extraction, temporal validity, concern-addressed judgments, and claim support separately. Use the C01/P01 records as reviewed examples plus synthetic negative/contradiction fixtures; they do not establish model generalization. Record Jev/LLM call counts and repeated-request cache behavior for these paths.
 
 v0.3 handover: product scope, data model, model responsibilities, API/read models, UI behavior, acceptance cases and implementation phases now include stakeholder guidance. Architecture remains React/Vite + Express/TypeScript + PostgreSQL. No code, migrations, imports, model calls or trained models have been implemented by this document update.
+
+## 21. Project provider skill
+
+For TypeSafe/Jev provider work, use the installed
+[TypeSafe skill](.agents/skills/typesafe-ai/SKILL.md) and read relevant live docs
+before changing API/question contracts. Preserve the bounded, scoped judgment
+role and independent evaluation gates above. The skill does not authorize new
+databases, autonomous messages, orchestration or automatic acceptance of judgments.
+The user selected Gemini as the current generative provider; credentials stay
+in ignored server configuration and never in committed code or browser bundles.

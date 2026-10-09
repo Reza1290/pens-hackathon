@@ -209,3 +209,13 @@ labels are unreviewed, live comparison is unavailable and numerical gates are no
 agreed. No classifier, embeddings or additional infrastructure is enabled.
 See [Phase 6 handover](docs/PHASE-6-HANDOVER.md) and
 [review checklist](docs/EVALUATION-REVIEW.md).
+
+## Provider setup
+
+The [TypeSafe skill](.agents/skills/typesafe-ai/SKILL.md) is installed for Codex in
+this repository. Use it for TypeSafe/Jev work. The user-selected generative provider
+is Gemini; configure `LLM_PROVIDER=gemini` plus credentials/model in ignored `.env`.
+`npm run providers:check -- --dataset <uuid> --live` checks both providers using
+synthetic input with at most one physical attempt each. Jev connectivity is verified;
+Gemini generation currently returns HTTP 402. Live UI generation remains disabled.
+See [provider setup handover](docs/PROVIDER-SETUP-HANDOVER.md).

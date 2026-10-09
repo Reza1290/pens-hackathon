@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { cardSchema,datasetSchema,accountSchema,healthSchema,sourceSchema,paginationSchema,diagnosisSchema,draftRequestSchema,qaRequestSchema } from '@kasirnusa/contracts';
 import { answerQuestion,clarification,outcomeQuestion,topic,type Resource } from './modules/qa/service.js';
 import { Interpreter } from './ai/router.js';
-import { generativeProvider } from './ai/providers/generative.js';
+import { selectedGenerativeProvider } from './ai/providers/selected.js';
 import type { Provider } from './ai/providers/interface.js';
 import { prepareDraft } from './modules/recommendations/drafts.js';
 import type { Database } from './db/client.js';
@@ -20,7 +20,7 @@ class HttpError extends Error { constructor(public status:number,message:string)
 export function createApp(db:Database,allowlist=allowedDatasets,qaOptions?:{runtime:Interpreter;provider:Provider}) {
   const app=express(); app.disable('x-powered-by');
   const qaRuntime=qaOptions?.runtime??new Interpreter(db,{live:env.QA_LIVE_ENABLED==='true',maxCalls:env.MODEL_MAX_CALLS,timeoutMs:env.MODEL_TIMEOUT_MS,inputRate:env.LLM_INPUT_USD_PER_MILLION,outputRate:env.LLM_OUTPUT_USD_PER_MILLION});
-  const qaProvider=qaOptions?.provider??generativeProvider(env.LLM_API_KEY,env.LLM_MODEL);
+  const qaProvider=qaOptions?.provider??selectedGenerativeProvider();
   app.use((req,res,next)=>{
     const host=req.hostname;
     if(!['localhost','127.0.0.1','[::1]','::1'].includes(host))return res.status(403).json({error:'Local access only'});

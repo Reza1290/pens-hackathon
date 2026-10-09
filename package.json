@@ -29,7 +29,8 @@
     "data:verify-stakeholders": "tsx apps/api/src/cli/verify-stakeholders.ts",
     "eval": "tsx apps/api/src/cli/eval.ts",
     "test:e2e": "playwright test",
-    "eval:qa": "tsx apps/api/src/cli/eval-qa.ts"
+    "eval:qa": "tsx apps/api/src/cli/eval-qa.ts",
+    "providers:check": "tsx apps/api/src/cli/provider-check.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.64.0",
