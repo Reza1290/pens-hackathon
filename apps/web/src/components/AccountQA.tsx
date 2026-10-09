@@ -92,7 +92,7 @@ export function AccountQA({
           <h2 className="text-base font-semibold text-brand-text">Ask about this account</h2>
         </div>
         <span className="text-[11px] text-brand-subtle">
-          Grounded with historical snapshot & cited evidence
+          Grounded with historical snapshot
         </span>
       </div>
 

@@ -532,8 +532,8 @@ export function App() {
                   </p>
                 </div>
               </div>
-              <button onClick={() => setScanModalOpen(false)} className="text-xs text-gray-400 hover:text-gray-600">
-                ✕
+              <button onClick={() => setScanModalOpen(false)} className="text-gray-400 hover:text-gray-600 p-1">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
             </div>
 
@@ -598,8 +598,8 @@ export function App() {
 
       {/* Footer */}
       <footer className="h-8 border-t border-brand-border bg-brand-canvas px-4 flex items-center justify-between text-[11px] text-brand-subtle select-none shrink-0 sticky bottom-0 z-30">
-        <span>KasirNusa Account Expansion Assistant · Historical snapshot</span>
-        <span>Proposed actions for human review · CRM writes disabled</span>
+        <span>KasirNusa Account Expansion Assistant use Historical snapshot</span>
+        <span></span>
       </footer>
     </div>
   );
@@ -696,14 +696,13 @@ function CopyButton({ text, label = 'Copy' }: { text: string; label?: string }) 
   );
 }
 
-// ================= VIEW: ACCOUNT COPILOT (STANDALONE FULL-PAGE CHAT) =================
-interface ChatMessage {
+// ================= VIEW: ACCOUNT COPILOT (INVESTIGATIVE WORKBENCH) =================
+interface InquiryRecord {
   id: string;
-  sender: 'user' | 'assistant';
-  text: string;
+  question: string;
   timestamp: string;
-  response?: QaResponse;
   accountContext?: string;
+  response: QaResponse;
 }
 
 function CopilotView({
@@ -719,100 +718,150 @@ function CopilotView({
   const [inputQuestion, setInputQuestion] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [activeInquiry, setActiveInquiry] = useState<InquiryRecord | null>(null);
+  const [recentInquiries, setRecentInquiries] = useState<InquiryRecord[]>([]);
   const [source, setSource] = useState<string>('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const activeAccount = accounts.find((a) => a.id === currentAccountId);
 
+  // Clear inquiry state when switching account scope
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
-
-  // Clear conversation state when switching account scope
-  useEffect(() => {
-    setMessages([]);
+    setActiveInquiry(null);
+    setRecentInquiries([]);
     setError('');
     setInputQuestion('');
   }, [currentAccountId]);
 
-  const handleSend = async (qText?: string) => {
+  const handleInvestigate = async (qText?: string) => {
     const textToSend = qText ?? inputQuestion;
     if (!textToSend.trim() || loading) return;
 
-    const userMsg: ChatMessage = {
-      id: 'msg_' + Date.now(),
-      sender: 'user',
-      text: textToSend,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      accountContext: activeAccount ? `${activeAccount.externalId} · ${activeAccount.name}` : undefined,
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
-    setInputQuestion('');
     setLoading(true);
     setError('');
 
     try {
-      const recentHistory = messages
-        .filter((m) => m.sender === 'user')
-        .slice(-3)
-        .map((m) => ({ question: m.text }));
+      const history = recentInquiries.slice(0, 3).map((r) => ({ question: r.question }));
 
       const res = await api.qa({
         dataset_id: dataset,
         account_id: currentAccountId || undefined,
         question: textToSend,
         language,
-        history: recentHistory,
+        history,
         route: 'joint',
       });
 
-      const assistantMsg: ChatMessage = {
-        id: 'msg_res_' + Date.now(),
-        sender: 'assistant',
-        text: res.answer,
+      const inqRecord: InquiryRecord = {
+        id: 'inq_' + Date.now(),
+        question: textToSend,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        accountContext: activeAccount ? `${activeAccount.externalId} · ${activeAccount.name}` : undefined,
         response: res,
       };
 
-      setMessages((prev) => [...prev, assistantMsg]);
+      setActiveInquiry(inqRecord);
+      setRecentInquiries((prev) => [inqRecord, ...prev.filter((item) => item.question !== textToSend)].slice(0, 6));
+      setInputQuestion(textToSend);
     } catch (err: any) {
-      setError(err.message || 'Copilot query failed');
+      setError(err.message || 'Investigation query failed');
     } finally {
       setLoading(false);
     }
   };
 
-  const sampleQuestions = activeAccount
+  const handleReset = () => {
+    setActiveInquiry(null);
+    setInputQuestion('');
+    setError('');
+  };
+
+  const launchpadCategories = activeAccount
     ? [
-        `Apa yang belum ditindaklanjuti untuk ${activeAccount.externalId}?`,
-        `Siapa yang perlu dilibatkan untuk ${activeAccount.externalId}, dan apa buktinya?`,
-        `Kalau ${activeAccount.externalId} tambah 10 outlet, berapa nilai tahunannya?`,
-        `Apakah follow-up terakhir sudah menjawab kekhawatiran decision maker?`,
+        {
+          title: 'Expansion Signals & Follow-Up',
+          queries: [
+            `Apa yang belum ditindaklanjuti untuk ${activeAccount.externalId}?`,
+            `Pelanggan mana yang punya peluang ekspansi?`,
+          ],
+        },
+        {
+          title: 'Stakeholder & Decision Requirements',
+          queries: [
+            `Siapa yang perlu dilibatkan untuk ${activeAccount.externalId}, dan apa buktinya?`,
+            `Apakah follow-up terakhir sudah menjawab kekhawatiran decision maker?`,
+          ],
+        },
+        {
+          title: 'Commercial Revenue Scenarios',
+          queries: [
+            `Kalau ${activeAccount.externalId} tambah 10 outlet, berapa nilai tahunannya?`,
+            `Berapa nilai skenario outlet untuk ${activeAccount.externalId}?`,
+          ],
+        },
+        {
+          title: 'Action Plans & Precedents',
+          queries: [
+            `Apa tindakan rekomendasi untuk ${activeAccount.externalId}?`,
+            `Buatkan draft follow-up untuk ${activeAccount.externalId}.`,
+          ],
+        },
       ]
     : [
-        'Pelanggan mana yang punya peluang ekspansi?',
-        'Apa yang belum ditindaklanjuti untuk C06?',
-        'Siapa yang perlu dilibatkan untuk C01, dan apa buktinya?',
-        'Kalau C06 tambah 10 outlet, berapa nilai tahunannya?',
+        {
+          title: 'Expansion Signals & Discovery',
+          queries: [
+            'Pelanggan mana yang punya peluang ekspansi?',
+            'Apa yang belum ditindaklanjuti untuk C06?',
+          ],
+        },
+        {
+          title: 'Stakeholder & Authority Diagnosis',
+          queries: [
+            'Siapa yang perlu dilibatkan untuk C01, dan apa buktinya?',
+            'Apakah follow-up terakhir sudah menjawab kekhawatiran decision maker?',
+          ],
+        },
+        {
+          title: 'Commercial Revenue Scenarios',
+          queries: [
+            'Kalau C06 tambah 10 outlet, berapa nilai tahunannya?',
+            'Kalau C02 tambah 6 outlet, berapa nilai tahunannya?',
+          ],
+        },
+        {
+          title: 'Action Plans & Drafts',
+          queries: [
+            'Apa saja constraint paket dan blocker yang tercatat untuk C02?',
+            'Buatkan draft follow-up untuk C06.',
+          ],
+        },
       ];
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 max-w-5xl mx-auto w-full">
-      {/* Header - Styled consistently with other views */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 mb-3 border-b border-brand-border shrink-0">
+    <div className="flex-1 flex flex-col min-h-0 max-w-5xl mx-auto w-full space-y-3.5">
+      {/* Workbench Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-brand-border shrink-0">
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-brand-text">Account Copilot</h1>
           <p className="text-xs text-brand-subtle mt-0.5">
             {activeAccount
-              ? `Scoped to ${activeAccount.externalId} · ${activeAccount.name}. Ask questions about expansion signals, unaddressed requirements, or revenue scenarios.`
-              : 'Ask questions about expansion signals, unaddressed requirements, stakeholder authority, or revenue scenarios.'}
+              ? `Scoped to ${activeAccount.externalId} · ${activeAccount.name}. Analytical workbench grounded in PostgreSQL context graph evidence.`
+              : 'Analytical workbench for expansion discovery, blocker diagnosis, and revenue modeling grounded in context graph.'}
           </p>
         </div>
 
-        {/* Header Right: Language Switch */}
+        {/* Header Right: Language Switch & Reset */}
         <div className="flex items-center space-x-2 shrink-0">
+          {(activeInquiry || inputQuestion) && (
+            <button
+              type="button"
+              onClick={handleReset}
+              className="h-8 px-3 text-xs border border-brand-border rounded-md bg-white hover:bg-gray-50 text-brand-text font-medium transition shadow-2xs flex items-center space-x-1"
+            >
+              <span>+ New Inquiry</span>
+            </button>
+          )}
+
           <div className="flex border border-brand-border rounded-md overflow-hidden text-xs">
             <button
               onClick={() => setLanguage('en')}
@@ -830,470 +879,522 @@ function CopilotView({
         </div>
       </div>
 
-      {/* Messages Scroll Area */}
-      <div className="flex-1 overflow-y-auto space-y-4 pr-1 min-h-0">
-        {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-5">
-            <div className="w-12 h-12 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500 shadow-2xs">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-              </svg>
-            </div>
-
-            <div className="space-y-1 max-w-md">
-              <h3 className="text-sm font-semibold text-brand-text">What would you like to investigate?</h3>
-              <p className="text-xs text-brand-subtle">
-                Ask questions about expansion signals, unaddressed requirements, stakeholder authority, or revenue scenarios.
-              </p>
-            </div>
-
-            {/* Quick Prompt Chips */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-2xl w-full text-left">
-              {sampleQuestions.map((q) => (
-                <button
-                  key={q}
-                  onClick={() => handleSend(q)}
-                  className="p-2.5 rounded-lg border border-brand-border hover:border-gray-400 bg-white hover:bg-gray-50 text-xs text-brand-text transition flex items-start space-x-2 text-left shadow-2xs group"
-                >
-                  <span className="text-gray-400 shrink-0 group-hover:translate-x-0.5 group-hover:text-brand-text transition">→</span>
-                  <span>{q}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          messages.map((m) => (
-            <div key={m.id} className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'} space-y-1`}>
-              {/* Message Header */}
-              <div className="flex items-center space-x-1.5 text-[10px] text-brand-subtle px-1">
-                <span className="font-medium text-brand-text">{m.sender === 'user' ? 'You' : 'KasirNusa Copilot'}</span>
-                {m.accountContext && (
-                  <span className="font-mono bg-gray-100 text-gray-600 px-1.5 rounded">
-                    Scope: {m.accountContext}
-                  </span>
-                )}
-                <span>· {m.timestamp}</span>
-              </div>
-
-              {/* Message Bubble */}
-              {m.sender === 'user' ? (
-                <div className="max-w-[85%] bg-blue-50 text-brand-text border border-blue-200/80 rounded-xl px-4 py-2.5 text-xs shadow-2xs">
-                  {m.text}
-                </div>
-              ) : (() => {
-                  const claims = m.response?.claims ?? [];
-                  const actionClaims = claims.filter((c) => c.kind === 'proposed_action');
-                  const diagnosticClaims = claims.filter((c) => c.kind === 'check');
-                  const factClaims = claims.filter((c) => c.kind === 'fact' || c.kind === 'source_quote');
-
-                  return (
-                    <div className="max-w-[98%] bg-white border border-brand-border rounded-xl p-4 sm:p-5 space-y-4 text-xs shadow-2xs w-full">
-                      {/* Header Row: Executive Telemetry Ribbon */}
-                      <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-brand-border">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {m.response?.commercial_context && (
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded font-medium uppercase tracking-wider border border-brand-border bg-gray-50 text-brand-text">
-                              {m.response.commercial_context}
-                            </span>
-                          )}
-                          {m.response?.value_scenario && (
-                            <span className="text-[10px] font-mono bg-gray-50 text-brand-text border border-brand-border px-2 py-0.5 rounded font-medium">
-                              ARR: {amount(m.response.value_scenario.amount)} IDR
-                            </span>
-                          )}
-                          {diagnosticClaims.some((c) => /no matching|unmatched/i.test(c.text)) && (
-                            <span className="text-[10px] font-mono bg-gray-50 text-gray-700 border border-brand-border px-1.5 py-0.5 rounded font-medium">
-                              Unmatched in CRM
-                            </span>
-                          )}
-                          {diagnosticClaims.some((c) => /no recorded follow-up/i.test(c.text)) && (
-                            <span className="text-[10px] font-mono bg-gray-50 text-gray-700 border border-brand-border px-1.5 py-0.5 rounded font-medium">
-                              Follow-up Pending
-                            </span>
-                          )}
-                          {m.response?.plan && (
-                            <span className="text-[10px] font-mono bg-gray-50 text-gray-700 px-2 py-0.5 rounded border border-brand-border">
-                              {m.response.plan.operation.replaceAll('_', ' ')}
-                            </span>
-                          )}
-                        </div>
-                        {m.response?.as_of && (
-                          <span className="text-[10px] font-mono text-brand-subtle">
-                            Snapshot: {m.response.as_of}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Executive Summary Card */}
-                      <div className="p-3.5 bg-gray-50/50 border border-brand-border rounded-lg space-y-1">
-                        <div className="text-[10px] font-semibold uppercase tracking-wider text-brand-subtle">
-                          Executive Summary
-                        </div>
-                        <div className="text-brand-text leading-relaxed whitespace-pre-line text-xs font-medium">
-                          {m.text}
-                        </div>
-                      </div>
-
-                      {/* Commercial Value Tile (if present) */}
-                      {m.response?.value_scenario && (
-                        <div className="p-3.5 bg-white border border-brand-border rounded-lg space-y-2 text-xs shadow-2xs">
-                          <div className="flex items-center justify-between pb-1 border-b border-brand-border">
-                            <div className="text-[11px] font-semibold uppercase tracking-wider text-brand-text">
-                              Commercial Revenue Scenario
-                            </div>
-                            <span className="text-[10px] font-mono bg-gray-50 text-brand-muted border border-brand-border px-2 py-0.5 rounded font-medium">
-                              Conditional Incremental ARR
-                            </span>
-                          </div>
-
-                          <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
-                            <div className="text-xl font-bold font-mono text-brand-text">
-                              {amount(m.response.value_scenario.amount)} IDR <span className="text-xs font-normal text-brand-subtle">/ year</span>
-                            </div>
-                            <div className="text-[11px] font-mono text-brand-muted bg-gray-50 border border-brand-border px-2 py-0.5 rounded">
-                              {m.response.value_scenario.formula}
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-[11px]">
-                            <div className="p-2 bg-gray-50/50 rounded border border-brand-border">
-                              <span className="text-[10px] text-gray-500 block uppercase font-mono">Additional Outlets</span>
-                              <span className="font-semibold font-mono text-brand-text">{m.response.value_scenario.inputs.additional_outlets} Outlets</span>
-                            </div>
-                            <div className="p-2 bg-gray-50/50 rounded border border-brand-border">
-                              <span className="text-[10px] text-gray-500 block uppercase font-mono">Monthly Rate / Outlet</span>
-                              <span className="font-semibold font-mono text-brand-text">{amount(m.response.value_scenario.inputs.monthly_rate)} IDR</span>
-                            </div>
-                            <div className="p-2 bg-gray-50/50 rounded border border-brand-border">
-                              <span className="text-[10px] text-gray-500 block uppercase font-mono">Discount Rate</span>
-                              <span className="font-semibold font-mono text-brand-text">{m.response.value_scenario.inputs.discount_percent}%</span>
-                            </div>
-                          </div>
-
-                          {m.response.value_scenario.assumptions.length > 0 && (
-                            <div className="text-[10px] text-brand-subtle pt-1 space-y-0.5">
-                              <span className="font-semibold uppercase tracking-wider text-gray-500">Assumptions:</span>
-                              <ul className="list-disc list-inside">
-                                {m.response.value_scenario.assumptions.map((a, idx) => (
-                                  <li key={idx}>{a}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Observed Gaps & Diagnostic Checks */}
-                      {diagnosticClaims.length > 0 && (
-                        <div className="border border-brand-border rounded-lg bg-white overflow-hidden shadow-2xs">
-                          <div className="flex items-center justify-between px-3.5 py-2.5 bg-gray-50/70 border-b border-brand-border">
-                            <div className="text-xs font-semibold text-brand-text">
-                              Observed Gaps & Recorded Constraints
-                            </div>
-                            <span className="text-[10px] font-mono bg-white px-2 py-0.5 rounded border border-brand-border text-brand-muted font-medium">
-                              {diagnosticClaims.length} items checked
-                            </span>
-                          </div>
-                          <div className="p-3 space-y-2">
-                            {diagnosticClaims.map((claim) => {
-                              const isWarning = /no matching|no recorded|unfulfilled|unmet|mismatch|conflict|cannot/i.test(claim.text);
-                              return (
-                                <div
-                                  key={claim.id}
-                                  className="p-2.5 rounded-md border border-brand-border bg-white text-xs space-y-1.5"
-                                >
-                                  <div className="flex items-start space-x-2">
-                                    <span className={`text-[10px] font-mono uppercase font-semibold shrink-0 mt-0.5 ${
-                                      isWarning ? 'text-brand-text' : 'text-brand-subtle'
-                                    }`}>
-                                      {isWarning ? '[Gap]' : '[Constraint]'}
-                                    </span>
-                                    <div className="flex-1">
-                                      <p className="text-brand-text font-normal leading-relaxed">{claim.text}</p>
-                                    </div>
-                                  </div>
-                                  {claim.evidence_ids.length > 0 && (
-                                    <div className="pl-12 pt-0.5">
-                                      <Refs ids={claim.evidence_ids} evidence={m.response?.evidence ?? []} open={(id) => setSource(id)} />
-                                    </div>
-                                  )}
-                                  {claim.check && (
-                                    <details className="pl-12 text-[10px] text-gray-500">
-                                      <summary className="cursor-pointer hover:text-brand-text font-medium select-none">
-                                        Inspect recorded check criteria
-                                      </summary>
-                                      <pre className="mt-1 font-mono text-[9px] bg-gray-50 p-2 rounded border border-brand-border overflow-x-auto">
-                                        {JSON.stringify(claim.check, null, 2)}
-                                      </pre>
-                                    </details>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Recommended Sales Action Plan */}
-                      {actionClaims.length > 0 && (
-                        <div className="border border-brand-border rounded-lg bg-white overflow-hidden shadow-2xs">
-                          <div className="flex items-center justify-between px-3.5 py-2.5 bg-gray-50/70 border-b border-brand-border">
-                            <div className="text-xs font-semibold text-brand-text">
-                              Recommended Sales Action Plan
-                            </div>
-                            <CopyButton
-                              text={actionClaims.map((c, i) => `${i + 1}. ${c.text}`).join('\n')}
-                              label="Copy Action Plan"
-                            />
-                          </div>
-                          <div className="p-3 space-y-2">
-                            {actionClaims.map((claim, idx) => (
-                              <div key={claim.id} className="p-3 bg-white border border-brand-border rounded-md text-xs space-y-1.5">
-                                <div className="flex items-start space-x-2.5">
-                                  <span className="h-5 w-5 rounded bg-gray-100 border border-brand-border text-brand-text text-[10px] font-mono font-semibold flex items-center justify-center shrink-0 mt-0.5">
-                                    {idx + 1}
-                                  </span>
-                                  <div className="flex-1 space-y-1">
-                                    <p className="text-brand-text font-medium leading-relaxed">{claim.text}</p>
-                                    {claim.evidence_ids.length > 0 && (
-                                      <div className="pt-0.5">
-                                        <Refs ids={claim.evidence_ids} evidence={m.response?.evidence ?? []} open={(id) => setSource(id)} />
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Question Premise Notice (if checking outcome questions) */}
-                      {m.response?.premise_check && (
-                        <div className="p-3.5 bg-gray-50/60 border border-brand-border rounded-lg space-y-1.5 text-xs">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-semibold text-brand-text text-xs">
-                              Question Premise: {words(m.response.premise_check.status)}
-                            </h4>
-                            <span className="text-[10px] font-mono bg-white px-2 py-0.5 rounded text-brand-muted border border-brand-border font-medium uppercase">
-                              {m.response.premise_check.status}
-                            </span>
-                          </div>
-                          <p className="text-brand-muted leading-relaxed">{m.response.premise_check.coverage}</p>
-                          {m.response.premise_check.clarification && (
-                            <p className="text-brand-muted leading-relaxed">{m.response.premise_check.clarification}</p>
-                          )}
-                          {m.response.premise_check.calculation && (
-                            <pre className="font-mono text-[10px] bg-white p-2.5 rounded border border-brand-border text-brand-text overflow-x-auto">
-                              {JSON.stringify(m.response.premise_check.calculation, null, 2)}
-                            </pre>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Requirement Assessments (if present) */}
-                      {m.response?.requirement_assessments && m.response.requirement_assessments.length > 0 && (
-                        <div className="space-y-2 pt-1 border-t border-brand-border">
-                          <div className="text-[11px] font-semibold uppercase tracking-wider text-brand-subtle">
-                            Requirement Assessments
-                          </div>
-                          <div className="space-y-2">
-                            {m.response.requirement_assessments.map((a) => (
-                              <article key={a.id} className="border border-brand-border rounded-lg p-3 bg-white text-xs space-y-1.5 shadow-2xs">
-                                <div className="flex items-center justify-between">
-                                  <span className="font-semibold text-brand-text">{a.requirement}</span>
-                                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-200 uppercase font-medium">
-                                    {a.status.replaceAll('_', ' ')}
-                                  </span>
-                                </div>
-                                <p className="text-brand-subtle text-[11px]">
-                                  Fulfillment: {a.fulfillment.status.replaceAll('_', ' ')}. {a.fulfillment.reason}
-                                </p>
-                                {a.missing_details.length > 0 && (
-                                  <p className="text-brand-subtle text-[11px]">
-                                    Missing: {a.missing_details.join(', ')}
-                                  </p>
-                                )}
-                                <div className="pt-0.5">
-                                  <Refs ids={a.source_ids} evidence={m.response?.evidence ?? []} open={(id) => setSource(id)} />
-                                </div>
-                              </article>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Follow-up Draft if present */}
-                      {m.response?.draft && (
-                        <div className="p-3.5 bg-gray-50 border border-brand-border rounded-lg space-y-2.5">
-                          <div className="flex items-center justify-between text-xs">
-                            <div className="flex items-center space-x-1.5 font-semibold text-brand-text">
-                              <svg className="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                              </svg>
-                              <span>Ready-to-Send Follow-Up Draft ({m.response.draft.route} route)</span>
-                            </div>
-                            <CopyButton
-                              text={`Subject: ${m.response.draft.subject}\n\n${m.response.draft.body}`}
-                              label="Copy Draft"
-                            />
-                          </div>
-                          <div className="text-[11px] text-brand-text font-medium bg-white px-3 py-1.5 rounded border border-gray-200">
-                            <span className="text-gray-400 font-mono mr-1.5">Subject:</span> {m.response.draft.subject}
-                          </div>
-                          <div className="text-xs text-brand-muted bg-white p-3 rounded border border-gray-200 font-mono text-[11px] whitespace-pre-wrap leading-relaxed shadow-2xs">
-                            {m.response.draft.body}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Verified Account Context & Stakeholder Facts */}
-                      {factClaims.length > 0 && (
-                        <details className="border border-brand-border rounded-lg bg-gray-50/40 p-3 space-y-2 text-xs">
-                          <summary className="font-semibold text-brand-text cursor-pointer select-none flex items-center justify-between">
-                            <span className="flex items-center space-x-1.5">
-                              <svg className="w-3.5 h-3.5 text-brand-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                              </svg>
-                              <span>Verified Stakeholder & Baseline Context ({factClaims.length})</span>
-                            </span>
-                            <span className="text-[10px] font-mono text-brand-subtle font-normal">Click to toggle</span>
-                          </summary>
-                          <div className="space-y-1.5 pt-2">
-                            {factClaims.map((claim) => (
-                              <div key={claim.id} className="p-2.5 bg-white border border-brand-border rounded text-xs space-y-1">
-                                <div className="flex items-start justify-between gap-2">
-                                  <p className="text-brand-text font-normal leading-relaxed">{claim.text}</p>
-                                  {claim.kind === 'source_quote' && (
-                                    <span className="text-[9px] font-mono px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded shrink-0">
-                                      Direct Quote
-                                    </span>
-                                  )}
-                                </div>
-                                {claim.evidence_ids.length > 0 && (
-                                  <Refs ids={claim.evidence_ids} evidence={m.response?.evidence ?? []} open={(id) => setSource(id)} />
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </details>
-                      )}
-
-                      {/* Context Relationship Graph (Cytoscape Nodes & Edges) */}
-                      {(m.response?.account_id || currentAccountId) && (
-                        <CopilotGraphViewer
-                          dataset={dataset}
-                          accountId={(m.response?.account_id ?? currentAccountId)!}
-                          openSource={(id) => setSource(id)}
-                        />
-                      )}
-
-                      {/* Cited Evidence Passages */}
-                      {m.response?.evidence && m.response.evidence.length > 0 && (
-                        <details className="border border-brand-border rounded-lg bg-gray-50/50 p-3 space-y-2 text-xs">
-                          <summary className="font-semibold text-brand-text cursor-pointer select-none flex items-center justify-between">
-                            <span className="flex items-center space-x-1.5">
-                              <svg className="w-3.5 h-3.5 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                              <span>Cited Evidence Passages ({m.response.evidence.length})</span>
-                            </span>
-                            <span className="text-[10px] font-mono text-brand-subtle font-normal">Click to expand</span>
-                          </summary>
-                          <div className="space-y-2 pt-2">
-                            {m.response.evidence.map((e, idx) => (
-                              <div key={idx} className="p-2.5 bg-white border border-brand-border rounded-md space-y-1">
-                                <div className="flex items-center justify-between text-[11px] font-mono text-brand-blue">
-                                  <span>{e.source_external_id ?? e.filename} · {e.field}</span>
-                                  <span className="text-gray-400">{e.filename}:{e.locator}</span>
-                                </div>
-                                <blockquote className="p-2 bg-gray-50 border-l-2 border-brand-blue text-[11px] font-mono text-gray-700 whitespace-pre-wrap">
-                                  {e.passage}
-                                </blockquote>
-                                <div className="pt-1 flex justify-end">
-                                  <button
-                                    type="button"
-                                    onClick={() => setSource(e.source_id)}
-                                    className="h-6 px-2.5 text-[10px] font-medium border border-brand-border rounded bg-white hover:bg-gray-100 text-brand-text transition"
-                                  >
-                                    Open original record
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </details>
-                      )}
-
-                      {/* Method Limitations */}
-                      {m.response?.limitations && m.response.limitations.length > 0 && (
-                        <div className="text-[11px] text-brand-subtle border-t border-dashed border-brand-border pt-2 space-y-0.5">
-                          <span className="font-semibold text-gray-500">Method limitations:</span>
-                          <ul className="list-disc list-inside">
-                            {m.response.limitations.map((lim, i) => (
-                              <li key={i}>{lim}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-            </div>
-          ))
-        )}
-
-        {/* Loading Indicator */}
-        {loading && (
-          <div className="flex items-center space-x-2 p-3 text-xs text-brand-subtle bg-gray-50 rounded-lg animate-pulse border border-brand-border">
-            <svg className="w-4 h-4 text-brand-orange animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span>Retrieving context graph & synthesizing cited response…</span>
-          </div>
-        )}
-
-        {/* Error message */}
-        {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">
-            <span className="font-semibold">Error:</span> {error}
-          </div>
-        )}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Bottom Sticky Input Bar */}
-      <div className="pt-3 border-t border-brand-border shrink-0">
+      {/* Prominent Top Query Bar */}
+      <div className="space-y-2 shrink-0">
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            handleSend();
+            handleInvestigate();
           }}
           className="flex items-center space-x-2 bg-white border border-brand-border rounded-lg p-1.5 shadow-2xs focus-within:border-brand-blue focus-within:ring-1 focus-within:ring-brand-blue/20"
         >
+          <div className="pl-2 text-gray-400">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
           <input
             type="text"
             placeholder={
               activeAccount
-                ? `Ask about ${activeAccount.externalId} (${activeAccount.name})…`
-                : 'Ask about any expansion opportunity, blocker, or stakeholder…'
+                ? `Investigate ${activeAccount.externalId} (${activeAccount.name})…`
+                : 'Investigate expansion signals, unaddressed requirements, stakeholder authority, or revenue scenarios…'
             }
             value={inputQuestion}
             onChange={(e) => setInputQuestion(e.target.value)}
             disabled={loading}
             className="flex-1 bg-transparent px-2 text-xs text-brand-text placeholder-gray-400 outline-none min-w-0"
           />
+          {inputQuestion && (
+            <button
+              type="button"
+              onClick={() => setInputQuestion('')}
+              className="text-gray-400 hover:text-gray-600 p-1 rounded"
+              title="Clear input"
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          )}
           <button
             type="submit"
             disabled={!inputQuestion.trim() || loading}
             className="h-8 px-4 bg-brand-blue hover:bg-brand-blue-hover disabled:bg-gray-200 disabled:text-gray-400 text-white text-xs font-medium rounded-md transition shrink-0 flex items-center space-x-1"
           >
-            <span>Send</span>
+            <span>{loading ? 'Analyzing…' : 'Investigate'}</span>
             <span>↵</span>
           </button>
         </form>
+
+        {/* Recent Inquiries Bar (Horizontal Chips) */}
+        {recentInquiries.length > 0 && (
+          <div className="flex items-center space-x-2 overflow-x-auto py-1 text-xs">
+            <span className="text-[10px] font-mono uppercase text-gray-400 shrink-0 font-medium">Recent:</span>
+            {recentInquiries.map((inq) => {
+              const isActive = activeInquiry?.id === inq.id;
+              return (
+                <button
+                  key={inq.id}
+                  onClick={() => {
+                    setActiveInquiry(inq);
+                    setInputQuestion(inq.question);
+                  }}
+                  className={`px-2.5 py-1 rounded border text-[11px] whitespace-nowrap transition shrink-0 max-w-xs truncate ${
+                    isActive
+                      ? 'bg-slate-900 text-white border-slate-900 font-medium shadow-2xs'
+                      : 'bg-white hover:bg-gray-50 text-brand-text border-brand-border'
+                  }`}
+                  title={inq.question}
+                >
+                  {inq.question}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => {
+                setRecentInquiries([]);
+                setActiveInquiry(null);
+              }}
+              className="text-[10px] text-gray-400 hover:text-gray-600 shrink-0 underline ml-1"
+            >
+              Clear
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Error message */}
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 shrink-0">
+          <span className="font-semibold">Error:</span> {error}
+        </div>
+      )}
+
+      {/* Main Workbench Body */}
+      <div className="flex-1 overflow-y-auto pr-1 min-h-0">
+        {loading ? (
+          <div className="py-16 flex flex-col items-center justify-center space-y-3">
+            <svg className="w-6 h-6 text-brand-blue animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p className="text-xs text-brand-subtle font-medium">Evaluating query against context graph & synthesizing grounded report…</p>
+          </div>
+        ) : !activeInquiry ? (
+          /* Launchpad */
+          <div className="p-6 space-y-6">
+            <div className="space-y-1">
+              <h2 className="text-sm font-semibold text-brand-text">Investigation Launchpad</h2>
+              <p className="text-xs text-brand-subtle">
+                Select an inquiry below or type a query above. Every answer maps to an allowlisted operation plan and evaluates connected evidence from the PostgreSQL context graph.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {launchpadCategories.map((cat, idx) => (
+                <div key={idx} className="border border-brand-border rounded-lg p-3.5 bg-white space-y-2 shadow-2xs">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider font-mono text-[11px] text-gray-500">
+                    {cat.title}
+                  </h3>
+                  <div className="space-y-1.5">
+                    {cat.queries.map((q, qIdx) => (
+                      <button
+                        key={qIdx}
+                        onClick={() => handleInvestigate(q)}
+                        className="w-full text-left p-2 rounded border border-brand-border hover:border-gray-400 bg-gray-50/50 hover:bg-white text-xs text-brand-text transition flex items-start space-x-2 group"
+                      >
+                        <span className="text-gray-400 shrink-0 group-hover:translate-x-0.5 group-hover:text-brand-text transition">→</span>
+                        <span className="leading-relaxed">{q}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (() => {
+          const claims = activeInquiry.response.claims ?? [];
+          const actionClaims = claims.filter((c) => c.kind === 'proposed_action');
+          const diagnosticClaims = claims.filter((c) => c.kind === 'check');
+          const factClaims = claims.filter((c) => c.kind === 'fact' || c.kind === 'source_quote');
+
+          return (
+            <div className="space-y-4 pb-8">
+              {/* Inquiry Status Banner */}
+              <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-white border border-brand-border rounded-lg shadow-2xs">
+                <div className="flex items-center space-x-2 min-w-0">
+                  <span className="text-[10px] font-mono uppercase bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-semibold shrink-0">
+                    Active Inquiry
+                  </span>
+                  <span className="font-semibold text-brand-text truncate">
+                    "{activeInquiry.question}"
+                  </span>
+                </div>
+                <div className="flex items-center space-x-3 text-[10px] font-mono text-brand-subtle shrink-0">
+                  {activeInquiry.accountContext && (
+                    <span className="bg-gray-50 border border-gray-200 px-1.5 py-0.5 rounded">
+                      Scope: {activeInquiry.accountContext}
+                    </span>
+                  )}
+                  <span>Snapshot: {activeInquiry.response.as_of}</span>
+                  <span>{activeInquiry.timestamp}</span>
+                </div>
+              </div>
+
+              {/* The Diagnostic Canvas */}
+              <div className="bg-white border border-brand-border rounded-xl p-4 sm:p-5 space-y-4 text-xs shadow-2xs">
+                {/* Header Row: Executive Telemetry Ribbon */}
+                <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-brand-border">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {activeInquiry.response?.commercial_context && (
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded font-medium uppercase tracking-wider border border-brand-border bg-gray-50 text-brand-text">
+                        {activeInquiry.response.commercial_context}
+                      </span>
+                    )}
+                    {activeInquiry.response?.value_scenario && (
+                      <span className="text-[10px] font-mono bg-gray-50 text-brand-text border border-brand-border px-2 py-0.5 rounded font-medium">
+                        ARR: {amount(activeInquiry.response.value_scenario.amount)} IDR
+                      </span>
+                    )}
+                    {diagnosticClaims.some((c) => /no matching|unmatched/i.test(c.text)) && (
+                      <span className="text-[10px] font-mono bg-gray-50 text-gray-700 border border-brand-border px-1.5 py-0.5 rounded font-medium">
+                        Unmatched in CRM
+                      </span>
+                    )}
+                    {diagnosticClaims.some((c) => /no recorded follow-up/i.test(c.text)) && (
+                      <span className="text-[10px] font-mono bg-gray-50 text-gray-700 border border-brand-border px-1.5 py-0.5 rounded font-medium">
+                        Follow-up Pending
+                      </span>
+                    )}
+                    {activeInquiry.response?.plan && (
+                      <span className="text-[10px] font-mono bg-gray-50 text-gray-700 px-2 py-0.5 rounded border border-brand-border">
+                        {activeInquiry.response.plan.operation.replaceAll('_', ' ')}
+                      </span>
+                    )}
+                  </div>
+                  {activeInquiry.response?.as_of && (
+                    <span className="text-[10px] font-mono text-brand-subtle">
+                      Snapshot: {activeInquiry.response.as_of}
+                    </span>
+                  )}
+                </div>
+
+                {/* Executive Summary Card */}
+                <div className="p-3.5 bg-gray-50/50 border border-brand-border rounded-lg space-y-1">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-brand-subtle">
+                    Executive Summary
+                  </div>
+                  <div className="text-brand-text leading-relaxed whitespace-pre-line text-xs font-medium">
+                    {activeInquiry.response.answer}
+                  </div>
+                </div>
+
+                {/* Commercial Value Tile (if present) */}
+                {activeInquiry.response?.value_scenario && (
+                  <div className="p-3.5 bg-white border border-brand-border rounded-lg space-y-2 text-xs shadow-2xs">
+                    <div className="flex items-center justify-between pb-1 border-b border-brand-border">
+                      <div className="text-[11px] font-semibold uppercase tracking-wider text-brand-text">
+                        Commercial Revenue Scenario
+                      </div>
+                      <span className="text-[10px] font-mono bg-gray-50 text-brand-muted border border-brand-border px-2 py-0.5 rounded font-medium">
+                        Conditional Incremental ARR
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+                      <div className="text-xl font-bold font-mono text-brand-text">
+                        {amount(activeInquiry.response.value_scenario.amount)} IDR <span className="text-xs font-normal text-brand-subtle">/ year</span>
+                      </div>
+                      <div className="text-[11px] font-mono text-brand-muted bg-gray-50 border border-brand-border px-2 py-0.5 rounded">
+                        {activeInquiry.response.value_scenario.formula}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-[11px]">
+                      <div className="p-2 bg-gray-50/50 rounded border border-brand-border">
+                        <span className="text-[10px] text-gray-500 block uppercase font-mono">Additional Outlets</span>
+                        <span className="font-semibold font-mono text-brand-text">{activeInquiry.response.value_scenario.inputs.additional_outlets} Outlets</span>
+                      </div>
+                      <div className="p-2 bg-gray-50/50 rounded border border-brand-border">
+                        <span className="text-[10px] text-gray-500 block uppercase font-mono">Monthly Rate / Outlet</span>
+                        <span className="font-semibold font-mono text-brand-text">{amount(activeInquiry.response.value_scenario.inputs.monthly_rate)} IDR</span>
+                      </div>
+                      <div className="p-2 bg-gray-50/50 rounded border border-brand-border">
+                        <span className="text-[10px] text-gray-500 block uppercase font-mono">Discount Rate</span>
+                        <span className="font-semibold font-mono text-brand-text">{activeInquiry.response.value_scenario.inputs.discount_percent}%</span>
+                      </div>
+                    </div>
+
+                    {activeInquiry.response.value_scenario.assumptions.length > 0 && (
+                      <div className="text-[10px] text-brand-subtle pt-1 space-y-0.5">
+                        <span className="font-semibold uppercase tracking-wider text-gray-500">Assumptions:</span>
+                        <ul className="list-disc list-inside">
+                          {activeInquiry.response.value_scenario.assumptions.map((a, idx) => (
+                            <li key={idx}>{a}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Observed Gaps & Diagnostic Checks */}
+                {diagnosticClaims.length > 0 && (
+                  <div className="border border-brand-border rounded-lg bg-white overflow-hidden shadow-2xs">
+                    <div className="flex items-center justify-between px-3.5 py-2.5 bg-gray-50/70 border-b border-brand-border">
+                      <div className="text-xs font-semibold text-brand-text">
+                        Observed Gaps & Recorded Constraints
+                      </div>
+                      <span className="text-[10px] font-mono bg-white px-2 py-0.5 rounded border border-brand-border text-brand-muted font-medium">
+                        {diagnosticClaims.length} items checked
+                      </span>
+                    </div>
+                    <div className="p-3 space-y-2">
+                      {diagnosticClaims.map((claim) => {
+                        const isWarning = /no matching|no recorded|unfulfilled|unmet|mismatch|conflict|cannot/i.test(claim.text);
+                        return (
+                          <div
+                            key={claim.id}
+                            className="p-2.5 rounded-md border border-brand-border bg-white text-xs space-y-1.5"
+                          >
+                            <div className="flex items-start space-x-2">
+                              <span className={`text-[10px] font-mono uppercase font-semibold shrink-0 mt-0.5 ${
+                                isWarning ? 'text-brand-text' : 'text-brand-subtle'
+                              }`}>
+                                {isWarning ? '[Gap]' : '[Constraint]'}
+                              </span>
+                              <div className="flex-1">
+                                <p className="text-brand-text font-normal leading-relaxed">{claim.text}</p>
+                              </div>
+                            </div>
+                            {claim.evidence_ids.length > 0 && (
+                              <div className="pl-12 pt-0.5">
+                                <Refs ids={claim.evidence_ids} evidence={activeInquiry.response?.evidence ?? []} open={(id) => setSource(id)} />
+                              </div>
+                            )}
+                            {claim.check && (
+                              <details className="pl-12 text-[10px] text-gray-500">
+                                <summary className="cursor-pointer hover:text-brand-text font-medium select-none">
+                                  Inspect recorded check criteria
+                                </summary>
+                                <pre className="mt-1 font-mono text-[9px] bg-gray-50 p-2 rounded border border-brand-border overflow-x-auto">
+                                  {JSON.stringify(claim.check, null, 2)}
+                                </pre>
+                              </details>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recommended Sales Action Plan */}
+                {actionClaims.length > 0 && (
+                  <div className="border border-brand-border rounded-lg bg-white overflow-hidden shadow-2xs">
+                    <div className="flex items-center justify-between px-3.5 py-2.5 bg-gray-50/70 border-b border-brand-border">
+                      <div className="text-xs font-semibold text-brand-text">
+                        Recommended Sales Action Plan
+                      </div>
+                      <CopyButton
+                        text={actionClaims.map((c, i) => `${i + 1}. ${c.text}`).join('\n')}
+                        label="Copy Action Plan"
+                      />
+                    </div>
+                    <div className="p-3 space-y-2">
+                      {actionClaims.map((claim, idx) => (
+                        <div key={claim.id} className="p-3 bg-white border border-brand-border rounded-md text-xs space-y-1.5">
+                          <div className="flex items-start space-x-2.5">
+                            <span className="h-5 w-5 rounded bg-gray-100 border border-brand-border text-brand-text text-[10px] font-mono font-semibold flex items-center justify-center shrink-0 mt-0.5">
+                              {idx + 1}
+                            </span>
+                            <div className="flex-1 space-y-1">
+                              <p className="text-brand-text font-medium leading-relaxed">{claim.text}</p>
+                              {claim.evidence_ids.length > 0 && (
+                                <div className="pt-0.5">
+                                  <Refs ids={claim.evidence_ids} evidence={activeInquiry.response?.evidence ?? []} open={(id) => setSource(id)} />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Question Premise Notice (if checking outcome questions) */}
+                {activeInquiry.response?.premise_check && (
+                  <div className="p-3.5 bg-gray-50/60 border border-brand-border rounded-lg space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold text-brand-text text-xs">
+                        Question Premise: {words(activeInquiry.response.premise_check.status)}
+                      </h4>
+                      <span className="text-[10px] font-mono bg-white px-2 py-0.5 rounded text-brand-muted border border-brand-border font-medium uppercase">
+                        {activeInquiry.response.premise_check.status}
+                      </span>
+                    </div>
+                    <p className="text-brand-muted leading-relaxed">{activeInquiry.response.premise_check.coverage}</p>
+                    {activeInquiry.response.premise_check.clarification && (
+                      <p className="text-brand-muted leading-relaxed">{activeInquiry.response.premise_check.clarification}</p>
+                    )}
+                    {activeInquiry.response.premise_check.calculation && (
+                      <pre className="font-mono text-[10px] bg-white p-2.5 rounded border border-brand-border text-brand-text overflow-x-auto">
+                        {JSON.stringify(activeInquiry.response.premise_check.calculation, null, 2)}
+                      </pre>
+                    )}
+                  </div>
+                )}
+
+                {/* Requirement Assessments (if present) */}
+                {activeInquiry.response?.requirement_assessments && activeInquiry.response.requirement_assessments.length > 0 && (
+                  <div className="space-y-2 pt-1 border-t border-brand-border">
+                    <div className="text-[11px] font-semibold uppercase tracking-wider text-brand-subtle">
+                      Requirement Assessments
+                    </div>
+                    <div className="space-y-2">
+                      {activeInquiry.response.requirement_assessments.map((a) => (
+                        <article key={a.id} className="border border-brand-border rounded-lg p-3 bg-white text-xs space-y-1.5 shadow-2xs">
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-brand-text">{a.requirement}</span>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-200 uppercase font-medium">
+                              {a.status.replaceAll('_', ' ')}
+                            </span>
+                          </div>
+                          <p className="text-brand-subtle text-[11px]">
+                            Fulfillment: {a.fulfillment.status.replaceAll('_', ' ')}. {a.fulfillment.reason}
+                          </p>
+                          {a.missing_details.length > 0 && (
+                            <p className="text-brand-subtle text-[11px]">
+                              Missing: {a.missing_details.join(', ')}
+                            </p>
+                          )}
+                          <div className="pt-0.5">
+                            <Refs ids={a.source_ids} evidence={activeInquiry.response?.evidence ?? []} open={(id) => setSource(id)} />
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Follow-up Draft if present */}
+                {activeInquiry.response?.draft && (
+                  <div className="p-3.5 bg-gray-50 border border-brand-border rounded-lg space-y-2.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center space-x-1.5 font-semibold text-brand-text">
+                        <svg className="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        <span>Ready-to-Send Follow-Up Draft ({activeInquiry.response.draft.route} route)</span>
+                      </div>
+                      <CopyButton
+                        text={`Subject: ${activeInquiry.response.draft.subject}\n\n${activeInquiry.response.draft.body}`}
+                        label="Copy Draft"
+                      />
+                    </div>
+                    <div className="text-[11px] text-brand-text font-medium bg-white px-3 py-1.5 rounded border border-gray-200">
+                      <span className="text-gray-400 font-mono mr-1.5">Subject:</span> {activeInquiry.response.draft.subject}
+                    </div>
+                    <div className="text-xs text-brand-muted bg-white p-3 rounded border border-gray-200 font-mono text-[11px] whitespace-pre-wrap leading-relaxed shadow-2xs">
+                      {activeInquiry.response.draft.body}
+                    </div>
+                  </div>
+                )}
+
+                {/* Verified Account Context & Stakeholder Facts */}
+                {factClaims.length > 0 && (
+                  <details className="border border-brand-border rounded-lg bg-gray-50/40 p-3 space-y-2 text-xs">
+                    <summary className="font-semibold text-brand-text cursor-pointer select-none flex items-center justify-between">
+                      <span className="flex items-center space-x-1.5">
+                        <svg className="w-3.5 h-3.5 text-brand-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        <span>Verified Stakeholder & Baseline Context ({factClaims.length})</span>
+                      </span>
+                      <span className="text-[10px] font-mono text-brand-subtle font-normal">Click to toggle</span>
+                    </summary>
+                    <div className="space-y-1.5 pt-2">
+                      {factClaims.map((claim) => (
+                        <div key={claim.id} className="p-2.5 bg-white border border-brand-border rounded text-xs space-y-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-brand-text font-normal leading-relaxed">{claim.text}</p>
+                            {claim.kind === 'source_quote' && (
+                              <span className="text-[9px] font-mono px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded shrink-0">
+                                Direct Quote
+                              </span>
+                            )}
+                          </div>
+                          {claim.evidence_ids.length > 0 && (
+                            <Refs ids={claim.evidence_ids} evidence={activeInquiry.response?.evidence ?? []} open={(id) => setSource(id)} />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                )}
+
+                {/* Context Relationship Graph (Cytoscape Nodes & Edges) */}
+                {(activeInquiry.response?.account_id || currentAccountId) && (
+                  <CopilotGraphViewer
+                    dataset={dataset}
+                    accountId={(activeInquiry.response?.account_id ?? currentAccountId)!}
+                    openSource={(id) => setSource(id)}
+                  />
+                )}
+
+                {/* Cited Evidence Passages */}
+                {activeInquiry.response?.evidence && activeInquiry.response.evidence.length > 0 && (
+                  <details className="border border-brand-border rounded-lg bg-gray-50/50 p-3 space-y-2 text-xs">
+                    <summary className="font-semibold text-brand-text cursor-pointer select-none flex items-center justify-between">
+                      <span className="flex items-center space-x-1.5">
+                        <svg className="w-3.5 h-3.5 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span>Cited Evidence Passages ({activeInquiry.response.evidence.length})</span>
+                      </span>
+                      <span className="text-[10px] font-mono text-brand-subtle font-normal">Click to expand</span>
+                    </summary>
+                    <div className="space-y-2 pt-2">
+                      {activeInquiry.response.evidence.map((e, idx) => (
+                        <div key={idx} className="p-2.5 bg-white border border-brand-border rounded-md space-y-1">
+                          <div className="flex items-center justify-between text-[11px] font-mono text-brand-blue">
+                            <span>{e.source_external_id ?? e.filename} · {e.field}</span>
+                            <span className="text-gray-400">{e.filename}:{e.locator}</span>
+                          </div>
+                          <blockquote className="p-2 bg-gray-50 border-l-2 border-brand-blue text-[11px] font-mono text-gray-700 whitespace-pre-wrap">
+                            {e.passage}
+                          </blockquote>
+                          <div className="pt-1 flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => setSource(e.source_id)}
+                              className="h-6 px-2.5 text-[10px] font-medium border border-brand-border rounded bg-white hover:bg-gray-100 text-brand-text transition"
+                            >
+                              Open original record
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                )}
+
+                {/* Method Limitations */}
+                {activeInquiry.response?.limitations && activeInquiry.response.limitations.length > 0 && (
+                  <div className="text-[11px] text-brand-subtle border-t border-dashed border-brand-border pt-2 space-y-0.5">
+                    <span className="font-semibold text-gray-500">Method limitations:</span>
+                    <ul className="list-disc list-inside">
+                      {activeInquiry.response.limitations.map((lim, i) => (
+                        <li key={i}>{lim}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {source && <Source dataset={dataset} id={source} close={() => setSource('')} />}
@@ -1710,6 +1811,14 @@ function Opportunities({ dataset, onOpenScan }: { dataset: string; onOpenScan: (
     api.opportunities(dataset, options, signal)
   );
 
+  const items = result.data?.items ?? [];
+  const total = result.data?.total ?? 0;
+  const activeCount = items.filter((c) => c.signal.status === 'active').length;
+  const highPriorityCount = items.filter((c) => c.signal.kind === 'quotation_request').length;
+  const medPriorityCount = items.filter((c) => c.signal.kind === 'explicit_plan').length;
+  const unmatchedCount = items.filter((c) => c.reconciliation.status === 'unmatched').length;
+  const matchedCount = items.filter((c) => c.reconciliation.status === 'matched').length;
+
   return (
     <section className="space-y-6 max-w-5xl mx-auto">
       {/* Dashboard & Opportunities Header */}
@@ -1734,31 +1843,45 @@ function Opportunities({ dataset, onOpenScan }: { dataset: string; onOpenScan: (
         </div>
       </div>
 
-      {/* Micro-Telemetry Metrics */}
+      {/* Summary Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="border border-brand-border rounded-lg p-4 bg-white">
           <span className="text-xs text-brand-subtle font-medium">Recorded Opportunities</span>
           <div className="mt-2 flex items-baseline space-x-2">
             <span className="text-2xl font-bold font-mono text-brand-text">
-              {result.data?.total ?? 0}
+              {total}
             </span>
-            <span className="text-xs text-emerald-600 font-medium font-mono">100% verified</span>
+            <span className="text-xs text-brand-subtle font-mono">{activeCount} active</span>
           </div>
         </div>
 
         <div className="border border-brand-border rounded-lg p-4 bg-white">
           <span className="text-xs text-brand-subtle font-medium">Priority Distribution</span>
-          <div className="mt-2 text-xs text-brand-muted space-y-0.5 font-mono">
-            <div>Quotation Requests: <strong className="text-brand-text font-bold">High</strong></div>
-            <div>Explicit Plans: <strong className="text-brand-text font-bold">Medium</strong></div>
+          <div className="mt-2 flex items-baseline space-x-3 font-mono">
+            <div className="flex items-baseline space-x-1.5">
+              <span className="text-2xl font-bold text-brand-text">{highPriorityCount}</span>
+              <span className="text-xs text-brand-subtle">High</span>
+            </div>
+            <span className="text-brand-border text-sm">/</span>
+            <div className="flex items-baseline space-x-1.5">
+              <span className="text-2xl font-bold text-brand-text">{medPriorityCount}</span>
+              <span className="text-xs text-brand-subtle">Medium</span>
+            </div>
           </div>
         </div>
 
         <div className="border border-brand-border rounded-lg p-4 bg-white">
-          <span className="text-xs text-brand-subtle font-medium">Reconciliation Rule</span>
-          <div className="mt-2 text-xs text-brand-muted space-y-0.5 font-mono">
-            <div>Account + Scope + Timing</div>
-            <div className="text-[11px] text-brand-subtle">Deterministic matching</div>
+          <span className="text-xs text-brand-subtle font-medium">CRM Reconciliation</span>
+          <div className="mt-2 flex items-baseline space-x-3 font-mono">
+            <div className="flex items-baseline space-x-1.5">
+              <span className="text-2xl font-bold text-amber-600">{unmatchedCount}</span>
+              <span className="text-xs text-brand-subtle">Unmatched</span>
+            </div>
+            <span className="text-brand-border text-sm">/</span>
+            <div className="flex items-baseline space-x-1.5">
+              <span className="text-2xl font-bold text-brand-text">{matchedCount}</span>
+              <span className="text-xs text-brand-subtle">Matched</span>
+            </div>
           </div>
         </div>
       </div>
