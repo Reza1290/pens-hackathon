@@ -1814,10 +1814,16 @@ function Opportunities({ dataset, onOpenScan }: { dataset: string; onOpenScan: (
   const items = result.data?.items ?? [];
   const total = result.data?.total ?? 0;
   const activeCount = items.filter((c) => c.signal.status === 'active').length;
-  const highPriorityCount = items.filter((c) => c.signal.kind === 'quotation_request').length;
-  const medPriorityCount = items.filter((c) => c.signal.kind === 'explicit_plan').length;
-  const unmatchedCount = items.filter((c) => c.reconciliation.status === 'unmatched').length;
-  const matchedCount = items.filter((c) => c.reconciliation.status === 'matched').length;
+  const totalPossibleRevenue = items.reduce((acc, c) => {
+    if (c.value_scenario?.amount) {
+      return acc + Number(c.value_scenario.amount);
+    }
+    return acc;
+  }, 0);
+  const pendingTermsCount = items.filter((c) => !c.value_scenario?.amount).length;
+  const actionCount = items.filter((c) => Boolean(c.next_action?.task)).length;
+  const avgElapsed =
+    items.length > 0 ? Math.round(items.reduce((acc, c) => acc + c.elapsed_days, 0) / items.length) : 0;
 
   return (
     <section className="space-y-6 max-w-5xl mx-auto">
@@ -1826,7 +1832,7 @@ function Opportunities({ dataset, onOpenScan }: { dataset: string; onOpenScan: (
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-brand-text">Dashboard</h1>
           <p className="text-xs text-brand-subtle mt-0.5">
-            Expansion opportunities, CRM reconciliation, and stakeholder-tailored action items.
+            Daftar peluang ekspansi, estimasi nilai, dan langkah tindak lanjut terverifikasi.
           </p>
         </div>
         <div className="flex items-center space-x-2 shrink-0">
@@ -1843,45 +1849,47 @@ function Opportunities({ dataset, onOpenScan }: { dataset: string; onOpenScan: (
         </div>
       </div>
 
-      {/* Summary Metrics */}
+      {/* Summary Metrics: 3 Mandatory Deliverables */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="border border-brand-border rounded-lg p-4 bg-white">
-          <span className="text-xs text-brand-subtle font-medium">Recorded Opportunities</span>
+        {/* Metric 1: Peluang Ekspansi */}
+        <div className="border border-brand-border rounded-lg p-4 bg-white shadow-2xs">
+          <span className="text-xs text-brand-subtle font-medium">Peluang Ekspansi</span>
           <div className="mt-2 flex items-baseline space-x-2">
             <span className="text-2xl font-bold font-mono text-brand-text">
-              {total}
+              {activeCount}
             </span>
-            <span className="text-xs text-brand-subtle font-mono">{activeCount} active</span>
+            <span className="text-xs text-brand-subtle font-mono">aktif / {total} terdeteksi</span>
+          </div>
+          <div className="text-[11px] text-gray-500 mt-1">Sinyal ekspansi tervalidasi dari komunikasi</div>
+        </div>
+
+        {/* Metric 2: Possible Revenue (Estimasi Nilai) */}
+        <div className="border border-brand-border rounded-lg p-4 bg-white shadow-2xs">
+          <span className="text-xs text-brand-subtle font-medium">Possible Revenue (Estimasi Nilai)</span>
+          <div className="mt-2 flex items-baseline space-x-2 font-mono">
+            <span className="text-2xl font-bold text-brand-text">
+              Rp {new Intl.NumberFormat('id-ID').format(totalPossibleRevenue)}
+            </span>
+            <span className="text-xs text-brand-subtle">/ thn</span>
+          </div>
+          <div className="text-[11px] text-gray-500 mt-1">
+            {pendingTermsCount > 0
+              ? `+${pendingTermsCount} akun membutuhkan penyesuaian paket`
+              : 'Estimasi nilai inkremental kondisional'}
           </div>
         </div>
 
-        <div className="border border-brand-border rounded-lg p-4 bg-white">
-          <span className="text-xs text-brand-subtle font-medium">Priority Distribution</span>
-          <div className="mt-2 flex items-baseline space-x-3 font-mono">
-            <div className="flex items-baseline space-x-1.5">
-              <span className="text-2xl font-bold text-brand-text">{highPriorityCount}</span>
-              <span className="text-xs text-brand-subtle">High</span>
-            </div>
-            <span className="text-brand-border text-sm">/</span>
-            <div className="flex items-baseline space-x-1.5">
-              <span className="text-2xl font-bold text-brand-text">{medPriorityCount}</span>
-              <span className="text-xs text-brand-subtle">Medium</span>
-            </div>
+        {/* Metric 3: Langkah Tindak Lanjut */}
+        <div className="border border-brand-border rounded-lg p-4 bg-white shadow-2xs">
+          <span className="text-xs text-brand-subtle font-medium">Langkah Tindak Lanjut</span>
+          <div className="mt-2 flex items-baseline space-x-2 font-mono">
+            <span className="text-2xl font-bold text-brand-text">
+              {actionCount}
+            </span>
+            <span className="text-xs text-brand-subtle">rekomendasi siap dijalankan</span>
           </div>
-        </div>
-
-        <div className="border border-brand-border rounded-lg p-4 bg-white">
-          <span className="text-xs text-brand-subtle font-medium">CRM Reconciliation</span>
-          <div className="mt-2 flex items-baseline space-x-3 font-mono">
-            <div className="flex items-baseline space-x-1.5">
-              <span className="text-2xl font-bold text-amber-600">{unmatchedCount}</span>
-              <span className="text-xs text-brand-subtle">Unmatched</span>
-            </div>
-            <span className="text-brand-border text-sm">/</span>
-            <div className="flex items-baseline space-x-1.5">
-              <span className="text-2xl font-bold text-brand-text">{matchedCount}</span>
-              <span className="text-xs text-brand-subtle">Matched</span>
-            </div>
+          <div className="text-[11px] text-gray-500 mt-1">
+            Rata-rata {avgElapsed} hari menunggu respon sales
           </div>
         </div>
       </div>
@@ -1961,12 +1969,10 @@ function Opportunities({ dataset, onOpenScan }: { dataset: string; onOpenScan: (
           <table className="w-full text-left text-xs border-collapse">
             <thead className="bg-brand-canvas border-b border-brand-border text-brand-subtle font-medium">
               <tr>
-                <th className="py-2.5 px-4">Account <span className="text-[10px]">↕</span></th>
-                <th className="py-2.5 px-4">Signal & Status</th>
-                <th className="py-2.5 px-4">Incremental Value</th>
-                <th className="py-2.5 px-4">Next Action & Owner</th>
-                <th className="py-2.5 px-4">Elapsed</th>
-                <th className="py-2.5 px-4 text-right">Details</th>
+                <th className="py-2.5 px-4 w-[36%]">Peluang Ekspansi</th>
+                <th className="py-2.5 px-4 w-[22%]">Estimasi Nilai</th>
+                <th className="py-2.5 px-4 w-[34%]">Langkah Tindak Lanjut</th>
+                <th className="py-2.5 px-4 text-right w-[8%]">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-brand-border text-brand-text">
@@ -1979,22 +1985,18 @@ function Opportunities({ dataset, onOpenScan }: { dataset: string; onOpenScan: (
                       className="hover:bg-brand-canvas/80 transition cursor-pointer"
                       onClick={() => setExpandedRow(isOpen ? null : card.id)}
                     >
-                      {/* Account Link */}
-                      <td className="py-3 px-4 font-mono font-medium text-brand-blue">
-                        <Link
-                          to={scoped('/opportunities/' + card.id, dataset)}
-                          className="hover:underline flex items-center space-x-1"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <span>{card.account.external_id} · {card.account.name}</span>
-                        </Link>
-                      </td>
-
-                      {/* Signal & Status */}
+                      {/* 1. Peluang Ekspansi */}
                       <td className="py-3 px-4">
-                        <div className="flex items-center space-x-1.5">
+                        <div className="flex items-center space-x-2">
+                          <Link
+                            to={scoped('/opportunities/' + card.id, dataset)}
+                            className="font-mono font-medium text-brand-blue hover:underline text-xs"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {card.account.external_id} · {card.account.name}
+                          </Link>
                           <span
-                            className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full border ${
+                            className={`inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full border ${
                               card.signal.status === 'active'
                                 ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
                                 : card.signal.status === 'cancelled'
@@ -2004,88 +2006,160 @@ function Opportunities({ dataset, onOpenScan }: { dataset: string; onOpenScan: (
                           >
                             {card.signal.status}
                           </span>
-                          <span className="text-[10px] text-brand-subtle font-mono">
-                            {words(card.signal.kind)}
+                        </div>
+                        <div className="text-xs font-medium text-gray-800 mt-1 flex items-center space-x-2">
+                          <span>
+                            {card.signal.additional_outlets ? `${card.signal.additional_outlets} outlet` : 'Ekspansi cabang'}
+                            {card.signal.location ? ` · ${card.signal.location}` : ''}
                           </span>
+                          {card.signal.target_period && (
+                            <span className="text-[11px] text-gray-500 font-mono">
+                              (Target: {card.signal.target_period})
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[10px] text-brand-subtle font-mono mt-0.5">
+                          {words(card.signal.kind)} · Req: {card.signal.date}
                         </div>
                       </td>
 
-                      {/* Value Scenario */}
+                      {/* 2. Estimasi Nilai (Possible Revenue) */}
                       <td className="py-3 px-4 font-mono">
                         {card.value_scenario ? (
                           <div>
-                            <span className="font-semibold text-brand-text">
-                              {amount(card.value_scenario.amount)} IDR
-                            </span>
-                            <div className="text-[10px] text-brand-subtle">annual conditional</div>
+                            <div className="font-semibold text-brand-text text-xs">
+                              Rp {amount(card.value_scenario.amount)}
+                            </div>
+                            <div className="text-[10px] text-brand-subtle">tahunan (kondisional)</div>
+                            <div className="text-[10px] text-gray-400 mt-0.5">
+                              {card.value_scenario.inputs.additional_outlets} outlet × Rp {amount(card.value_scenario.inputs.monthly_rate)}/bln
+                            </div>
                           </div>
                         ) : (
-                          <span className="text-gray-400 text-[11px]">New terms required</span>
+                          <div>
+                            <span className="text-amber-700 text-xs font-medium">Perlu penyesuaian paket</span>
+                            <div className="text-[10px] text-gray-400 mt-0.5">Batas Growth 25 outlet tercapai</div>
+                          </div>
                         )}
                       </td>
 
-                      {/* Owner & Task */}
-                      <td className="py-3 px-4 max-w-xs truncate">
-                        <div className="font-medium text-brand-text">{card.people.owner.name}</div>
-                        <div className="text-[11px] text-brand-muted truncate">{card.next_action.task}</div>
+                      {/* 3. Langkah Tindak Lanjut & Owner */}
+                      <td className="py-3 px-4 max-w-sm">
+                        <div className="flex items-center space-x-1.5 text-xs">
+                          <span className="font-semibold text-brand-text">{card.people.owner.name}</span>
+                          {card.people.contact && (
+                            <>
+                              <span className="text-gray-400">→</span>
+                              <span className="text-gray-600 font-medium">{card.people.contact.name}</span>
+                            </>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-brand-muted mt-1 truncate">
+                          {card.next_action.task}
+                        </div>
+                        <div className="text-[10px] text-brand-subtle font-mono mt-1 flex items-center space-x-2">
+                          <span>{card.elapsed_days}d pending</span>
+                          {card.reconciliation.status === 'unmatched' && (
+                            <span className="text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                              Belum tercatat di CRM
+                            </span>
+                          )}
+                        </div>
                       </td>
 
-                      {/* Elapsed Days */}
-                      <td className="py-3 px-4 text-brand-subtle font-mono">
-                        {card.elapsed_days}d
-                      </td>
-
-                      {/* Details Accordion Toggle */}
+                      {/* 4. Aksi / Rincian Toggle */}
                       <td className="py-3 px-4 text-right">
-                        <span className="inline-flex items-center space-x-1 text-xs text-brand-subtle hover:text-brand-text">
-                          <span className="text-[11px] mr-0.5">Inspect</span>
+                        <button
+                          type="button"
+                          className="inline-flex items-center space-x-1 text-xs text-brand-subtle hover:text-brand-text px-2 py-1 rounded hover:bg-gray-100 transition"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setExpandedRow(isOpen ? null : card.id);
+                          }}
+                        >
+                          <span className="text-[11px]">{isOpen ? 'Tutup' : 'Rincian'}</span>
                           <svg
                             className={`w-3.5 h-3.5 chevron-icon ${isOpen ? 'chevron-down-rotated' : ''}`}
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
                           >
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                           </svg>
-                        </span>
+                        </button>
                       </td>
                     </tr>
 
                     {/* FOLDABLE ACCORDION DETAIL ROW */}
                     {isOpen && (
                       <tr key={card.id + '-foldable'} className="bg-brand-canvas/60 border-t border-brand-border">
-                        <td colSpan={6} className="p-4 space-y-3">
+                        <td colSpan={4} className="p-4 space-y-3">
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                            <div className="p-3 bg-white border border-brand-border rounded">
-                              <div className="text-[10px] text-gray-400 font-medium uppercase">Scope & Location</div>
-                              <div className="font-semibold text-gray-800 mt-0.5">
-                                {card.signal.additional_outlets ?? 'Unknown'} outlets · {card.signal.location ?? 'Location unstated'}
+                            <div className="p-3 bg-white border border-brand-border rounded shadow-2xs">
+                              <div className="text-[10px] text-gray-400 font-medium uppercase font-mono">1. Rincian Peluang Ekspansi</div>
+                              <div className="font-semibold text-gray-800 mt-1">
+                                {card.signal.additional_outlets ?? 'Unstated'} outlets · {card.signal.location ?? 'Lokasi unstated'}
                               </div>
-                              <div className="text-[11px] text-gray-500 mt-0.5">Target: {card.signal.target_period ?? 'Timing unstated'}</div>
+                              <div className="text-[11px] text-gray-500 mt-0.5">
+                                Target: {card.signal.target_period ?? 'Waktu unstated'}
+                              </div>
+                              <div className="mt-2 pt-2 border-t border-gray-100 text-[10px] text-brand-subtle font-mono">
+                                Status CRM: {card.reconciliation.status === 'unmatched' ? 'Belum dimasukkan ke CRM (Unrecorded Deal)' : 'Tercatat di CRM'}
+                              </div>
                             </div>
 
-                            <div className="p-3 bg-white border border-brand-border rounded">
-                              <div className="text-[10px] text-gray-400 font-medium uppercase">CRM Reconciliation</div>
-                              <div className="font-semibold text-gray-800 mt-0.5">{words(card.reconciliation.status)}</div>
-                              <div className="text-[11px] text-gray-500 mt-0.5">Search scope verified</div>
+                            <div className="p-3 bg-white border border-brand-border rounded shadow-2xs">
+                              <div className="text-[10px] text-gray-400 font-medium uppercase font-mono">2. Dasar Estimasi Nilai</div>
+                              {card.value_scenario ? (
+                                <>
+                                  <div className="font-semibold text-gray-800 mt-1 font-mono">
+                                    Rp {amount(card.value_scenario.amount)} / thn
+                                  </div>
+                                  <div className="text-[11px] text-gray-600 mt-0.5">
+                                    Formula: {card.value_scenario.formula}
+                                  </div>
+                                  <div className="mt-2 pt-2 border-t border-gray-100 text-[10px] text-brand-subtle">
+                                    Asumsi: rate saat ini berlanjut, belum termasuk pajak
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="font-semibold text-amber-800 mt-1">
+                                    Perlu Penyesuaian Paket
+                                  </div>
+                                  <div className="text-[11px] text-gray-600 mt-0.5">
+                                    Batas kuota Growth (25 outlet) tercapai. Penambahan outlet memerlukan upgrade paket Enterprise.
+                                  </div>
+                                  <div className="mt-2 pt-2 border-t border-gray-100 text-[10px] text-brand-subtle">
+                                    Harga paket baru perlu dikonfirmasi
+                                  </div>
+                                </>
+                              )}
                             </div>
 
-                            <div className="p-3 bg-white border border-brand-border rounded">
-                              <div className="text-[10px] text-gray-400 font-medium uppercase">Observed Blocker / Finding</div>
-                              <div className="font-semibold text-gray-800 mt-0.5 truncate">{card.findings[0]?.label ?? 'No active blockers'}</div>
-                              <div className="text-[11px] text-gray-500 mt-0.5">Contact: {card.people.contact?.name ?? 'Unknown'}</div>
+                            <div className="p-3 bg-white border border-brand-border rounded shadow-2xs">
+                              <div className="text-[10px] text-gray-400 font-medium uppercase font-mono">3. Panduan Tindak Lanjut</div>
+                              <div className="font-semibold text-gray-800 mt-1 truncate">
+                                {card.findings[0]?.label ?? 'Tidak ada kendala aktif'}
+                              </div>
+                              <div className="text-[11px] text-gray-600 mt-0.5">
+                                PIC Pelanggan: {card.people.contact?.name ?? 'Belum teridentifikasi'}
+                              </div>
+                              <div className="mt-2 pt-2 border-t border-gray-100 text-[10px] text-brand-subtle">
+                                Rute: {words(card.next_action.route)}
+                              </div>
                             </div>
                           </div>
 
-                          <div className="flex items-center justify-between pt-1">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-gray-200/60">
                             <span className="text-[11px] text-brand-subtle font-mono">
-                              Request Date: {card.signal.date} · Snapshot As of: {card.as_of}
+                              Sinyal: {card.signal.date} · Snapshot As of: {card.as_of} · Pending: {card.elapsed_days} hari
                             </span>
                             <Link
                               to={scoped('/opportunities/' + card.id, dataset)}
-                              className="h-8 px-3.5 bg-brand-blue hover:bg-brand-blue-hover text-white text-xs font-medium rounded-md transition shadow-xs flex items-center space-x-1"
+                              className="h-8 px-3.5 bg-brand-blue hover:bg-brand-blue-hover text-white text-xs font-medium rounded-md transition shadow-xs inline-flex items-center space-x-1"
                             >
-                              <span>Inspect evidence and context</span>
+                              <span>Buka Context Graph & Bukti Lengkap</span>
                               <span>→</span>
                             </Link>
                           </div>
@@ -2098,7 +2172,7 @@ function Opportunities({ dataset, onOpenScan }: { dataset: string; onOpenScan: (
 
               {!result.data.items.length && (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-xs text-brand-subtle">
+                  <td colSpan={4} className="py-8 text-center text-xs text-brand-subtle">
                     No opportunities match these filters.
                   </td>
                 </tr>
