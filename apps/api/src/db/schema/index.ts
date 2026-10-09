@@ -119,7 +119,7 @@ export const assertionEvidence = pgTable('assertion_evidence', { datasetId: uuid
 foreignKey({ columns: [t.datasetId, t.assertionId], foreignColumns: [assertions.datasetId, assertions.id] }),
 foreignKey({ columns: [t.datasetId, t.sourceId], foreignColumns: [sourceRecords.datasetId, sourceRecords.id] })]);
 export const findings = pgTable('findings', {
-  id: uuid().primaryKey(), datasetId: uuid('dataset_id').notNull(), accountId: uuid('account_id').notNull(), signalId: uuid('signal_id').notNull(),
+  id: uuid().primaryKey(), datasetId: uuid('dataset_id').notNull(), accountId: uuid('account_id').notNull(), signalId: uuid('signal_id'),
   runId: uuid('run_id').notNull(), commercialContext: text('commercial_context').notNull(), type: text().notNull(), details: jsonb().notNull()
 }, t => [unique().on(t.datasetId, t.id),
 foreignKey({ columns: [t.datasetId, t.accountId], foreignColumns: [accounts.datasetId, accounts.id] }),
@@ -129,13 +129,34 @@ export const findingEvidence = pgTable('finding_evidence', { datasetId: uuid('da
   foreignKey({ columns: [t.datasetId, t.findingId], foreignColumns: [findings.datasetId, findings.id] }),
   foreignKey({ columns: [t.datasetId, t.sourceId], foreignColumns: [sourceRecords.datasetId, sourceRecords.id] }), check('finding_evidence_target', sql`${t.sourceId} is not null or ${t.checkResult} is not null`)]);
 export const recommendations = pgTable('recommendations', {
-  id: uuid().primaryKey(), datasetId: uuid('dataset_id').notNull(), signalId: uuid('signal_id').notNull(), runId: uuid('run_id').notNull(),
+  id: uuid().primaryKey(), datasetId: uuid('dataset_id').notNull(), signalId: uuid('signal_id'), accountId:uuid('account_id'),runId: uuid('run_id').notNull(),
   ownerId: uuid('owner_id').notNull(), contactId: uuid('contact_id'), route: text().notNull(), reviewStatus: text('review_status').notNull().default('proposed'), card: jsonb().notNull()
 }, t => [unique().on(t.datasetId, t.id), unique().on(t.runId, t.signalId),
+check('recommendation_scope',sql`${t.signalId} is not null or ${t.accountId} is not null`),
+foreignKey({columns:[t.datasetId,t.accountId],foreignColumns:[accounts.datasetId,accounts.id]}),
 foreignKey({ columns: [t.datasetId, t.signalId], foreignColumns: [signals.datasetId, signals.id] }),
 foreignKey({ columns: [t.datasetId, t.ownerId], foreignColumns: [employees.datasetId, employees.id] }),
 foreignKey({ columns: [t.datasetId, t.contactId], foreignColumns: [contacts.datasetId, contacts.id] }),
 foreignKey({ columns: [t.datasetId, t.runId], foreignColumns: [analysisRuns.datasetId, analysisRuns.id] })]);
+
+export const decisions=pgTable('decisions',{
+  ...identity('decision'),accountId:uuid('account_id').notNull(),eventDate:date('event_date').notNull(),dealId:uuid('deal_id'),
+  requesterId:uuid('requester_id').notNull(),approverId:uuid('approver_id').notNull(),outcome:text().notNull(),value:text().notNull(),
+  rationale:text().notNull(),featureExternalId:text('feature_external_id'),commitmentStatus:text('commitment_status'),sourceId:uuid('source_id').notNull(),
+},t=>[...identityConstraints(t,'decision'),
+  foreignKey({columns:[t.datasetId,t.accountId],foreignColumns:[accounts.datasetId,accounts.id]}),
+  foreignKey({columns:[t.datasetId,t.dealId],foreignColumns:[deals.datasetId,deals.id]}),
+  foreignKey({columns:[t.datasetId,t.requesterId],foreignColumns:[employees.datasetId,employees.id]}),
+  foreignKey({columns:[t.datasetId,t.approverId],foreignColumns:[employees.datasetId,employees.id]}),
+  foreignKey({columns:[t.datasetId,t.sourceId],foreignColumns:[sourceRecords.datasetId,sourceRecords.id]})]);
+export const diagnoses=pgTable('account_diagnoses',{
+  id:uuid().primaryKey(),datasetId:uuid('dataset_id').notNull(),accountId:uuid('account_id').notNull(),runId:uuid('run_id').notNull(),
+  signalId:uuid('signal_id'),dealId:uuid('deal_id'),scopeKey:text('scope_key').notNull(),diagnosis:jsonb().notNull(),
+},t=>[unique().on(t.datasetId,t.scopeKey),
+  foreignKey({columns:[t.datasetId,t.accountId],foreignColumns:[accounts.datasetId,accounts.id]}),
+  foreignKey({columns:[t.datasetId,t.signalId],foreignColumns:[signals.datasetId,signals.id]}),
+  foreignKey({columns:[t.datasetId,t.dealId],foreignColumns:[deals.datasetId,deals.id]}),
+  foreignKey({columns:[t.datasetId,t.runId],foreignColumns:[analysisRuns.datasetId,analysisRuns.id]})]);
 
 // Successful validated candidates are cached; failure attempts remain auditable.
 // Candidates require review and never establish commercial authority by themselves.

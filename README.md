@@ -7,12 +7,13 @@ Product scope and engineering requirements live in [AGENTS.md](AGENTS.md).
 
 Phase 0 inspection and Phase 1 deterministic C06 slice are implemented: React/Vite,
 Express/TypeScript, shared Zod DTOs, PostgreSQL/Drizzle migrations, retained-source
-import, analysis, evidence endpoints and a local review UI. Broader interpretation,
-stakeholder diagnosis, the full three-view workflow, drafts and Q&A remain planned.
+import, analysis, evidence endpoints and a local review UI. Phase 3 adds account
+stakeholder diagnoses, C01 renewal/P01 procurement routes and outcome-premise checks.
+The full three-view workflow, drafts and Q&A remain planned.
 Phase 2 adds deterministic revision/cancellation handling, scoped provider adapters,
 durable cache/failure records and synthetic evaluation. Live model evaluation and
 human acceptance gates remain open. This is not a complete MVP.
-See [Phase 2 handover](docs/PHASE-2-HANDOVER.md).
+See [Phase 3 handover](docs/PHASE-3-HANDOVER.md).
 
 ## Local setup
 
@@ -37,6 +38,8 @@ originals. Import prints the internal dataset UUID. For the supplied manifest:
 ```powershell
 npm run data:analyze -- --dataset 93bb692a-2168-5ef3-a37d-8e929f9b6340 --as-of 2026-10-01
 npm run data:verify -- --dataset 93bb692a-2168-5ef3-a37d-8e929f9b6340 --fixture tests/fixtures/c06-review.json
+npm run data:diagnose -- --dataset 93bb692a-2168-5ef3-a37d-8e929f9b6340
+npm run data:verify-stakeholders -- --dataset 93bb692a-2168-5ef3-a37d-8e929f9b6340 --fixture tests/fixtures/stakeholders-review.json
 npm run dev
 ```
 
@@ -98,6 +101,12 @@ snapshot isolation. This is not remote authentication or per-user account access
 Define that boundary before exposing customer data remotely. No upload/admin,
 external-message, CRM-write or provider endpoints exist.
 
+Account `/diagnosis`, `/stakeholders`, and `/diagnosis/evidence` read endpoints
+return prepared stakeholder guidance independently of an expansion signal.
+They support prepared signal/deal scope, intermediary preparation and structured
+outcome-premise checks. After changing opportunity analysis, rerun `data:diagnose`
+to refresh its dependencies. See [Phase 3 API usage](docs/PHASE-3-HANDOVER.md).
+
 ## Layout
 
 | Path | Responsibility |
@@ -135,7 +144,8 @@ conditional on evaluation. Expansion, renewal and new-sale context stay separate
 
 See the [development plan](docs/README.md) for phase PRDs, definitions of done,
 acceptance checks and out-of-scope work. Phases 0–1 are locally verified;
-Phase 2 infrastructure is tested with live evaluation gates open; Phases 3–6
+Phase 2 infrastructure is tested with live evaluation gates open; Phase 3's
+deterministic backend is locally verified; Phases 4–6
 remain planned. Run `python scripts/audit_sources.py` to
 regenerate the checksum manifest and inventory from the original `data/raw/` files
 with Python 3.10 or newer (verified with Python 3.14.7). This standard-library tool

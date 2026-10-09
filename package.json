@@ -23,6 +23,8 @@
     "data:analyze": "tsx apps/api/src/cli/analyze.ts",
     "data:verify": "tsx apps/api/src/cli/verify.ts",
     "data:interpret": "tsx apps/api/src/cli/interpret.ts",
+    "data:diagnose": "tsx apps/api/src/cli/diagnose.ts",
+    "data:verify-stakeholders": "tsx apps/api/src/cli/verify-stakeholders.ts",
     "eval": "tsx apps/api/src/cli/eval.ts"
   },
   "devDependencies": {

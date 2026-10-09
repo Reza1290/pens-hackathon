@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import { env,projectRoot } from '../../apps/api/src/config/env.js';
 import { sha256, type Manifest } from '../../apps/api/src/modules/ingestion/manifest.js';
 const csv=(columns:string[],rows:Record<string,string>[])=>columns.join(',')+'\n'+rows.map(row=>columns.map(key=>'"'+(row[key]??'').replaceAll('"','""')+'"').join(',')).join('\n')+(rows.length?'\n':'');
-export async function fixture(options:{tag?:string;messages?:{id:string;body:string;parent?:string;sender?:string;date?:string}[];inconsistentTerms?:boolean;deal?:boolean;invalidOwner?:boolean;malformed?:boolean;missingDeals?:boolean;invalidDealHeader?:boolean;duplicate?:boolean;conflictingContracts?:boolean;finiteLimit?:boolean}={}){
+export async function fixture(options:{tag?:string;stakeholderSlice?:boolean;ticketSlice?:boolean;invalidDecisionApprover?:boolean;messages?:{id:string;body:string;parent?:string;sender?:string;date?:string;participants?:string;recipient?:string}[];inconsistentTerms?:boolean;deal?:boolean;invalidOwner?:boolean;malformed?:boolean;missingDeals?:boolean;invalidDealHeader?:boolean;duplicate?:boolean;conflictingContracts?:boolean;finiteLimit?:boolean}={}){
   const version=`phase1-test-${randomUUID()}`;const path=resolve(projectRoot,env.DATA_ROOT,version);await mkdir(path,{recursive:true});
   const inputs:Record<string,{columns:string[];rows:Record<string,string>[]}>={
     'employees.csv':{columns:['employee_id','nama','jabatan','email'],rows:[{employee_id:'E1',nama:'Sample Manager',jabatan:'Account Manager',email:'manager@example.test'}]},
@@ -19,8 +19,14 @@ export async function fixture(options:{tag?:string;messages?:{id:string;body:str
   if(options.inconsistentTerms)inputs['contracts_billing.csv'].rows[0].nilai_tahunan='1';
   if(options.conflictingContracts)inputs['contracts_billing.csv'].rows.push({...inputs['contracts_billing.csv'].rows[0],contract_id:'CT2',harga_per_outlet_bulan:'200'});
   for(const filename of ['outlets.csv','product_usage_daily.csv','feature_usage_monthly.csv','support_tickets.csv','features.csv','bugs.csv','releases.csv','decision_log.csv'])inputs[filename]={columns:['id'],rows:[]};
+  if(options.stakeholderSlice){
+    inputs['decision_log.csv']={columns:['decision_id','tanggal','account_id','deal_id','diminta_oleh','diputuskan_oleh','keputusan','nilai','alasan','fitur_dijanjikan','status_janji'],rows:[{decision_id:'D1',tanggal:'2026-01-01',account_id:'A1',deal_id:'',diminta_oleh:'E1',diputuskan_oleh:'E1',keputusan:'Disetujui',nilai:'10%',alasan:'Komitmen integrasi akuntansi Q3 2026',fitur_dijanjikan:'F1',status_janji:'Belum ditepati'}]};
+    inputs['features.csv']={columns:['feature_id','nama','status','target_awal','target_terkini','catatan'],rows:[{feature_id:'F1',nama:'Integrasi akuntansi',status:'Dalam pengembangan',target_awal:'2026-Q3',target_terkini:'Belum ditetapkan',catatan:''}]};
+  }
+  if(options.invalidDecisionApprover&&options.stakeholderSlice)inputs['decision_log.csv'].rows[0].diputuskan_oleh='K1';
+  if(options.ticketSlice)inputs['support_tickets.csv']={columns:['ticket_id','account_id','dibuat','status','diselesaikan','deskripsi'],rows:[{ticket_id:'T1',account_id:'A1',dibuat:'2026-08-01',status:'Baru',diselesaikan:'',deskripsi:'Sample product requirement'}]};
   const message={interaction_id:'I1',tanggal:'2026-08-01',tipe:'email',account_id:'A1',dari:'buyer@example.test',ke:'manager@example.test',peserta:'',subjek:'Proposed rollout',isi:'Kami berencana membuka 3 outlet di Testville pada kuartal 2 2027. Mohon penawaran dan jadwal implementasinya.',membalas_id:''};
-  const added=(options.messages??[]).map(m=>({...message,interaction_id:m.id,isi:m.body,membalas_id:m.parent??'',dari:m.sender??message.dari,tanggal:m.date??'2026-08-02'}));
+  const added=(options.messages??[]).map(m=>({...message,interaction_id:m.id,isi:m.body,membalas_id:m.parent??'',dari:m.sender??message.dari,tanggal:m.date??'2026-08-02',peserta:m.participants??'',ke:m.recipient??message.ke}));
   const jsonl=options.malformed?'{broken JSON\n':JSON.stringify(message)+'\n'+(options.duplicate?JSON.stringify({...message,interaction_id:'I2'})+'\n':'')+added.map(m=>JSON.stringify(m)+'\n').join('');
   const files:Manifest['files']=[];
   for(const filename of Object.keys(inputs).sort()){

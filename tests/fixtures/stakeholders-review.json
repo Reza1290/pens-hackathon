@@ -1,0 +1,38 @@
+{
+  "review_status": "assistant_source_inspected_expectations; human acceptance pending",
+  "dataset_version": "kasirnusa-2026-10-01",
+  "as_of": "2026-10-01",
+  "cases": [
+    {
+      "account_id": "C01",
+      "commercial_context": "renewal",
+      "route": "resolve_prerequisite_first",
+      "sources": ["D-2025-11", "I0331", "I0344"],
+      "finding_types": ["unmet_commitment", "engagement_mismatch", "unavailable_attachment"],
+      "historical_contacts": ["K017"],
+      "statements": [{"contact_id": "K134", "predicate": "RAISES_CONCERN", "attribution": "reported"}]
+    },
+    {
+      "account_id": "P01",
+      "commercial_context": "new_sale",
+      "route": "joint_decision_maker_discussion",
+      "sources": ["I0343"],
+      "finding_types": [],
+      "historical_contacts": [],
+      "statements": [
+        {"contact_id": "K052", "predicate": "EVALUATES_TECHNICAL_FOR", "attribution": "direct"},
+        {"contact_id": "K052", "predicate": "INTERMEDIARY_FOR", "attribution": "direct"},
+        {"contact_id": "K017", "predicate": "APPROVER_FOR", "attribution": "reported"}
+      ]
+    },
+    {
+      "account_id": "C02",
+      "commercial_context": "expansion",
+      "route": "resolve_prerequisite_first",
+      "sources": ["I0253", "I0255"],
+      "finding_types": ["package_context", "follow_through", "ticket_context"],
+      "historical_contacts": [],
+      "statements": []
+    }
+  ]
+}

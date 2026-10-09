@@ -2,7 +2,8 @@
 
 Authority: [AGENTS.md](../AGENTS.md), v0.3. Phase 0 source inspection is **completed**;
 Phase 1 is **implemented and locally verified**; Phase 2 has **tested interpretation
-infrastructure with live evaluation gates open**; Phases 3–6 remain **planned**. A checkbox is completed
+infrastructure with live evaluation gates open**; Phase 3 has a **locally verified
+deterministic stakeholder backend**; Phases 4–6 remain **planned**. A checkbox is completed
 only when its supporting validation is recorded. PRD numbering starts at `0x1`
 while implementation phase numbering starts at 0, matching AGENTS.md.
 
@@ -11,7 +12,7 @@ while implementation phase numbering starts at 0, matching AGENTS.md.
 | [PRD-0x1](PRD-0x1.md) | 0: Source verification (completed) | Inventory, mappings, reviewed C06 source path | Baseplate |
 | [PRD-0x2](PRD-0x2.md) | 1: Deterministic evidence path (verified) | Runnable workspace, repeatable import, C06 card API | 0x1 |
 | [PRD-0x3](PRD-0x3.md) | 2: Interpretation | Validated rules/provider outputs and evaluation | 0x2 |
-| [PRD-0x4](PRD-0x4.md) | 3: Stakeholder guidance | C01 diagnosis, P01 route, C02 constraints, premise checks | 0x2; automated judgments depend on 0x3 |
+| [PRD-0x4](PRD-0x4.md) | 3: Stakeholder guidance (backend verified) | C01 diagnosis, P01 route, C02 constraints, premise checks | 0x2; automated judgments depend on 0x3 |
 | [PRD-0x5](PRD-0x5.md) | 4: Product workflow | Three views, evidence inspection, editable template drafts | 0x4 |
 | [PRD-0x6](PRD-0x6.md) | 5: Grounded Q&A | Cited bilingual answers and customized drafts | 0x3, 0x5 |
 | [PRD-0x7](PRD-0x7.md) | 6: Conditional optimization | Measured quality/cost decision | 0x6 and reviewed evaluation set |
@@ -52,8 +53,8 @@ and grounded Q&A; C06 alone does not complete it.
 
 ## Current handover
 
-See [Phase 2 handover](PHASE-2-HANDOVER.md): 24 tables, C06/C02 deterministic
-regressions, scoped provider adapters, durable cache/failure records and synthetic
-evaluation. All 229,627 records remain retained. Live Jev/LLM evaluation,
-human-reviewed labels and acceptance gates remain open. C01/P01 in PRD-0x4 remains
-mandatory; no model result is accepted into action cards yet.
+See [Phase 3 handover](PHASE-3-HANDOVER.md): 26 tables, 45 account diagnoses,
+30 internal decisions and source-verified C01/P01/C02 guidance and premise checks.
+All 229,627 records remain retained. Live Jev/LLM evaluation, human-reviewed labels
+and acceptance gates remain open; no model result is accepted into action cards.
+Next is PRD-0x5: workflow views, graph rendering and editable template drafts.

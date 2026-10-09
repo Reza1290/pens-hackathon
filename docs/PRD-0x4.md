@@ -1,6 +1,8 @@
 # PRD-0x4 — Phase 3: Stakeholder diagnosis and action routes
 
-Status: Planned. Dependency: PRD-0x2; automated judgments use PRD-0x3 gates.
+Status: Deterministic backend implemented and locally verified. Dependency:
+PRD-0x2; automated model judgments still use the open PRD-0x3 gates.
+See [Phase 3 handover](PHASE-3-HANDOVER.md). User-facing workflow is PRD-0x5.
 Requirements: FR-04–06, FR-11–13; AGENTS.md Sections 10, 16 and 20.
 
 ## Goal
@@ -31,22 +33,28 @@ knowledge, requirements and commitments. Validate outcome premises before diagno
 
 ## Definition of done
 
-- [ ] C01 diagnosis addresses integration/remediation before seeking renewal;
+- [x] C01 diagnosis addresses integration/remediation before seeking renewal;
   Rina is not presented as a current C01 stakeholder.
-- [ ] P01 route retains Fajar, separates technical evaluation from reported procurement
+- [x] P01 route retains Fajar, separates technical evaluation from reported procurement
   authority and confirms requirements rather than reusing cross-company preferences.
-- [ ] Internal decision approvers resolve to employees and never become customer
+- [x] Internal decision approvers resolve to employees and never become customer
   approvers without separate customer-side evidence.
-- [ ] Synthetic owner/intermediary fixtures support both joint and preparation routes;
+- [x] Synthetic owner/intermediary fixtures support both joint and preparation routes;
   each talking point stays attributed to its actual speaker/subject.
-- [ ] Title-only, outdated, contradictory and missing authority evidence produces
+- [x] Title-only, outdated, contradictory and missing authority evidence produces
   clarification or surfaced uncertainty, not invented purchasing authority.
-- [ ] Changing supported stakeholder requirements changes involvement/route and
+- [x] Changing supported stakeholder requirements changes involvement/route and
   discussion content; guidance is more than a contact list.
-- [ ] Repeat-order questions run the premise check first; insufficient data does not
+- [x] Repeat-order questions run the premise check first; insufficient data does not
   become a fabricated decline, monetary value or causal blame.
-- [ ] C02 constraints distinguish confirmed prerequisites from relevant context.
-- [ ] Temporal, attribution, premise and route tests pass; shared DoD is recorded.
+- [x] C02 constraints distinguish confirmed prerequisites from relevant context.
+- [x] Temporal, attribution, premise and route tests pass; shared DoD is recorded.
+
+These checks refer to source-inspected regressions and synthetic acceptance tests,
+not a generalization benchmark or independent human approval. Parsed statements
+remain explicitly labeled rules candidates. Complete order/revenue ledgers are
+absent, so actual repeat-order decline remains insufficient data. An optional
+recorded-won-deal comparison exposes its stage-date proxy and snapshot-only scope.
 
 ## Out of scope
 

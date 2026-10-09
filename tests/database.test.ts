@@ -19,6 +19,8 @@ import { Interpreter } from '../apps/api/src/ai/router.js';
 import { choices,type Context } from '../apps/api/src/ai/schemas/interpretation.js';
 import { ProviderError,type Provider } from '../apps/api/src/ai/providers/interface.js';
 import { interpretationContext } from '../apps/api/src/ai/context.js';
+import { analyzeStakeholders } from '../apps/api/src/modules/stakeholders/service.js';
+import { diagnosisSchema } from '@kasirnusa/contracts';
 
 // Never migrate/truncate/drop the imported developer database. Only a freshly
 // created random database owned by this test run is eligible for teardown.
@@ -41,6 +43,39 @@ afterAll(async()=>{
   for(const path of paths){const target=inside(root,await realpath(path));if(!basename(target).startsWith('phase1-test-'))throw new Error('Unsafe fixture cleanup');await rm(target,{recursive:true});}
 });
 describe('disposable migrated PostgreSQL slice',()=>{
+  it('persists account diagnosis, employee decisions and graph assertions without a new signal',async()=>{
+    const f=await make({stakeholderSlice:true,messages:[{id:'I2',body:'Hadir: Pak Sample. Ia bertanya mengapa integrasi yang dijanjikan belum ada. Belum ada komitmen renewal.',sender:'manager@example.test',participants:'K1;E1'},{id:'I3',body:'Saya lampirkan ringkasan penggunaan. Kapan bahas renewal?',sender:'manager@example.test',recipient:'buyer@example.test',date:'2026-08-03'}]});
+    const imported=await importDataset(db,f.manifest);const accountId=stableId(imported.dataset_id,'account','A1');
+    const result=await analyzeStakeholders(db,imported.dataset_id,accountId);expect(result.decisions).toBe(1);expect((await analyzeStakeholders(db,imported.dataset_id,accountId)).reused).toBe(true);
+    const [row]=await db.select().from(s.diagnoses).where(eq(s.diagnoses.datasetId,imported.dataset_id));const d=diagnosisSchema.parse(row.diagnosis);
+    expect(d.commercial_context).toBe('renewal');expect(d.signal_id).toBeNull();expect(d.value_scenario).toBeNull();expect(d.action_plan.route).toBe('resolve_prerequisite_first');expect(d.findings.some(f=>f.type==='engagement_mismatch')).toBe(true);
+    expect(d.stakeholder_context[0].statements[0].attribution).toBe('reported');expect(d.stakeholder_context[0].authority).toBe('unknown');
+    const [signals]=await db.select({n:count()}).from(s.signals).where(eq(s.signals.datasetId,imported.dataset_id));expect(signals.n).toBe(0);
+    const [link]=await db.select().from(s.assertions).where(and(eq(s.assertions.datasetId,imported.dataset_id),eq(s.assertions.predicate,'CONCERN_ABOUT_COMMITMENT')));expect(link.objectId).toBe(d.internal_decisions[0].id);
+    const api=createApp(db,new Set([imported.dataset_id]));const url=`/api/accounts/${accountId}/diagnosis?dataset_id=${imported.dataset_id}`;
+    const question=await request(api).get(url+'&question=Why%20are%20repeat%20orders%20lower?');expect(question.status).toBe(200);expect(question.body.premise_check.status).toBe('insufficient_data');
+    expect((await request(api).get(`/api/accounts/${accountId}/stakeholders?dataset_id=${imported.dataset_id}`)).status).toBe(200);
+    expect((await request(api).get(`/api/accounts/${accountId}/diagnosis/evidence?dataset_id=${imported.dataset_id}`)).body.limits.max_hops).toBe(3);
+    expect((await request(api).get(url+'&signal_id='+randomUUID())).status).toBe(404);
+    expect((await request(api).get(url+'&metric=renewal&previous_start=2026-01-01')).status).toBe(400);
+    for(const evidence of d.evidence)expect((await request(api).get(`/api/sources/${evidence.source_id}?dataset_id=${imported.dataset_id}`)).status).toBe(200);
+    await analyzeDataset(db,imported.dataset_id,'2026-09-01');expect((await request(api).get(url)).status).toBe(409);
+    const c=await card(imported.dataset_id);await analyzeStakeholders(db,imported.dataset_id,accountId,{signalId:c.id});expect((await request(api).get(url+'&signal_id='+c.id)).status).toBe(200);
+    await analyzeStakeholders(db,imported.dataset_id,accountId);expect((await request(api).get(url)).status).toBe(200);
+  });
+  it('retains unresolved internal approvals without assigning a customer as approver',async()=>{
+    const f=await make({stakeholderSlice:true,invalidDecisionApprover:true});const imported=await importDataset(db,f.manifest);
+    const result=await analyzeStakeholders(db,imported.dataset_id,stableId(imported.dataset_id,'account','A1'));expect(result.unresolved_decisions).toBe(1);expect(result.decisions).toBe(0);
+    const [row]=await db.select().from(s.diagnoses).where(eq(s.diagnoses.datasetId,imported.dataset_id));const d=diagnosisSchema.parse(row.diagnosis);expect(d.internal_decisions).toHaveLength(0);expect(d.stakeholder_context[0].authority).toBe('unknown');
+    expect(d.findings.some(f=>f.type==='unresolved_internal_decisions')).toBe(true);
+  });
+  it('requires a documented ticket prerequisite instead of treating ticket volume as a blocker',async()=>{
+    for(const [body,expected] of [['Kami mengirim banyak tiket termasuk T1 sebelum ekspansi.',false],['T1 harus selesai sebelum rollout.',true]] as const){
+      const f=await make({ticketSlice:true,messages:[{id:'I2',body}]});const imported=await importDataset(db,f.manifest);await analyzeStakeholders(db,imported.dataset_id,stableId(imported.dataset_id,'account','A1'));
+      const [row]=await db.select().from(s.diagnoses).where(eq(s.diagnoses.datasetId,imported.dataset_id));const d=diagnosisSchema.parse(row.diagnosis);
+      expect(d.findings.some(f=>f.type==='documented_ticket_prerequisite')).toBe(expected);expect(d.action_plan.route).toBe(expected?'resolve_prerequisite_first':'clarify_authority_or_requirement');
+    }
+  });
   it('retains one signal through revision and cancellation with both source records',async()=>{
     const f=await make({messages:[{id:'I2',body:'Revisi rencana menjadi 5 outlet.',parent:'I1'}]});const result=await importDataset(db,f.manifest);
     await analyzeDataset(db,result.dataset_id,'2026-09-01');const revised=await card(result.dataset_id);
