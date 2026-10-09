@@ -1,6 +1,8 @@
 # PRD-0x3 — Phase 2: Automate validated interpretation
 
-Status: Planned. Dependency: reproducible PRD-0x2 evidence path.
+Status: Implemented infrastructure and deterministic regression coverage; live
+provider evaluation and human acceptance gates remain open. Dependency: reproducible
+PRD-0x2 evidence path. See [Phase 2 handover](PHASE-2-HANDOVER.md).
 Requirements: FR-01–04, FR-11–12; AGENTS.md Sections 8, 11 and 17.
 
 ## Goal
@@ -29,18 +31,25 @@ enabling model judgments. Preserve deterministic capability during provider fail
 
 - [ ] Reviewed fixtures cover request repetition, negation, cancellation, revision,
   acknowledgement, ambiguity and unsupported assertions.
-- [ ] Repeated messages yield one updated signal rather than duplicate opportunities.
+- [x] Repeated messages yield one updated signal rather than duplicate opportunities.
 - [ ] Accepted assertions carry source span/field, event date, scope, method/version,
   attribution, verification state and model metadata when applicable.
 - [ ] Rules-only and rules-plus-Jev results are measured on the same labeled set;
   thresholds/gates are agreed from evidence before automated acceptance is enabled.
-- [ ] If Jev is unavailable, its evaluation/integration is explicitly unfinished;
+- [x] If Jev is unavailable, its evaluation/integration is explicitly unfinished;
   mock inference is never presented as real, and deterministic features still work.
-- [ ] Invalid outputs and provider failures have explicit outcomes; stale caches are
+- [x] Invalid outputs and provider failures have explicit outcomes; stale caches are
   rejected and repeated valid requests reuse the appropriate successful output.
-- [ ] Call/usage/cost reporting and meaningful provider-failure tests pass.
-- [ ] Relevant checks and shared DoD are recorded without generalization claims
+- [x] Call/usage/cost reporting and meaningful provider-failure tests pass.
+- [x] Relevant checks and shared DoD are recorded without generalization claims
   based solely on showcased examples.
+
+Unchecked items remain intentional release gates. Synthetic fixtures are
+assistant-curated with human review pending. Provider results are validated,
+cached **candidates**, never automatically accepted graph facts or action-card
+inputs. Source-inspected C06/C02 regressions are narrower than dataset evaluation.
+The standalone extraction adapter is available for scoped CLI review; automatic
+fallback selection and assertion promotion remain gated by evaluation.
 
 ## Out of scope
 

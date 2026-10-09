@@ -136,3 +136,19 @@ foreignKey({ columns: [t.datasetId, t.signalId], foreignColumns: [signals.datase
 foreignKey({ columns: [t.datasetId, t.ownerId], foreignColumns: [employees.datasetId, employees.id] }),
 foreignKey({ columns: [t.datasetId, t.contactId], foreignColumns: [contacts.datasetId, contacts.id] }),
 foreignKey({ columns: [t.datasetId, t.runId], foreignColumns: [analysisRuns.datasetId, analysisRuns.id] })]);
+
+// Successful validated candidates are cached; failure attempts remain auditable.
+// Candidates require review and never establish commercial authority by themselves.
+export const modelRuns = pgTable('model_runs', {
+  id:uuid().primaryKey(),datasetId:uuid('dataset_id').notNull(),accountId:uuid('account_id').notNull(),
+  cacheKey:text('cache_key').notNull(),inputHash:text('input_hash').notNull(),operation:text().notNull(),
+  provider:text().notNull(),model:text().notNull(),promptVersion:text('prompt_version').notNull(),
+  schemaVersion:text('schema_version').notNull(),parametersVersion:text('parameters_version').notNull(),
+  status:text().notNull(),output:jsonb(),latencyMs:integer('latency_ms').notNull(),
+  inputTokens:integer('input_tokens'),outputTokens:integer('output_tokens'),
+  costUsd:numeric('cost_usd',{precision:20,scale:10}),costBasis:text('cost_basis').notNull(),
+  createdAt:timestamp('created_at',{withTimezone:true}).defaultNow().notNull(),
+},t=>[foreignKey({columns:[t.datasetId,t.accountId],foreignColumns:[accounts.datasetId,accounts.id]}),
+  index('model_cache_idx').on(t.datasetId,t.accountId,t.cacheKey,t.status),
+  check('model_run_status',sql`${t.status} in ('succeeded','unavailable','invalid','timeout','provider_error','budget_exceeded')`),
+  check('model_run_usage',sql`${t.latencyMs} >= 0 and (${t.inputTokens} is null or ${t.inputTokens} >= 0) and (${t.outputTokens} is null or ${t.outputTokens} >= 0) and (${t.costUsd} is null or ${t.costUsd} >= 0)`) ]);

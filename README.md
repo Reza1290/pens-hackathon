@@ -9,7 +9,10 @@ Phase 0 inspection and Phase 1 deterministic C06 slice are implemented: React/Vi
 Express/TypeScript, shared Zod DTOs, PostgreSQL/Drizzle migrations, retained-source
 import, analysis, evidence endpoints and a local review UI. Broader interpretation,
 stakeholder diagnosis, the full three-view workflow, drafts and Q&A remain planned.
-This is not a complete MVP. See [Phase 1 handover](docs/PHASE-1-HANDOVER.md).
+Phase 2 adds deterministic revision/cancellation handling, scoped provider adapters,
+durable cache/failure records and synthetic evaluation. Live model evaluation and
+human acceptance gates remain open. This is not a complete MVP.
+See [Phase 2 handover](docs/PHASE-2-HANDOVER.md).
 
 ## Local setup
 
@@ -58,7 +61,17 @@ random `kasirnusa_test_<uuid>` database, apply committed migrations, use synthet
 fixtures, and remove only their own database. They never truncate or migrate the
 imported developer database. Production artifacts are in ignored `apps/*/dist`;
 `npm run start -w @kasirnusa/api` starts the built API. Production frontend serving
-and hosting are not configured. The future `eval` command is not implemented.
+and hosting are not configured.
+
+```powershell
+npm run eval -- --dataset 93bb692a-2168-5ef3-a37d-8e929f9b6340
+npm run data:verify -- --dataset 93bb692a-2168-5ef3-a37d-8e929f9b6340 --fixture tests/fixtures/c02-review.json
+```
+
+Evaluation defaults to offline synthetic regression cases. Provider adapters are
+server-side and require explicit CLI `--live` plus configuration; their results
+remain unverified candidates, not action-card inputs. See
+[provider configuration and limitations](docs/AI-PROVIDERS.md).
 
 An esbuild **0.28.2** override resolves observed development-tool advisories;
 clean install, migration generation, tests and builds were checked with it.
@@ -122,7 +135,8 @@ conditional on evaluation. Expansion, renewal and new-sale context stay separate
 
 See the [development plan](docs/README.md) for phase PRDs, definitions of done,
 acceptance checks and out-of-scope work. Phases 0–1 are locally verified;
-later phases remain planned. Run `python scripts/audit_sources.py` to
+Phase 2 infrastructure is tested with live evaluation gates open; Phases 3–6
+remain planned. Run `python scripts/audit_sources.py` to
 regenerate the checksum manifest and inventory from the original `data/raw/` files
 with Python 3.10 or newer (verified with Python 3.14.7). This standard-library tool
 does not import or change customer records; diagnostics are stored in ignored

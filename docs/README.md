@@ -1,7 +1,8 @@
 # Development plan
 
 Authority: [AGENTS.md](../AGENTS.md), v0.3. Phase 0 source inspection is **completed**;
-Phase 1 is **implemented and locally verified**; Phases 2–6 remain **planned**. A checkbox is completed
+Phase 1 is **implemented and locally verified**; Phase 2 has **tested interpretation
+infrastructure with live evaluation gates open**; Phases 3–6 remain **planned**. A checkbox is completed
 only when its supporting validation is recorded. PRD numbering starts at `0x1`
 while implementation phase numbering starts at 0, matching AGENTS.md.
 
@@ -51,9 +52,8 @@ and grounded Q&A; C06 alone does not complete it.
 
 ## Current handover
 
-See [Phase 1 handover](PHASE-1-HANDOVER.md): runnable workspace, 23-table migration,
-all 229,627 records retained, seven core inputs normalized and one C06 card verified
-against reviewed expectations. A stale C01 champion and six historical-email
-occurrences remain diagnostics. Originals remain untouched and ignored. The missing
-brief, broader interpretation, stakeholder diagnosis and model evaluation are
-explicit gaps. Next task: PRD-0x3; C01/P01 in PRD-0x4 remains mandatory for the MVP.
+See [Phase 2 handover](PHASE-2-HANDOVER.md): 24 tables, C06/C02 deterministic
+regressions, scoped provider adapters, durable cache/failure records and synthetic
+evaluation. All 229,627 records remain retained. Live Jev/LLM evaluation,
+human-reviewed labels and acceptance gates remain open. C01/P01 in PRD-0x4 remains
+mandatory; no model result is accepted into action cards yet.

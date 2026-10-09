@@ -16,5 +16,13 @@ export const env = z.object({
   API_PORT: z.coerce.number().int().min(1024).max(65535).default(3001),
   DATA_ROOT: z.string().default('data/raw'),
   ALLOWED_DATASET_IDS: z.string().default(''),
+  JEV_API_KEY: z.string().default(''),
+  JEV_MODEL: z.string().default('jev-1.13.0'),
+  LLM_API_KEY: z.string().default(''),
+  LLM_MODEL: z.string().default(''),
+  MODEL_MAX_CALLS: z.coerce.number().int().min(0).max(1000).default(20),
+  MODEL_TIMEOUT_MS: z.coerce.number().int().min(10).max(60000).default(15000),
+  LLM_INPUT_USD_PER_MILLION: z.preprocess(v=>v===''?undefined:v,z.string().regex(/^\d+(\.\d+)?$/).optional()),
+  LLM_OUTPUT_USD_PER_MILLION: z.preprocess(v=>v===''?undefined:v,z.string().regex(/^\d+(\.\d+)?$/).optional()),
 }).parse(process.env);
 export const allowedDatasets = new Set(env.ALLOWED_DATASET_IDS.split(',').filter(Boolean));

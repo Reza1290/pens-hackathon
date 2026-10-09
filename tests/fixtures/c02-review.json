@@ -1,0 +1,19 @@
+{
+  "review_status": "assistant_source_inspected_expectations; human approval pending",
+  "scope": "C02 regression only; no generalization or authority evaluation",
+  "dataset_version": "kasirnusa-2026-10-01",
+  "as_of": "2026-10-01",
+  "account_external_id": "C02",
+  "source_external_id": "I0253",
+  "request_date": "2026-07-14",
+  "additional_outlets": 6,
+  "location": "Sidoarjo",
+  "target_period": "2027-early",
+  "annual_increment": null,
+  "elapsed_days": 79,
+  "owner_external_id": "E05",
+  "contact_external_id": "K111",
+  "reconciliation_status": "unmatched",
+  "next_action_route": "resolve_prerequisite_first",
+  "acknowledgements": 1
+}

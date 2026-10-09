@@ -15,6 +15,10 @@ import { inside } from '../apps/api/src/modules/ingestion/manifest.js';
 import { createApp } from '../apps/api/src/app.js';
 import { fixture } from './fixtures/snapshot.js';
 import { cardSchema } from '@kasirnusa/contracts';
+import { Interpreter } from '../apps/api/src/ai/router.js';
+import { choices,type Context } from '../apps/api/src/ai/schemas/interpretation.js';
+import { ProviderError,type Provider } from '../apps/api/src/ai/providers/interface.js';
+import { interpretationContext } from '../apps/api/src/ai/context.js';
 
 // Never migrate/truncate/drop the imported developer database. Only a freshly
 // created random database owned by this test run is eligible for teardown.
@@ -37,6 +41,39 @@ afterAll(async()=>{
   for(const path of paths){const target=inside(root,await realpath(path));if(!basename(target).startsWith('phase1-test-'))throw new Error('Unsafe fixture cleanup');await rm(target,{recursive:true});}
 });
 describe('disposable migrated PostgreSQL slice',()=>{
+  it('retains one signal through revision and cancellation with both source records',async()=>{
+    const f=await make({messages:[{id:'I2',body:'Revisi rencana menjadi 5 outlet.',parent:'I1'}]});const result=await importDataset(db,f.manifest);
+    await analyzeDataset(db,result.dataset_id,'2026-09-01');const revised=await card(result.dataset_id);
+    expect(revised.signal.additional_outlets).toBe(5);expect(revised.value_scenario?.amount).toBe('5250.00');expect(revised.signal.date).toBe('2026-08-01');
+    expect(revised.evidence.filter(e=>e.filename==='interactions.jsonl').map(e=>e.source_external_id).sort()).toEqual(['I1','I2']);
+    const [signals]=await db.select({n:count()}).from(s.signals).where(eq(s.signals.datasetId,result.dataset_id));expect(signals.n).toBe(1);
+    const cancelledFixture=await make({messages:[{id:'I2',body:'Rencana ekspansi dibatalkan.',parent:'I1'}]});const cancelled=await importDataset(db,cancelledFixture.manifest);await analyzeDataset(db,cancelled.dataset_id,'2026-09-01');
+    expect(await card(cancelled.dataset_id)).toMatchObject({signal:{status:'cancelled'},value_scenario:null});
+  });
+  it('records unavailable/failure outcomes, reuses successes and rejects stale or invalid caches',async()=>{
+    const f=await make({tag:'model-ledger'});const imported=await importDataset(db,f.manifest);
+    const context=await interpretationContext(db,imported.dataset_id,'A1',['I1'],'K1');
+    let invoked=0;
+    const value={type:'choice',choice:'quotation_request',probabilities:Object.fromEntries(choices.intent.map(k=>[k,k==='quotation_request'?1:0])),confidence:0.75};
+    const provider:Provider={name:'typesafe',model:'jev-1.13.0',configured:true,async invoke(){invoked++;return {model:'jev-1.13.0',value,inputTokens:100,outputTokens:10};}};
+    const offline=new Interpreter(db,{live:false,maxCalls:2,timeoutMs:100});expect((await offline.run(context,'intent',provider)).status).toBe('unavailable');expect(invoked).toBe(0);
+    const live=new Interpreter(db,{live:true,maxCalls:2,timeoutMs:100});
+    const results=await Promise.all([live.run(context,'intent',provider),live.run(context,'intent',provider)]);expect(results.every(r=>r.status==='succeeded')).toBe(true);expect(invoked).toBe(1);expect(results.filter(r=>r.cached)).toHaveLength(1);
+    const [saved]=await db.select().from(s.modelRuns).where(eq(s.modelRuns.id,results[0].runId));expect(saved.costUsd).toBe('0.0000042000');expect(saved.inputTokens).toBe(100);
+    await txInvalidCache(saved.id);
+    expect((await live.run(context,'intent',provider)).cached).toBe(false);expect(invoked).toBe(2);
+    expect((await live.run({...context,claim:'changed operation input'},'intent',provider)).status).toBe('budget_exceeded');
+    const invalid=new Interpreter(db,{live:true,maxCalls:2,timeoutMs:100});
+    const bad={...provider,model:'invalid-test-model',async invoke(){return {model:'invalid-test-model',value:{...value,probabilities:{quotation_request:1}},inputTokens:1,outputTokens:1};}};
+    expect((await invalid.run(context,'intent',bad)).status).toBe('invalid');expect((await invalid.run(context,'intent',bad)).cached).toBe(false);
+    const timeoutProvider={...provider,model:'timeout-test-model',invoke:async(_op:unknown,_context:unknown,signal:AbortSignal)=>new Promise<never>((_resolve,reject)=>signal.addEventListener('abort',()=>reject(new Error('aborted')),{once:true}))};
+    expect((await new Interpreter(db,{live:true,maxCalls:1,timeoutMs:10}).run(context,'intent',timeoutProvider)).status).toBe('timeout');
+    let attempts=0;const retryProvider={...provider,model:'retry-test-model',async invoke(){attempts++;if(attempts===1)throw new ProviderError('provider_error',true);return {model:'retry-test-model',value,inputTokens:1,outputTokens:1};}};
+    const retries=new Interpreter(db,{live:true,maxCalls:2,timeoutMs:100});expect((await retries.run(context,'intent',retryProvider)).status).toBe('succeeded');expect(retries.calls).toBe(2);
+    await expect(interpretationContext(db,imported.dataset_id,'A1',['missing'])).rejects.toThrow();
+    await expect(live.run({...context,accountId:randomUUID()},'intent',provider)).rejects.toThrow('account_outside_dataset');
+    async function txInvalidCache(id:string){await db.update(s.modelRuns).set({output:{bad:true}}).where(eq(s.modelRuns.id,id));}
+  });
   it('imports idempotently, retains all records and produces one deduplicated card',async()=>{
     const f=await make({duplicate:true});const result=await importDataset(db,f.manifest);expect(result.status).toBe('ready');
     expect((await importDataset(db,f.manifest)).reused).toBe(true);

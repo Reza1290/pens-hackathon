@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import { env,projectRoot } from '../../apps/api/src/config/env.js';
 import { sha256, type Manifest } from '../../apps/api/src/modules/ingestion/manifest.js';
 const csv=(columns:string[],rows:Record<string,string>[])=>columns.join(',')+'\n'+rows.map(row=>columns.map(key=>'"'+(row[key]??'').replaceAll('"','""')+'"').join(',')).join('\n')+(rows.length?'\n':'');
-export async function fixture(options:{tag?:string;inconsistentTerms?:boolean;deal?:boolean;invalidOwner?:boolean;malformed?:boolean;missingDeals?:boolean;invalidDealHeader?:boolean;duplicate?:boolean;conflictingContracts?:boolean;finiteLimit?:boolean}={}){
+export async function fixture(options:{tag?:string;messages?:{id:string;body:string;parent?:string;sender?:string;date?:string}[];inconsistentTerms?:boolean;deal?:boolean;invalidOwner?:boolean;malformed?:boolean;missingDeals?:boolean;invalidDealHeader?:boolean;duplicate?:boolean;conflictingContracts?:boolean;finiteLimit?:boolean}={}){
   const version=`phase1-test-${randomUUID()}`;const path=resolve(projectRoot,env.DATA_ROOT,version);await mkdir(path,{recursive:true});
   const inputs:Record<string,{columns:string[];rows:Record<string,string>[]}>={
     'employees.csv':{columns:['employee_id','nama','jabatan','email'],rows:[{employee_id:'E1',nama:'Sample Manager',jabatan:'Account Manager',email:'manager@example.test'}]},
@@ -20,14 +20,15 @@ export async function fixture(options:{tag?:string;inconsistentTerms?:boolean;de
   if(options.conflictingContracts)inputs['contracts_billing.csv'].rows.push({...inputs['contracts_billing.csv'].rows[0],contract_id:'CT2',harga_per_outlet_bulan:'200'});
   for(const filename of ['outlets.csv','product_usage_daily.csv','feature_usage_monthly.csv','support_tickets.csv','features.csv','bugs.csv','releases.csv','decision_log.csv'])inputs[filename]={columns:['id'],rows:[]};
   const message={interaction_id:'I1',tanggal:'2026-08-01',tipe:'email',account_id:'A1',dari:'buyer@example.test',ke:'manager@example.test',peserta:'',subjek:'Proposed rollout',isi:'Kami berencana membuka 3 outlet di Testville pada kuartal 2 2027. Mohon penawaran dan jadwal implementasinya.',membalas_id:''};
-  const jsonl=options.malformed?'{broken JSON\n':JSON.stringify(message)+'\n'+(options.duplicate?JSON.stringify({...message,interaction_id:'I2'})+'\n':'');
+  const added=(options.messages??[]).map(m=>({...message,interaction_id:m.id,isi:m.body,membalas_id:m.parent??'',dari:m.sender??message.dari,tanggal:m.date??'2026-08-02'}));
+  const jsonl=options.malformed?'{broken JSON\n':JSON.stringify(message)+'\n'+(options.duplicate?JSON.stringify({...message,interaction_id:'I2'})+'\n':'')+added.map(m=>JSON.stringify(m)+'\n').join('');
   const files:Manifest['files']=[];
   for(const filename of Object.keys(inputs).sort()){
     if(options.missingDeals&&filename==='crm_deals.csv')continue;
     const {columns,rows}=inputs[filename];const content=csv(columns,rows);await writeFile(resolve(path,filename),content);
     files.push({filename,relative_path:`data/raw/${version}/${filename}`,sha256:sha256(content),bytes:Buffer.byteLength(content),kind:'records',records:rows.length,columns});
   }
-  await writeFile(resolve(path,'interactions.jsonl'),jsonl);files.push({filename:'interactions.jsonl',relative_path:`data/raw/${version}/interactions.jsonl`,sha256:sha256(jsonl),bytes:Buffer.byteLength(jsonl),kind:'records',records:options.duplicate?2:1,columns:Object.keys(message)});
+  await writeFile(resolve(path,'interactions.jsonl'),jsonl);files.push({filename:'interactions.jsonl',relative_path:`data/raw/${version}/interactions.jsonl`,sha256:sha256(jsonl),bytes:Buffer.byteLength(jsonl),kind:'records',records:(options.duplicate?2:1)+added.length,columns:Object.keys(message)});
   files.sort((a,b)=>a.filename<b.filename?-1:1);
   const manifest:Manifest={schema_version:'source-manifest-v1',dataset_version:version,mapping_version:'phase0-v1',as_of:'2026-09-01',files,content_manifest_sha256:sha256(JSON.stringify(files.map(f=>[f.filename,f.sha256])))};
   return {manifest,path};

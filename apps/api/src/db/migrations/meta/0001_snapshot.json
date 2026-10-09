@@ -1,0 +1,2955 @@
+{
+  "id": "430cac93-e6fe-42bd-af69-7d7eea4141d4",
+  "prevId": "b8b1f762-f597-4791-8933-32d51731b08e",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.accounts": {
+      "name": "accounts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "dataset_id": {
+          "name": "dataset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "external_id": {
+          "name": "external_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entity_kind": {
+          "name": "entity_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'account'"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "owner_id": {
+          "name": "owner_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "champion_external_id": {
+          "name": "champion_external_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "package": {
+          "name": "package",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "outlet_count": {
+          "name": "outlet_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "accounts_dataset_id_id_entity_kind_entities_dataset_id_id_kind_fk": {
+          "name": "accounts_dataset_id_id_entity_kind_entities_dataset_id_id_kind_fk",
+          "tableFrom": "accounts",
+          "tableTo": "entities",
+          "columnsFrom": [
+            "dataset_id",
+            "id",
+            "entity_kind"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id",
+            "kind"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "accounts_dataset_id_owner_id_employees_dataset_id_id_fk": {
+          "name": "accounts_dataset_id_owner_id_employees_dataset_id_id_fk",
+          "tableFrom": "accounts",
+          "tableTo": "employees",
+          "columnsFrom": [
+            "dataset_id",
+            "owner_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "accounts_dataset_id_id_unique": {
+          "name": "accounts_dataset_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "id"
+          ]
+        },
+        "accounts_dataset_id_external_id_unique": {
+          "name": "accounts_dataset_id_external_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "external_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "account_kind": {
+          "name": "account_kind",
+          "value": "\"accounts\".\"entity_kind\" = 'account'"
+        },
+        "account_type": {
+          "name": "account_type",
+          "value": "\"accounts\".\"type\" in ('customer','prospect')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.analysis_runs": {
+      "name": "analysis_runs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "dataset_id": {
+          "name": "dataset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "as_of": {
+          "name": "as_of",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rule_version": {
+          "name": "rule_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "analysis_runs_dataset_id_datasets_id_fk": {
+          "name": "analysis_runs_dataset_id_datasets_id_fk",
+          "tableFrom": "analysis_runs",
+          "tableTo": "datasets",
+          "columnsFrom": [
+            "dataset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "analysis_runs_dataset_id_id_unique": {
+          "name": "analysis_runs_dataset_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.assertion_evidence": {
+      "name": "assertion_evidence",
+      "schema": "",
+      "columns": {
+        "dataset_id": {
+          "name": "dataset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "assertion_id": {
+          "name": "assertion_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_id": {
+          "name": "source_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "field": {
+          "name": "field",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "passage": {
+          "name": "passage",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "relation": {
+          "name": "relation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "assertion_evidence_dataset_id_assertion_id_assertions_dataset_id_id_fk": {
+          "name": "assertion_evidence_dataset_id_assertion_id_assertions_dataset_id_id_fk",
+          "tableFrom": "assertion_evidence",
+          "tableTo": "assertions",
+          "columnsFrom": [
+            "dataset_id",
+            "assertion_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "assertion_evidence_dataset_id_source_id_source_records_dataset_id_id_fk": {
+          "name": "assertion_evidence_dataset_id_source_id_source_records_dataset_id_id_fk",
+          "tableFrom": "assertion_evidence",
+          "tableTo": "source_records",
+          "columnsFrom": [
+            "dataset_id",
+            "source_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "assertion_evidence_assertion_id_source_id_field_unique": {
+          "name": "assertion_evidence_assertion_id_source_id_field_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "assertion_id",
+            "source_id",
+            "field"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.assertions": {
+      "name": "assertions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "dataset_id": {
+          "name": "dataset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subject_id": {
+          "name": "subject_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "predicate": {
+          "name": "predicate",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "object_id": {
+          "name": "object_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "literal": {
+          "name": "literal",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_date": {
+          "name": "event_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "speaker_id": {
+          "name": "speaker_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attribution": {
+          "name": "attribution",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "method": {
+          "name": "method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "verification": {
+          "name": "verification",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "run_id": {
+          "name": "run_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "assertion_traversal_idx": {
+          "name": "assertion_traversal_idx",
+          "columns": [
+            {
+              "expression": "dataset_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "subject_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "predicate",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "assertions_dataset_id_subject_id_entities_dataset_id_id_fk": {
+          "name": "assertions_dataset_id_subject_id_entities_dataset_id_id_fk",
+          "tableFrom": "assertions",
+          "tableTo": "entities",
+          "columnsFrom": [
+            "dataset_id",
+            "subject_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "assertions_dataset_id_object_id_entities_dataset_id_id_fk": {
+          "name": "assertions_dataset_id_object_id_entities_dataset_id_id_fk",
+          "tableFrom": "assertions",
+          "tableTo": "entities",
+          "columnsFrom": [
+            "dataset_id",
+            "object_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "assertions_dataset_id_speaker_id_entities_dataset_id_id_fk": {
+          "name": "assertions_dataset_id_speaker_id_entities_dataset_id_id_fk",
+          "tableFrom": "assertions",
+          "tableTo": "entities",
+          "columnsFrom": [
+            "dataset_id",
+            "speaker_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "assertions_dataset_id_account_id_accounts_dataset_id_id_fk": {
+          "name": "assertions_dataset_id_account_id_accounts_dataset_id_id_fk",
+          "tableFrom": "assertions",
+          "tableTo": "accounts",
+          "columnsFrom": [
+            "dataset_id",
+            "account_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "assertions_dataset_id_run_id_analysis_runs_dataset_id_id_fk": {
+          "name": "assertions_dataset_id_run_id_analysis_runs_dataset_id_id_fk",
+          "tableFrom": "assertions",
+          "tableTo": "analysis_runs",
+          "columnsFrom": [
+            "dataset_id",
+            "run_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "assertions_dataset_id_id_unique": {
+          "name": "assertions_dataset_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "assertion_one_target": {
+          "name": "assertion_one_target",
+          "value": "(\"assertions\".\"object_id\" is null) <> (\"assertions\".\"literal\" is null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.contacts": {
+      "name": "contacts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "dataset_id": {
+          "name": "dataset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "external_id": {
+          "name": "external_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entity_kind": {
+          "name": "entity_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'contact'"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "contacts_dataset_id_id_entity_kind_entities_dataset_id_id_kind_fk": {
+          "name": "contacts_dataset_id_id_entity_kind_entities_dataset_id_id_kind_fk",
+          "tableFrom": "contacts",
+          "tableTo": "entities",
+          "columnsFrom": [
+            "dataset_id",
+            "id",
+            "entity_kind"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id",
+            "kind"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "contacts_dataset_id_account_id_accounts_dataset_id_id_fk": {
+          "name": "contacts_dataset_id_account_id_accounts_dataset_id_id_fk",
+          "tableFrom": "contacts",
+          "tableTo": "accounts",
+          "columnsFrom": [
+            "dataset_id",
+            "account_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "contacts_dataset_id_id_unique": {
+          "name": "contacts_dataset_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "id"
+          ]
+        },
+        "contacts_dataset_id_external_id_unique": {
+          "name": "contacts_dataset_id_external_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "external_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "contact_kind": {
+          "name": "contact_kind",
+          "value": "\"contacts\".\"entity_kind\" = 'contact'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.contracts": {
+      "name": "contracts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "dataset_id": {
+          "name": "dataset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "external_id": {
+          "name": "external_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entity_kind": {
+          "name": "entity_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'contract'"
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "package": {
+          "name": "package",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "outlets": {
+          "name": "outlets",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "outlet_limit": {
+          "name": "outlet_limit",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unlimited": {
+          "name": "unlimited",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_date": {
+          "name": "start_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "renewal_date": {
+          "name": "renewal_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "monthly_rate": {
+          "name": "monthly_rate",
+          "type": "numeric(20, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "discount_percent": {
+          "name": "discount_percent",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "annual_value": {
+          "name": "annual_value",
+          "type": "numeric(20, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "currency": {
+          "name": "currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'IDR'"
+        },
+        "decision_external_id": {
+          "name": "decision_external_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "contracts_dataset_id_id_entity_kind_entities_dataset_id_id_kind_fk": {
+          "name": "contracts_dataset_id_id_entity_kind_entities_dataset_id_id_kind_fk",
+          "tableFrom": "contracts",
+          "tableTo": "entities",
+          "columnsFrom": [
+            "dataset_id",
+            "id",
+            "entity_kind"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id",
+            "kind"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "contracts_dataset_id_account_id_accounts_dataset_id_id_fk": {
+          "name": "contracts_dataset_id_account_id_accounts_dataset_id_id_fk",
+          "tableFrom": "contracts",
+          "tableTo": "accounts",
+          "columnsFrom": [
+            "dataset_id",
+            "account_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "contracts_dataset_id_id_unique": {
+          "name": "contracts_dataset_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "id"
+          ]
+        },
+        "contracts_dataset_id_external_id_unique": {
+          "name": "contracts_dataset_id_external_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "external_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "contract_kind": {
+          "name": "contract_kind",
+          "value": "\"contracts\".\"entity_kind\" = 'contract'"
+        },
+        "contract_numbers": {
+          "name": "contract_numbers",
+          "value": "\"contracts\".\"outlets\" >= 0 and \"contracts\".\"monthly_rate\" >= 0 and \"contracts\".\"discount_percent\" between 0 and 100"
+        },
+        "contract_limit": {
+          "name": "contract_limit",
+          "value": "(\"contracts\".\"unlimited\" and \"contracts\".\"outlet_limit\" is null) or (not \"contracts\".\"unlimited\" and \"contracts\".\"outlet_limit\" >= 0)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.datasets": {
+      "name": "datasets",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "manifest_hash": {
+          "name": "manifest_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mapping_version": {
+          "name": "mapping_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "as_of": {
+          "name": "as_of",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "coverage": {
+          "name": "coverage",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "datasets_manifest_hash_unique": {
+          "name": "datasets_manifest_hash_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "manifest_hash"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "dataset_status": {
+          "name": "dataset_status",
+          "value": "\"datasets\".\"status\" in ('staging','incomplete','ready')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.deals": {
+      "name": "deals",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "dataset_id": {
+          "name": "dataset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "external_id": {
+          "name": "external_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entity_kind": {
+          "name": "entity_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'deal'"
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "owner_id": {
+          "name": "owner_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stage": {
+          "name": "stage",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stage_since": {
+          "name": "stage_since",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_date": {
+          "name": "created_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "outlets": {
+          "name": "outlets",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "annual_value": {
+          "name": "annual_value",
+          "type": "numeric(20, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "deal_account_idx": {
+          "name": "deal_account_idx",
+          "columns": [
+            {
+              "expression": "dataset_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "deals_dataset_id_id_entity_kind_entities_dataset_id_id_kind_fk": {
+          "name": "deals_dataset_id_id_entity_kind_entities_dataset_id_id_kind_fk",
+          "tableFrom": "deals",
+          "tableTo": "entities",
+          "columnsFrom": [
+            "dataset_id",
+            "id",
+            "entity_kind"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id",
+            "kind"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "deals_dataset_id_account_id_accounts_dataset_id_id_fk": {
+          "name": "deals_dataset_id_account_id_accounts_dataset_id_id_fk",
+          "tableFrom": "deals",
+          "tableTo": "accounts",
+          "columnsFrom": [
+            "dataset_id",
+            "account_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "deals_dataset_id_owner_id_employees_dataset_id_id_fk": {
+          "name": "deals_dataset_id_owner_id_employees_dataset_id_id_fk",
+          "tableFrom": "deals",
+          "tableTo": "employees",
+          "columnsFrom": [
+            "dataset_id",
+            "owner_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "deals_dataset_id_id_unique": {
+          "name": "deals_dataset_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "id"
+          ]
+        },
+        "deals_dataset_id_external_id_unique": {
+          "name": "deals_dataset_id_external_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "external_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "deal_kind": {
+          "name": "deal_kind",
+          "value": "\"deals\".\"entity_kind\" = 'deal'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.employees": {
+      "name": "employees",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "dataset_id": {
+          "name": "dataset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "external_id": {
+          "name": "external_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entity_kind": {
+          "name": "entity_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'employee'"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "employees_dataset_id_id_entity_kind_entities_dataset_id_id_kind_fk": {
+          "name": "employees_dataset_id_id_entity_kind_entities_dataset_id_id_kind_fk",
+          "tableFrom": "employees",
+          "tableTo": "entities",
+          "columnsFrom": [
+            "dataset_id",
+            "id",
+            "entity_kind"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id",
+            "kind"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "employees_dataset_id_id_unique": {
+          "name": "employees_dataset_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "id"
+          ]
+        },
+        "employees_dataset_id_external_id_unique": {
+          "name": "employees_dataset_id_external_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "external_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "employee_kind": {
+          "name": "employee_kind",
+          "value": "\"employees\".\"entity_kind\" = 'employee'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.contact_employments": {
+      "name": "contact_employments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "dataset_id": {
+          "name": "dataset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "external_id": {
+          "name": "external_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entity_kind": {
+          "name": "entity_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'employment'"
+        },
+        "contact_id": {
+          "name": "contact_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_date": {
+          "name": "start_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_date": {
+          "name": "end_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "contact_employments_dataset_id_id_entity_kind_entities_dataset_id_id_kind_fk": {
+          "name": "contact_employments_dataset_id_id_entity_kind_entities_dataset_id_id_kind_fk",
+          "tableFrom": "contact_employments",
+          "tableTo": "entities",
+          "columnsFrom": [
+            "dataset_id",
+            "id",
+            "entity_kind"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id",
+            "kind"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "contact_employments_dataset_id_contact_id_contacts_dataset_id_id_fk": {
+          "name": "contact_employments_dataset_id_contact_id_contacts_dataset_id_id_fk",
+          "tableFrom": "contact_employments",
+          "tableTo": "contacts",
+          "columnsFrom": [
+            "dataset_id",
+            "contact_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "contact_employments_dataset_id_organization_id_organizations_dataset_id_id_fk": {
+          "name": "contact_employments_dataset_id_organization_id_organizations_dataset_id_id_fk",
+          "tableFrom": "contact_employments",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "dataset_id",
+            "organization_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "contact_employments_dataset_id_account_id_accounts_dataset_id_id_fk": {
+          "name": "contact_employments_dataset_id_account_id_accounts_dataset_id_id_fk",
+          "tableFrom": "contact_employments",
+          "tableTo": "accounts",
+          "columnsFrom": [
+            "dataset_id",
+            "account_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "contact_employments_dataset_id_id_unique": {
+          "name": "contact_employments_dataset_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "id"
+          ]
+        },
+        "contact_employments_dataset_id_external_id_unique": {
+          "name": "contact_employments_dataset_id_external_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "external_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "employment_kind": {
+          "name": "employment_kind",
+          "value": "\"contact_employments\".\"entity_kind\" = 'employment'"
+        },
+        "employment_interval": {
+          "name": "employment_interval",
+          "value": "\"contact_employments\".\"end_date\" is null or \"contact_employments\".\"end_date\" >= \"contact_employments\".\"start_date\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.entities": {
+      "name": "entities",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "dataset_id": {
+          "name": "dataset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "external_id": {
+          "name": "external_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "entities_dataset_id_datasets_id_fk": {
+          "name": "entities_dataset_id_datasets_id_fk",
+          "tableFrom": "entities",
+          "tableTo": "datasets",
+          "columnsFrom": [
+            "dataset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "entities_dataset_id_id_unique": {
+          "name": "entities_dataset_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "id"
+          ]
+        },
+        "entities_dataset_id_id_kind_unique": {
+          "name": "entities_dataset_id_id_kind_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "id",
+            "kind"
+          ]
+        },
+        "entities_dataset_id_kind_external_id_unique": {
+          "name": "entities_dataset_id_kind_external_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "kind",
+            "external_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.entity_sources": {
+      "name": "entity_sources",
+      "schema": "",
+      "columns": {
+        "dataset_id": {
+          "name": "dataset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entity_id": {
+          "name": "entity_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_id": {
+          "name": "source_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "entity_sources_dataset_id_entity_id_entities_dataset_id_id_fk": {
+          "name": "entity_sources_dataset_id_entity_id_entities_dataset_id_id_fk",
+          "tableFrom": "entity_sources",
+          "tableTo": "entities",
+          "columnsFrom": [
+            "dataset_id",
+            "entity_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "entity_sources_dataset_id_source_id_source_records_dataset_id_id_fk": {
+          "name": "entity_sources_dataset_id_source_id_source_records_dataset_id_id_fk",
+          "tableFrom": "entity_sources",
+          "tableTo": "source_records",
+          "columnsFrom": [
+            "dataset_id",
+            "source_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "entity_sources_entity_id_source_id_unique": {
+          "name": "entity_sources_entity_id_source_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "entity_id",
+            "source_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.finding_evidence": {
+      "name": "finding_evidence",
+      "schema": "",
+      "columns": {
+        "dataset_id": {
+          "name": "dataset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "finding_id": {
+          "name": "finding_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_id": {
+          "name": "source_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "check_result": {
+          "name": "check_result",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "finding_evidence_dataset_id_finding_id_findings_dataset_id_id_fk": {
+          "name": "finding_evidence_dataset_id_finding_id_findings_dataset_id_id_fk",
+          "tableFrom": "finding_evidence",
+          "tableTo": "findings",
+          "columnsFrom": [
+            "dataset_id",
+            "finding_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "finding_evidence_dataset_id_source_id_source_records_dataset_id_id_fk": {
+          "name": "finding_evidence_dataset_id_source_id_source_records_dataset_id_id_fk",
+          "tableFrom": "finding_evidence",
+          "tableTo": "source_records",
+          "columnsFrom": [
+            "dataset_id",
+            "source_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "finding_evidence_target": {
+          "name": "finding_evidence_target",
+          "value": "\"finding_evidence\".\"source_id\" is not null or \"finding_evidence\".\"check_result\" is not null"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.findings": {
+      "name": "findings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "dataset_id": {
+          "name": "dataset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "signal_id": {
+          "name": "signal_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "run_id": {
+          "name": "run_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "commercial_context": {
+          "name": "commercial_context",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "details": {
+          "name": "details",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "findings_dataset_id_account_id_accounts_dataset_id_id_fk": {
+          "name": "findings_dataset_id_account_id_accounts_dataset_id_id_fk",
+          "tableFrom": "findings",
+          "tableTo": "accounts",
+          "columnsFrom": [
+            "dataset_id",
+            "account_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "findings_dataset_id_signal_id_expansion_signals_dataset_id_id_fk": {
+          "name": "findings_dataset_id_signal_id_expansion_signals_dataset_id_id_fk",
+          "tableFrom": "findings",
+          "tableTo": "expansion_signals",
+          "columnsFrom": [
+            "dataset_id",
+            "signal_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "findings_dataset_id_run_id_analysis_runs_dataset_id_id_fk": {
+          "name": "findings_dataset_id_run_id_analysis_runs_dataset_id_id_fk",
+          "tableFrom": "findings",
+          "tableTo": "analysis_runs",
+          "columnsFrom": [
+            "dataset_id",
+            "run_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "findings_dataset_id_id_unique": {
+          "name": "findings_dataset_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ingestion_errors": {
+      "name": "ingestion_errors",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "dataset_id": {
+          "name": "dataset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "file_id": {
+          "name": "file_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "locator": {
+          "name": "locator",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "field": {
+          "name": "field",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "disposition": {
+          "name": "disposition",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "ingestion_errors_dataset_id_datasets_id_fk": {
+          "name": "ingestion_errors_dataset_id_datasets_id_fk",
+          "tableFrom": "ingestion_errors",
+          "tableTo": "datasets",
+          "columnsFrom": [
+            "dataset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "ingestion_errors_dataset_id_file_id_source_files_dataset_id_id_fk": {
+          "name": "ingestion_errors_dataset_id_file_id_source_files_dataset_id_id_fk",
+          "tableFrom": "ingestion_errors",
+          "tableTo": "source_files",
+          "columnsFrom": [
+            "dataset_id",
+            "file_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.interactions": {
+      "name": "interactions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "dataset_id": {
+          "name": "dataset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "external_id": {
+          "name": "external_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entity_kind": {
+          "name": "entity_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'interaction'"
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "event_date": {
+          "name": "event_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sender": {
+          "name": "sender",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recipients": {
+          "name": "recipients",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subject": {
+          "name": "subject",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "interaction_account_date_idx": {
+          "name": "interaction_account_date_idx",
+          "columns": [
+            {
+              "expression": "dataset_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "event_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "interactions_dataset_id_id_entity_kind_entities_dataset_id_id_kind_fk": {
+          "name": "interactions_dataset_id_id_entity_kind_entities_dataset_id_id_kind_fk",
+          "tableFrom": "interactions",
+          "tableTo": "entities",
+          "columnsFrom": [
+            "dataset_id",
+            "id",
+            "entity_kind"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id",
+            "kind"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "interactions_dataset_id_account_id_accounts_dataset_id_id_fk": {
+          "name": "interactions_dataset_id_account_id_accounts_dataset_id_id_fk",
+          "tableFrom": "interactions",
+          "tableTo": "accounts",
+          "columnsFrom": [
+            "dataset_id",
+            "account_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "interactions_dataset_id_parent_id_interactions_dataset_id_id_fk": {
+          "name": "interactions_dataset_id_parent_id_interactions_dataset_id_id_fk",
+          "tableFrom": "interactions",
+          "tableTo": "interactions",
+          "columnsFrom": [
+            "dataset_id",
+            "parent_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "interactions_dataset_id_id_unique": {
+          "name": "interactions_dataset_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "id"
+          ]
+        },
+        "interactions_dataset_id_external_id_unique": {
+          "name": "interactions_dataset_id_external_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "external_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "interaction_kind": {
+          "name": "interaction_kind",
+          "value": "\"interactions\".\"entity_kind\" = 'interaction'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.model_runs": {
+      "name": "model_runs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "dataset_id": {
+          "name": "dataset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cache_key": {
+          "name": "cache_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "input_hash": {
+          "name": "input_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "operation": {
+          "name": "operation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider": {
+          "name": "provider",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model": {
+          "name": "model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prompt_version": {
+          "name": "prompt_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "schema_version": {
+          "name": "schema_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "parameters_version": {
+          "name": "parameters_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "output": {
+          "name": "output",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "latency_ms": {
+          "name": "latency_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "input_tokens": {
+          "name": "input_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "output_tokens": {
+          "name": "output_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cost_usd": {
+          "name": "cost_usd",
+          "type": "numeric(20, 10)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cost_basis": {
+          "name": "cost_basis",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "model_cache_idx": {
+          "name": "model_cache_idx",
+          "columns": [
+            {
+              "expression": "dataset_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "cache_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "model_runs_dataset_id_account_id_accounts_dataset_id_id_fk": {
+          "name": "model_runs_dataset_id_account_id_accounts_dataset_id_id_fk",
+          "tableFrom": "model_runs",
+          "tableTo": "accounts",
+          "columnsFrom": [
+            "dataset_id",
+            "account_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "model_run_status": {
+          "name": "model_run_status",
+          "value": "\"model_runs\".\"status\" in ('succeeded','unavailable','invalid','timeout','provider_error','budget_exceeded')"
+        },
+        "model_run_usage": {
+          "name": "model_run_usage",
+          "value": "\"model_runs\".\"latency_ms\" >= 0 and (\"model_runs\".\"input_tokens\" is null or \"model_runs\".\"input_tokens\" >= 0) and (\"model_runs\".\"output_tokens\" is null or \"model_runs\".\"output_tokens\" >= 0) and (\"model_runs\".\"cost_usd\" is null or \"model_runs\".\"cost_usd\" >= 0)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.organizations": {
+      "name": "organizations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "dataset_id": {
+          "name": "dataset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "external_id": {
+          "name": "external_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entity_kind": {
+          "name": "entity_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'organization'"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "organizations_dataset_id_id_entity_kind_entities_dataset_id_id_kind_fk": {
+          "name": "organizations_dataset_id_id_entity_kind_entities_dataset_id_id_kind_fk",
+          "tableFrom": "organizations",
+          "tableTo": "entities",
+          "columnsFrom": [
+            "dataset_id",
+            "id",
+            "entity_kind"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id",
+            "kind"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "organizations_dataset_id_account_id_accounts_dataset_id_id_fk": {
+          "name": "organizations_dataset_id_account_id_accounts_dataset_id_id_fk",
+          "tableFrom": "organizations",
+          "tableTo": "accounts",
+          "columnsFrom": [
+            "dataset_id",
+            "account_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "organizations_dataset_id_id_unique": {
+          "name": "organizations_dataset_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "id"
+          ]
+        },
+        "organizations_dataset_id_external_id_unique": {
+          "name": "organizations_dataset_id_external_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "external_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "organization_kind": {
+          "name": "organization_kind",
+          "value": "\"organizations\".\"entity_kind\" = 'organization'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.interaction_participants": {
+      "name": "interaction_participants",
+      "schema": "",
+      "columns": {
+        "dataset_id": {
+          "name": "dataset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "interaction_id": {
+          "name": "interaction_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "person_id": {
+          "name": "person_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "interaction_participants_dataset_id_interaction_id_interactions_dataset_id_id_fk": {
+          "name": "interaction_participants_dataset_id_interaction_id_interactions_dataset_id_id_fk",
+          "tableFrom": "interaction_participants",
+          "tableTo": "interactions",
+          "columnsFrom": [
+            "dataset_id",
+            "interaction_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "interaction_participants_dataset_id_person_id_entities_dataset_id_id_fk": {
+          "name": "interaction_participants_dataset_id_person_id_entities_dataset_id_id_fk",
+          "tableFrom": "interaction_participants",
+          "tableTo": "entities",
+          "columnsFrom": [
+            "dataset_id",
+            "person_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "interaction_participants_interaction_id_person_id_role_unique": {
+          "name": "interaction_participants_interaction_id_person_id_role_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "interaction_id",
+            "person_id",
+            "role"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.recommendations": {
+      "name": "recommendations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "dataset_id": {
+          "name": "dataset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "signal_id": {
+          "name": "signal_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "run_id": {
+          "name": "run_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "owner_id": {
+          "name": "owner_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contact_id": {
+          "name": "contact_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "route": {
+          "name": "route",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "review_status": {
+          "name": "review_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'proposed'"
+        },
+        "card": {
+          "name": "card",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "recommendations_dataset_id_signal_id_expansion_signals_dataset_id_id_fk": {
+          "name": "recommendations_dataset_id_signal_id_expansion_signals_dataset_id_id_fk",
+          "tableFrom": "recommendations",
+          "tableTo": "expansion_signals",
+          "columnsFrom": [
+            "dataset_id",
+            "signal_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "recommendations_dataset_id_owner_id_employees_dataset_id_id_fk": {
+          "name": "recommendations_dataset_id_owner_id_employees_dataset_id_id_fk",
+          "tableFrom": "recommendations",
+          "tableTo": "employees",
+          "columnsFrom": [
+            "dataset_id",
+            "owner_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "recommendations_dataset_id_contact_id_contacts_dataset_id_id_fk": {
+          "name": "recommendations_dataset_id_contact_id_contacts_dataset_id_id_fk",
+          "tableFrom": "recommendations",
+          "tableTo": "contacts",
+          "columnsFrom": [
+            "dataset_id",
+            "contact_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "recommendations_dataset_id_run_id_analysis_runs_dataset_id_id_fk": {
+          "name": "recommendations_dataset_id_run_id_analysis_runs_dataset_id_id_fk",
+          "tableFrom": "recommendations",
+          "tableTo": "analysis_runs",
+          "columnsFrom": [
+            "dataset_id",
+            "run_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "recommendations_dataset_id_id_unique": {
+          "name": "recommendations_dataset_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "id"
+          ]
+        },
+        "recommendations_run_id_signal_id_unique": {
+          "name": "recommendations_run_id_signal_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "run_id",
+            "signal_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.signal_deal_matches": {
+      "name": "signal_deal_matches",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "dataset_id": {
+          "name": "dataset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "signal_id": {
+          "name": "signal_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deal_id": {
+          "name": "deal_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "run_id": {
+          "name": "run_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "signal_deal_matches_dataset_id_signal_id_expansion_signals_dataset_id_id_fk": {
+          "name": "signal_deal_matches_dataset_id_signal_id_expansion_signals_dataset_id_id_fk",
+          "tableFrom": "signal_deal_matches",
+          "tableTo": "expansion_signals",
+          "columnsFrom": [
+            "dataset_id",
+            "signal_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "signal_deal_matches_dataset_id_deal_id_deals_dataset_id_id_fk": {
+          "name": "signal_deal_matches_dataset_id_deal_id_deals_dataset_id_id_fk",
+          "tableFrom": "signal_deal_matches",
+          "tableTo": "deals",
+          "columnsFrom": [
+            "dataset_id",
+            "deal_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "signal_deal_matches_dataset_id_run_id_analysis_runs_dataset_id_id_fk": {
+          "name": "signal_deal_matches_dataset_id_run_id_analysis_runs_dataset_id_id_fk",
+          "tableFrom": "signal_deal_matches",
+          "tableTo": "analysis_runs",
+          "columnsFrom": [
+            "dataset_id",
+            "run_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.expansion_signals": {
+      "name": "expansion_signals",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "dataset_id": {
+          "name": "dataset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "external_id": {
+          "name": "external_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entity_kind": {
+          "name": "entity_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'signal'"
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "request_date": {
+          "name": "request_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quantity": {
+          "name": "quantity",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location": {
+          "name": "location",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "target_period": {
+          "name": "target_period",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dedup_key": {
+          "name": "dedup_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "run_id": {
+          "name": "run_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_id": {
+          "name": "source_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "expansion_signals_dataset_id_id_entity_kind_entities_dataset_id_id_kind_fk": {
+          "name": "expansion_signals_dataset_id_id_entity_kind_entities_dataset_id_id_kind_fk",
+          "tableFrom": "expansion_signals",
+          "tableTo": "entities",
+          "columnsFrom": [
+            "dataset_id",
+            "id",
+            "entity_kind"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id",
+            "kind"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "expansion_signals_dataset_id_account_id_accounts_dataset_id_id_fk": {
+          "name": "expansion_signals_dataset_id_account_id_accounts_dataset_id_id_fk",
+          "tableFrom": "expansion_signals",
+          "tableTo": "accounts",
+          "columnsFrom": [
+            "dataset_id",
+            "account_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "expansion_signals_dataset_id_run_id_analysis_runs_dataset_id_id_fk": {
+          "name": "expansion_signals_dataset_id_run_id_analysis_runs_dataset_id_id_fk",
+          "tableFrom": "expansion_signals",
+          "tableTo": "analysis_runs",
+          "columnsFrom": [
+            "dataset_id",
+            "run_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "expansion_signals_dataset_id_source_id_source_records_dataset_id_id_fk": {
+          "name": "expansion_signals_dataset_id_source_id_source_records_dataset_id_id_fk",
+          "tableFrom": "expansion_signals",
+          "tableTo": "source_records",
+          "columnsFrom": [
+            "dataset_id",
+            "source_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "expansion_signals_dataset_id_id_unique": {
+          "name": "expansion_signals_dataset_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "id"
+          ]
+        },
+        "expansion_signals_dataset_id_external_id_unique": {
+          "name": "expansion_signals_dataset_id_external_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "external_id"
+          ]
+        },
+        "expansion_signals_dataset_id_dedup_key_unique": {
+          "name": "expansion_signals_dataset_id_dedup_key_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "dedup_key"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "signal_kind": {
+          "name": "signal_kind",
+          "value": "\"expansion_signals\".\"entity_kind\" = 'signal'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.source_files": {
+      "name": "source_files",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "dataset_id": {
+          "name": "dataset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "filename": {
+          "name": "filename",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sha256": {
+          "name": "sha256",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "relative_path": {
+          "name": "relative_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "record_count": {
+          "name": "record_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "source_files_dataset_id_datasets_id_fk": {
+          "name": "source_files_dataset_id_datasets_id_fk",
+          "tableFrom": "source_files",
+          "tableTo": "datasets",
+          "columnsFrom": [
+            "dataset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "source_files_dataset_id_id_unique": {
+          "name": "source_files_dataset_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "id"
+          ]
+        },
+        "source_files_dataset_id_filename_unique": {
+          "name": "source_files_dataset_id_filename_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "filename"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.source_records": {
+      "name": "source_records",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "dataset_id": {
+          "name": "dataset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "file_id": {
+          "name": "file_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "locator": {
+          "name": "locator",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "external_id": {
+          "name": "external_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "account_external_id": {
+          "name": "account_external_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payload": {
+          "name": "payload",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "raw_text": {
+          "name": "raw_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content_hash": {
+          "name": "content_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "search_text": {
+          "name": "search_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "source_account_idx": {
+          "name": "source_account_idx",
+          "columns": [
+            {
+              "expression": "dataset_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "account_external_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "source_records_dataset_id_file_id_source_files_dataset_id_id_fk": {
+          "name": "source_records_dataset_id_file_id_source_files_dataset_id_id_fk",
+          "tableFrom": "source_records",
+          "tableTo": "source_files",
+          "columnsFrom": [
+            "dataset_id",
+            "file_id"
+          ],
+          "columnsTo": [
+            "dataset_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "source_records_dataset_id_id_unique": {
+          "name": "source_records_dataset_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_id",
+            "id"
+          ]
+        },
+        "source_records_file_id_locator_unique": {
+          "name": "source_records_file_id_locator_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "file_id",
+            "locator"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

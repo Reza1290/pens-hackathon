@@ -1,0 +1,30 @@
+// Assistant-curated synthetic labels. Human approval is pending; never a rollout gate.
+import type { Operation } from '../../apps/api/src/ai/schemas/interpretation.js';
+export type EvaluationCase={id:string;operation:Exclude<Operation,'extract_details'>;text:string;followup?:string;claim?:string;expected:string;quantity?:number|null;period?:string|null};
+export const evaluationCases:EvaluationCase[]=[
+  {id:'quote-id',operation:'intent',text:'Kami berencana membuka 3 outlet di Testville pada kuartal 2 2027. Mohon penawaran.',expected:'quotation_request',quantity:3,period:'2027-Q2'},
+  {id:'future-id',operation:'intent',text:'Awal 2027 kami buka 6 cabang di Testville.',expected:'explicit_plan',quantity:6,period:'2027-early'},
+  {id:'quote-en',operation:'intent',text:'We plan to open 4 stores in Q2 2027. Please send a quotation.',expected:'quotation_request',quantity:4,period:'2027-Q2'},
+  {id:'repeat',operation:'intent',text:'Rencana membuka 3 outlet di Testville pada Q2 2027. Mohon penawaran.',expected:'quotation_request',quantity:3,period:'2027-Q2'},
+  {id:'negation',operation:'intent',text:'Kami tidak berencana membuka 3 outlet.',expected:'none'},
+  {id:'historical',operation:'intent',text:'Terima kasih atas dukungan saat pembukaan 3 outlet.',expected:'acknowledgement'},
+  {id:'cancel',operation:'intent',text:'Rencana ekspansi dibatalkan.',expected:'cancellation'},
+  {id:'negated-cancel',operation:'intent',text:'Rencana membuka 3 outlet tidak batal.',expected:'explicit_plan',quantity:3,period:null},
+  {id:'ack',operation:'intent',text:'Nanti saya cek dan kabari.',expected:'acknowledgement'},
+  {id:'terms',operation:'intent',text:'Terima kasih. Penawaran IDR 100 untuk setiap outlet.',expected:'substantive_candidate'},
+  {id:'promise',operation:'intent',text:'Akan kirim penawaran IDR 100 besok.',expected:'acknowledgement'},
+  {id:'revision',operation:'intent',text:'Revisi rencana menjadi 5 outlet.',expected:'revision'},
+  {id:'ambiguous',operation:'intent',text:'Rencana membuka 3 outlet dan 4 cabang awal 2027.',expected:'explicit_plan',quantity:null,period:'2027-early'},
+  {id:'support-volume',operation:'intent',text:'Kami mengirim banyak tiket minggu lalu.',expected:'none'},
+  {id:'renewal-not-expansion',operation:'intent',text:'Mohon penawaran renewal untuk 25 outlet saat ini.',expected:'none'},
+  {id:'title-only',operation:'role',text:'Saya pemilik perusahaan.',expected:'insufficient_evidence'},
+  {id:'approver',operation:'role',text:'Saya menyetujui pembelian untuk rollout ini.',expected:'approver'},
+  {id:'evaluator',operation:'role',text:'Saya mengevaluasi aspek teknis, bukan memutuskan pengadaan.',expected:'technical_evaluator'},
+  {id:'intermediary',operation:'role',text:'Saya menyiapkan business case untuk CFO yang memutuskan pembelian.',expected:'intermediary'},
+  {id:'concern-missed',operation:'concern_addressed',text:'Sebelum renewal kami perlu status integrasi yang dijanjikan.',followup:'Berikut ringkasan penggunaan. Apakah mau renewal?',expected:'not_addressed'},
+  {id:'concern-addressed',operation:'concern_addressed',text:'Kami perlu jadwal integrasi.',followup:'Jadwal integrasi: 12 Oktober untuk uji coba, 20 Oktober untuk rollout.',expected:'addressed'},
+  {id:'attachment-unknown',operation:'concern_addressed',text:'Kami perlu rencana perbaikan integrasi.',followup:'Lihat lampiran yang tidak tersedia dalam data ini.',expected:'insufficient_evidence'},
+  {id:'supported',operation:'relevance',text:'Mohon penawaran untuk 3 outlet tambahan.',claim:'Customer requested a quotation.',expected:'relevant'},
+  {id:'unsupported',operation:'relevance',text:'Kedua kontak pernah bekerja di organisasi sama.',claim:'They are friends.',expected:'irrelevant'},
+  {id:'reported',operation:'relevance',text:'Menurut koordinator, CFO memerlukan referensi.',claim:'The CFO directly requested a reference in this passage.',expected:'irrelevant'},
+];

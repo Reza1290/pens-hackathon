@@ -21,7 +21,9 @@
     "data:prepare": "tsx apps/api/src/cli/prepare.ts",
     "data:import": "tsx apps/api/src/cli/import.ts",
     "data:analyze": "tsx apps/api/src/cli/analyze.ts",
-    "data:verify": "tsx apps/api/src/cli/verify.ts"
+    "data:verify": "tsx apps/api/src/cli/verify.ts",
+    "data:interpret": "tsx apps/api/src/cli/interpret.ts",
+    "eval": "tsx apps/api/src/cli/eval.ts"
   },
   "devDependencies": {
     "@types/express": "5.0.6",
