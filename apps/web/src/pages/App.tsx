@@ -598,7 +598,9 @@ export function App() {
 
       {/* Footer */}
       <footer className="h-8 border-t border-brand-border bg-brand-canvas px-4 flex items-center justify-between text-[11px] text-brand-subtle select-none shrink-0 sticky bottom-0 z-30">
-        <span>KasirNusa Account Expansion Assistant use Historical snapshot</span>
+        <span>
+          KasirNusa Account Expansion Assistant use Historical snapshot · Snapshot: {dataset?.asOf ?? '2026-10-01'} · {dataset?.version ?? 'kasirnusa-2026-10-01'}
+        </span>
         <span></span>
       </footer>
     </div>
@@ -1801,7 +1803,7 @@ function Opportunities({ dataset, onOpenScan }: { dataset: string; onOpenScan: (
         {/* Metric 2: Possible Revenue (Estimasi Nilai) */}
         <div className="border border-brand-border rounded-lg p-4 bg-white shadow-2xs">
           <span className="text-xs font-medium">Possible Revenue (Estimasi Nilai)</span>
-          <div className="mt-2 flex items-baseline space-x-2 font-mono">
+          <div className="mt-2 flex items-baseline space-x-2">
             <span className="text-2xl font-bold">
               Rp {new Intl.NumberFormat('id-ID').format(totalPossibleRevenue)}
             </span>
@@ -2171,21 +2173,7 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
 
   return (
     <div className="space-y-5 max-w-5xl mx-auto">
-      {/* 1. Top Navigation: Back Button & Snapshot */}
-      <div className="flex items-center justify-between pb-2 border-b border-brand-border">
-        <Link
-          to={scoped('/', dataset)}
-          className="text-gray-600 hover:text-gray-900 inline-flex items-center space-x-1.5 text-xs font-medium transition"
-        >
-          <span>←</span>
-          <span>Kembali</span>
-        </Link>
-        <div className="text-[11px] font-mono text-gray-400">
-          Snapshot: {resource.as_of} · {resource.dataset_version}
-        </div>
-      </div>
-
-      {/* 2. Header Title, Badges & Context */}
+      {/* Header Title, Badges & Context */}
       <div>
         {card && (
           <div className="flex flex-wrap items-center gap-2 mb-1.5">
