@@ -1,7 +1,8 @@
 import { z } from 'zod';
+import { operationPlanSchema } from '@kasirnusa/contracts';
 
-export const SCHEMA_VERSION='interpretation-v1';
-export const operationSchema=z.enum(['intent','role','relevance','concern_addressed','extract_details','answer_plan','draft_plan']);
+export const SCHEMA_VERSION='interpretation-v2-four-choice';
+export const operationSchema=z.enum(['intent','role','relevance','concern_addressed','extract_details','answer_plan','draft_plan','query_plan']);
 export type Operation=z.infer<typeof operationSchema>;
 export const contextSchema=z.object({
   datasetId:z.uuid(),accountId:z.uuid(),
@@ -15,7 +16,7 @@ export const choices={
   intent:['quotation_request','explicit_plan','acknowledgement','substantive_candidate','cancellation','revision','none','insufficient_evidence'],
   role:['approver','technical_evaluator','intermediary','insufficient_evidence'],
   relevance:['relevant','irrelevant','insufficient_evidence'],
-  concern_addressed:['addressed','not_addressed','insufficient_evidence'],
+  concern_addressed:['addressed','partially_addressed','not_addressed','insufficient_evidence'],
 } as const;
 export const extractionSchema=z.object({
   status:z.enum(['candidate','insufficient_evidence']),
@@ -27,6 +28,7 @@ export const extractionSchema=z.object({
   })).max(12),
 }).strict();
 export function validateValue(operation:Operation,value:unknown,context:Context){
+  if(operation==='query_plan')return operationPlanSchema.parse(value);
   if(operation==='answer_plan'||operation==='draft_plan'){
     const output=answerPlanSchema.parse(value);
     if(!context.grounding||output.fact_ids.some(id=>!context.grounding!.facts.some(f=>f.id===id))||new Set(output.fact_ids).size!==output.fact_ids.length)throw new Error('unsupported_answer_fact');
@@ -36,7 +38,7 @@ export function validateValue(operation:Operation,value:unknown,context:Context)
     const answer=z.object({type:z.literal('choice'),choice:z.string(),probabilities:z.record(z.string(),z.number().min(0).max(1)),confidence:z.number().min(0).max(1)}).parse(value);
     const expected:readonly string[]=choices[operation];
     if(!expected.includes(answer.choice)||Object.keys(answer.probabilities).length!==expected.length||expected.some(k=>answer.probabilities[k]===undefined)||Math.abs(Object.values(answer.probabilities).reduce((a,b)=>a+b,0)-1)>0.001||answer.probabilities[answer.choice]<Math.max(...Object.values(answer.probabilities)))throw new Error('invalid_choice_distribution');
-    if((operation==='role'&&context.subjectId===null||operation==='relevance'&&!context.claim||operation==='concern_addressed'&&context.sources.length!==2)&&answer.choice!=='insufficient_evidence')throw new Error('missing_judgment_context');
+    if((operation==='role'&&context.subjectId===null||operation==='relevance'&&!context.claim||operation==='concern_addressed'&&context.sources.length<2)&&answer.choice!=='insufficient_evidence')throw new Error('missing_judgment_context');
     return answer;
   }
   const output=extractionSchema.parse(value);

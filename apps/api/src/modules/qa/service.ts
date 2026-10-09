@@ -1,5 +1,7 @@
 import { and,eq,lte,or,sql,inArray } from 'drizzle-orm';
-import { qaResponseSchema,type QaRequest,type QaResponse,type QaClaim,type AccountDiagnosis,type OpportunityCard,type Evidence } from '@kasirnusa/contracts';
+import { qaResponseSchema,type QaRequest,type QaResponse,type QaClaim,type AccountDiagnosis,type OpportunityCard,type Evidence,type OperationPlan } from '@kasirnusa/contracts';
+import { retrieveConnected } from './retrieval.js';
+import { lookupPrecedents } from './precedents.js';
 import type { Database } from '../../db/client.js';
 import * as s from '../../db/schema/index.js';
 import { annualIncrement } from '../opportunities/rules.js';
@@ -25,8 +27,8 @@ export function searchTerms(text:string){
   const words=normalized.split(/\s+/).filter(w=>w.length>2&&!stop.has(w));
   return [...new Set(words.flatMap(w=>[w,...(aliases[w]??[])]))].slice(0,12);
 }
-export function claimsFor(resource:Resource,request:QaRequest){
-  const card='signal' in resource;const intent=topic(request.question);const claims:QaClaim[]=[];
+export function claimsFor(resource:Resource,request:QaRequest,plan?:OperationPlan){
+  const card='signal' in resource;const intent=plan?({stakeholder_guidance:'people',value_scenario:'value',draft:'draft',source_search:'search',commercial_precedent:'precedent',account_diagnosis:'diagnosis',expansion_listing:'diagnosis',clarify:'search'}[plan.operation]):topic(request.question);const claims:QaClaim[]=[];
   const add=(kind:QaClaim['kind'],text:string,ids:string[],check:QaClaim['check']=null)=>claims.push({id:`${QA_VERSION}:${claims.length}`,kind,text,evidence_ids:[...new Set(ids)],check});
   const owner=card?resource.people.owner:resource.owner;const action=card?resource.next_action:resource.action_plan;
   if(intent==='people'){
@@ -38,6 +40,7 @@ export function claimsFor(resource:Resource,request:QaRequest){
     }
   }
   if(intent==='diagnosis')for(const f of resource.findings)add(f.check?'check':'fact',f.label,f.evidence_ids,f.check??null);
+  if(!card&&intent!=='search'&&intent!=='precedent')for(const task of resource.action_plan.tasks)add('proposed_action',`${task.order}. ${task.text}`,task.evidence_ids,{owner_ids:task.owner_ids,requirement_ids:task.requirement_ids,status:'proposed'});
   if(intent!=='search'&&intent!=='value'){
     add('proposed_action',action.task,[...new Set(action.discussion_points.flatMap(p=>p.evidence_ids))],{route:action.route,review_status:'proposed',owner_id:action.owner_id,recipient_ids:action.recipient_ids});
     for(const p of action.discussion_points)add('proposed_action',p.text,p.evidence_ids,'audience_ids' in p?{audience_ids:p.audience_ids}:null);
@@ -67,20 +70,37 @@ export async function retrieveText(db:Database,datasetId:string,accountId:string
     .orderBy(sql`ts_rank(to_tsvector('simple',${s.interactions.body}),to_tsquery('simple',${query})) desc`,sql`${s.interactions.eventDate} desc`,s.interactions.id).limit(6);
   return rows.map(row=>({source_id:row.source.id,source_external_id:row.source.externalId,filename:row.file.filename,locator:row.source.locator,field:'normalized interaction body (excerpt)',passage:row.body.slice(0,1600)}));
 }
-export async function answerQuestion(db:Database,resource:Resource,request:QaRequest,runtime:Interpreter,provider:Provider):Promise<QaResponse>{
-  const started=Date.now();const built=claimsFor(resource,request);let claims=built.claims;
-  const text=built.intent==='search'?await retrieveText(db,resource.dataset_id,resource.account.id,resource.as_of,request.question):[];
+export async function answerQuestion(db:Database,resource:Resource,request:QaRequest,runtime:Interpreter,provider:Provider,plan?:OperationPlan):Promise<QaResponse>{
+  const started=Date.now();const built=claimsFor(resource,request,plan);let claims=built.claims;
+  const requirementSources='requirement_assessments' in resource?resource.requirement_assessments.flatMap(a=>a.source_ids):[];
+  const bundle=await retrieveConnected(db,{datasetId:resource.dataset_id,accountId:resource.account.id,asOf:resource.as_of,seedSourceIds:built.intent==='search'?[]:(requirementSources.length?requirementSources:resource.evidence.filter(e=>e.filename==='interactions.jsonl').map(e=>e.source_id)),query:built.intent==='search'?(plan?.operation==='source_search'?plan.args.query:request.question):undefined,dealId:request.deal_id,signalId:request.signal_id});
+  const text=built.intent==='search'?bundle.sources.map(s=>({source_id:s.id,source_external_id:s.external_id,filename:s.filename,locator:s.locator,field:'isi',passage:s.text})):[];
   let evidence=[...resource.evidence,...text];
+  if(plan?.operation==='expansion_listing'){
+    const rows=await db.select({card:s.recommendations.card}).from(s.signals).innerJoin(s.recommendations,and(eq(s.signals.datasetId,s.recommendations.datasetId),eq(s.signals.id,s.recommendations.signalId),eq(s.signals.runId,s.recommendations.runId))).where(and(eq(s.signals.datasetId,resource.dataset_id),eq(s.signals.accountId,resource.account.id))).orderBy(s.signals.requestDate,s.signals.id).limit(12);
+    const {cardSchema}=await import('@kasirnusa/contracts');const cards=rows.map(row=>cardSchema.parse(row.card));
+    claims=cards.map((card,i)=>({id:`expansion:${i}`,kind:'fact',text:`${card.signal.kind}; ${card.signal.status}; ${card.signal.date}; additional outlets: ${card.signal.additional_outlets??'unknown'}.`,evidence_ids:card.evidence.map(e=>e.source_id),check:{signal_id:card.id,reconciliation:card.reconciliation}}));
+    evidence=cards.flatMap(card=>card.evidence);
+  }
   if(built.intent==='search')claims=text.map((e,i)=>({id:`${QA_VERSION}:quote:${i}`,kind:'source_quote',text:e.passage,evidence_ids:[e.source_id],check:null}));
+  if(plan?.operation==='commercial_precedent'){
+    const records=await lookupPrecedents(db,resource.dataset_id,resource.account.id,resource.as_of,plan.args);
+    claims=records.map((r,i)=>({id:`precedent:${i}`,kind:'fact',text:`Historical precedent, not entitlement or authorization: ${r.outcome}; ${r.value}. ${r.rationale}`,evidence_ids:[r.evidence.source_id],check:{approver:r.approver,date:r.date,conditions:r.conditions,scope_difference:r.scope_difference,unknowns:r.unknowns}}));
+    evidence=records.map(r=>r.evidence);
+  }
   const ids=[...new Set(claims.flatMap(c=>c.evidence_ids))];
   // Citation existence is verified within the selected snapshot before rendering or generation.
-  const existing=ids.length?await db.select({id:s.sourceRecords.id}).from(s.sourceRecords).where(and(eq(s.sourceRecords.datasetId,resource.dataset_id),inArray(s.sourceRecords.id,ids))):[];
+  const existing=ids.length?await db.select({id:s.sourceRecords.id,hash:s.sourceRecords.contentHash,payload:s.sourceRecords.payload}).from(s.sourceRecords).where(and(eq(s.sourceRecords.datasetId,resource.dataset_id),inArray(s.sourceRecords.id,ids))):[];
   if(ids.some(id=>!existing.some(row=>row.id===id)||!evidence.some(e=>e.source_id===id)))throw new Error('invalid_qa_citation');
+  for(const claim of claims.filter(c=>c.kind==='source_quote')){
+    const source=existing.find(row=>row.id===claim.evidence_ids[0]);
+    if(!source||!Object.values(source.payload).some(value=>value===claim.text))throw new Error('unsupported_source_quote');
+  }
   let generation:QaResponse['generation']={status:'not_requested',cached:false,run_id:null,calls:0,cost_usd:'0',latency_ms:0};
   let selectedIds:string[]=[];
   if(claims.length&&built.intent!=='search'){
     const sources=[...new Map(evidence.map(e=>[e.source_id,e])).values()].slice(0,4);
-    const outcome=await runtime.run({datasetId:resource.dataset_id,accountId:resource.account.id,subjectId:null,candidates:[],claim:QA_VERSION,sources:sources.map(e=>({id:e.source_id,field:e.field,text:e.passage.slice(0,1200),eventDate:resource.as_of,speakerId:null})),grounding:{question:request.question+'\nPrior questions (untrusted): '+request.history.map(h=>h.question).join('\n'),language:request.language,facts:claims.map(c=>({id:c.id,text:c.text.slice(0,500),evidence_ids:c.evidence_ids.slice(0,8)}))}},built.intent==='draft'?'draft_plan':'answer_plan',provider);
+    const outcome=await runtime.run({datasetId:resource.dataset_id,accountId:resource.account.id,subjectId:null,candidates:[],claim:JSON.stringify({method:QA_VERSION,operation:plan?.operation,as_of:resource.as_of,scope:[request.deal_id,request.signal_id],revisions:existing.slice(0,24).map(row=>[row.id,row.hash])}).slice(0,2000),sources:sources.map(e=>({id:e.source_id,field:e.field,text:e.passage.slice(0,1200),eventDate:resource.as_of,speakerId:null})),grounding:{question:request.question+'\nPrior questions (untrusted): '+request.history.map(h=>h.question).join('\n'),language:request.language,facts:claims.map(c=>({id:c.id,text:c.text.slice(0,500),evidence_ids:c.evidence_ids.slice(0,8)}))}},built.intent==='draft'?'draft_plan':'answer_plan',provider);
     const [run]=await db.select().from(s.modelRuns).where(eq(s.modelRuns.id,outcome.runId));
     generation={status:outcome.status,cached:outcome.cached,run_id:outcome.runId,calls:outcome.calls,cost_usd:outcome.cached?'0':outcome.calls>1?null:run.costUsd,latency_ms:run.latencyMs};
     if(outcome.status==='succeeded'){
@@ -114,7 +134,7 @@ export async function answerQuestion(db:Database,resource:Resource,request:QaReq
     }
   }
   evidence=evidence.filter(e=>ids.includes(e.source_id));
-  return qaResponseSchema.parse({dataset_id:resource.dataset_id,as_of:resource.as_of,account_id:resource.account.id,commercial_context:resource.commercial_context,status:unsupported?'unsupported':built.intent==='search'?'evidence_only':'answered',language:lang,answer:prefix,claims,evidence,premise_check:premise,value_scenario:built.value,draft,limitations:limits,retrieval:{method:'graph-and-simple-text-v1',source_count:new Set(evidence.map(e=>e.source_id)).size,truncated:built.claims.length===24||text.length===6},generation:{...generation,latency_ms:Date.now()-started}});
+  return qaResponseSchema.parse({dataset_id:resource.dataset_id,as_of:resource.as_of,account_id:resource.account.id,commercial_context:resource.commercial_context,status:unsupported?'unsupported':built.intent==='search'?'evidence_only':'answered',language:lang,answer:prefix,claims,evidence,premise_check:premise,value_scenario:built.value,draft,limitations:limits,plan:plan??null,evidence_bundle:bundle,requirement_assessments:'requirement_assessments' in resource?resource.requirement_assessments:[],retrieval:{method:'graph-and-simple-text-v1',source_count:new Set(evidence.map(e=>e.source_id)).size,truncated:bundle.coverage.truncated||built.claims.length===24},generation:{...generation,latency_ms:Date.now()-started}});
 }
 export function clarification(datasetId:string,asOf:string,request:QaRequest,message:string):QaResponse{
   return qaResponseSchema.parse({dataset_id:datasetId,as_of:asOf,account_id:null,commercial_context:'unknown',status:'clarification_required',language:request.language,answer:message,claims:[],evidence:[],premise_check:null,value_scenario:null,draft:null,limitations:[],retrieval:{method:'graph-and-simple-text-v1',source_count:0,truncated:false},generation:{status:'not_requested',cached:false,run_id:null,calls:0,cost_usd:'0',latency_ms:0}});

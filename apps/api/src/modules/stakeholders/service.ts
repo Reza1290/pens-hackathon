@@ -6,10 +6,20 @@ import * as s from '../../db/schema/index.js';
 import { stableId } from '../ingestion/service.js';
 import { sha256 } from '../ingestion/manifest.js';
 import { extractStatements,authority,selectAction,STAKEHOLDER_VERSION,type Candidate } from './rules.js';
+import { retrieveConnected } from '../qa/retrieval.js';
+import { assessRequirement } from './requirements.js';
+import { env } from '../../config/env.js';
+import { Interpreter } from '../../ai/router.js';
+import { jevProvider } from '../../ai/providers/jev.js';
+import { selectedGenerativeProvider } from '../../ai/providers/selected.js';
+import type { Provider } from '../../ai/providers/interface.js';
+import { extractionSchema,SCHEMA_VERSION } from '../../ai/schemas/interpretation.js';
+const runtimes=new WeakMap<Database,{judgment:Interpreter;extraction:Interpreter}>();
+const runtimeFor=(db:Database)=>{let pair=runtimes.get(db);if(!pair){pair={judgment:new Interpreter(db,{live:env.QA_JEV_ENABLED==='true',maxCalls:env.MODEL_MAX_CALLS,timeoutMs:env.MODEL_TIMEOUT_MS}),extraction:new Interpreter(db,{live:env.ANALYSIS_EXTRACTION_ENABLED==='true',maxCalls:env.MODEL_MAX_CALLS,timeoutMs:env.MODEL_TIMEOUT_MS})};runtimes.set(db,pair);}return pair;};
 
 export const diagnosisScopeKey=(accountId:string,signalId?:string,dealId?:string)=>JSON.stringify([accountId,signalId??null,dealId??null]);
 const decisionRow=z.object({decision_id:z.string().min(1),tanggal:z.iso.date(),account_id:z.string().min(1),deal_id:z.string(),diminta_oleh:z.string().min(1),diputuskan_oleh:z.string().min(1),keputusan:z.string(),nilai:z.string(),alasan:z.string(),fitur_dijanjikan:z.string(),status_janji:z.string()});
-export async function analyzeStakeholders(db:Database,datasetId:string,accountId:string,scope:{signalId?:string;dealId?:string}={}){
+export async function analyzeStakeholders(db:Database,datasetId:string,accountId:string,scope:{signalId?:string;dealId?:string}={},modelOptions?:{runtime:Interpreter;jev?:Provider;extractor?:Provider}){
   z.uuid().parse(datasetId);z.uuid().parse(accountId);
   const [dataset]=await db.select().from(s.datasets).where(eq(s.datasets.id,datasetId));
   if(dataset?.status!=='ready')throw new Error('Ready dataset required');
@@ -32,9 +42,13 @@ export async function analyzeStakeholders(db:Database,datasetId:string,accountId
   if(selected&&deal&&(selected.reconciliation.status!=='matched'||!selected.reconciliation.candidate_ids.includes(deal.id)))throw new Error('Signal/deal combination needs a verified same-request link');
   const scopeKey=diagnosisScopeKey(accountId,scope.signalId,scope.dealId);
   const relevant=rows.filter(r=>r.record.accountExternalId===account.externalId||['employees.csv','crm_contacts.csv','contact_employment_history.csv','features.csv'].includes(r.file.filename));
-  const runId=stableId(datasetId,STAKEHOLDER_VERSION,scopeKey,sha256(JSON.stringify([relevant.map(r=>[r.record.id,r.record.contentHash]),opportunityCards])));
+  const runId=stableId(datasetId,STAKEHOLDER_VERSION,scopeKey,sha256(JSON.stringify([relevant.map(r=>[r.record.id,r.record.contentHash]),opportunityCards,SCHEMA_VERSION,env.QA_JEV_ENABLED,env.ANALYSIS_EXTRACTION_ENABLED,modelOptions?.jev?.model,modelOptions?.extractor?.model])));
   const [previous]=await db.select().from(s.analysisRuns).where(eq(s.analysisRuns.id,runId));
-  if(previous?.status==='completed')return {dataset_id:datasetId,account_id:accountId,run_id:runId,reused:true};
+  if(previous?.status==='completed'){
+    const [saved]=await db.select().from(s.recommendations).where(and(eq(s.recommendations.datasetId,datasetId),eq(s.recommendations.runId,runId),eq(s.recommendations.accountId,accountId)));
+    if(saved){const restored=diagnosisSchema.parse(saved.card);await db.insert(s.diagnoses).values({id:restored.id,datasetId,accountId,runId,signalId:scope.signalId??null,dealId:scope.dealId??null,scopeKey,diagnosis:restored}).onConflictDoUpdate({target:[s.diagnoses.datasetId,s.diagnoses.scopeKey],set:{runId,diagnosis:restored}});}
+    return {dataset_id:datasetId,account_id:accountId,run_id:runId,reused:true};
+  }
   const evidence:Evidence[]=[];
   const addEvidence=(row:typeof rows[number],field:string,passage?:string)=>{
     const item:Evidence={source_id:row.record.id,source_external_id:row.record.externalId,filename:row.file.filename,locator:row.record.locator,field,passage:passage??row.record.payload[field]??''};
@@ -52,16 +66,26 @@ export async function analyzeStakeholders(db:Database,datasetId:string,accountId
     return {id:contact.id,name:contact.name,email:contact.email,role:job.role,start:job.start,end:job.end,current:job.start<=dataset.asOf&&(!job.end||job.end>=dataset.asOf)&&contact.accountId===accountId,evidenceIds:[history.source_id,identity.source_id]};
   });
   const currentIds=[...new Set(people.filter(p=>p.current).map(p=>p.id))];
-  const sourceSubset=selected?new Set(selected.evidence.map(e=>e.source_id)):null;
+  const selectedBundle=selected||deal?await retrieveConnected(db,{datasetId,accountId,asOf:dataset.asOf,seedSourceIds:selected?.evidence.map(e=>e.source_id)??[],query:deal?.externalId,signalId:selected?.id,dealId:scope.dealId}):null;
+  const sourceSubset=selectedBundle?new Set(selectedBundle.sources.map(e=>e.id)):null;
   const decisionInputs=rows.filter(r=>r.file.filename==='decision_log.csv'&&r.record.accountExternalId===account.externalId);
   const statements=messages.filter(m=>m.eventDate<=dataset.asOf).flatMap(message=>{
     const source=find('interactions.jsonl',message.externalId)!;
     if(sourceSubset&&!sourceSubset.has(source.record.id))return [];
-    if(deal&&!message.body.includes(deal.externalId)&&!decisionInputs.some(r=>r.record.payload.deal_id===deal.externalId&&r.record.payload.bukti_interaction_id===message.externalId))return [];
     const speakers=[...employees,...contacts].filter(p=>p.email.toLowerCase()===message.sender.toLowerCase());
     const raw=source.record.payload;
     const result=extractStatements({id:message.id,date:message.eventDate,text:message.body,sourceId:source.record.id,speakerId:speakers.length===1?speakers[0].id:null,attendeeIds:people.filter(p=>raw.peserta.split(';').includes(contacts.find(c=>c.id===p.id)!.externalId)).map(p=>p.id)},people);
-    for(const statement of result)addEvidence(source,'isi',statement.text);
+    const root=(id:string)=>{const seen=new Set<string>();let current=messages.find(m=>m.id===id);while(current?.parentId&&!seen.has(current.id)){seen.add(current.id);const parent=messages.find(m=>m.id===current!.parentId&&m.accountId===accountId&&m.eventDate<=dataset.asOf);if(!parent)return null;current=parent;}return seen.has(current?.id??'')?null:current?.id??null;};
+    const threadRoot=root(message.id);let decisionScope=threadRoot;
+    if(threadRoot){
+      let cursor:typeof message|undefined=message;const seen=new Set<string>();
+      while(cursor&&!seen.has(cursor.id)){
+        seen.add(cursor.id);const tokens=[...new Set(cursor.body.match(/\b(?:DL\d+|DL-[\w-]+|DEAL-[\w-]+|S\d+|S-[\w-]+)\b/g)??[])];
+        if(tokens.length){decisionScope=tokens.length===1?stableId(accountId,'thread-decision-scope',threadRoot,tokens[0]):null;break;}
+        cursor=cursor.parentId?messages.find(m=>m.id===cursor!.parentId):undefined;
+      }
+    }
+    for(const statement of result){statement.decision_scope_id=decisionScope;addEvidence(source,'isi',statement.text);}
     return result;
   });
   const stakeholders=[...new Set(people.map(p=>p.id))].map(id=>{
@@ -71,6 +95,18 @@ export async function analyzeStakeholders(db:Database,datasetId:string,accountId
   });
   const allStatements=stakeholders.flatMap(p=>p.statements);
   const findings:AccountDiagnosis['findings']=[];const prerequisites:{text:string;evidenceIds:string[]}[]=[];
+  if(env.ANALYSIS_EXTRACTION_ENABLED==='true'||modelOptions?.extractor){
+    const candidates=people.slice(0,12).map(p=>({id:p.id,role:p.role,start:p.start,end:p.end}));
+    for(const message of messages.filter(m=>m.eventDate<=dataset.asOf&&(!sourceSubset||sourceSubset.has(find('interactions.jsonl',m.externalId)!.record.id))&&!statements.some(a=>a.scope_id===m.id)&&/require|need|memerlukan|membutuhkan|syarat/i.test(m.body)).slice(0,2)){
+      const record=find('interactions.jsonl',message.externalId)!;const speaker=[...contacts,...employees].find(p=>p.email.toLowerCase()===message.sender.toLowerCase());
+      const result=await (modelOptions?.runtime??runtimeFor(db).extraction).run({datasetId,accountId,sources:[{id:record.record.id,field:'isi',text:message.body.slice(0,12000),eventDate:message.eventDate,speakerId:speaker?.id??null}],candidates,subjectId:null,claim:'complex-requirement-extraction-v1'},'extract_details',modelOptions?.extractor??selectedGenerativeProvider());
+      const item=addEvidence(record,'isi');
+      const [usage]=await db.select().from(s.modelRuns).where(eq(s.modelRuns.id,result.runId));
+      // Span/identity validation precedes persistence. Candidate semantics still
+      // require review, so inferred approval cannot enter current authority/routes.
+      findings.push({type:'unresolved_complex_interpretation',label:result.status==='succeeded'?'Validated source-span extraction candidates require semantic verification before they affect authority or action.':'Complex requirement interpretation is unavailable; retained evidence requires review.',evidence_ids:[item.source_id],check:{run_id:result.runId,status:result.status,calls:result.calls,cost_usd:result.cached?'0':result.calls>1?null:usage.costUsd,input_tokens:usage.inputTokens,output_tokens:usage.outputTokens,prompt_version:usage.promptVersion,schema_version:usage.schemaVersion,candidates:result.status==='succeeded'?extractionSchema.parse(result.value):null,automatic_acceptance:false}});
+    }
+  }
   const normalizedDecisions: typeof s.decisions.$inferInsert[]=[];const internal:AccountDiagnosis['internal_decisions']=[];
   const commitmentLinks:{subjectId:string;decisionId:string;eventDate:string;speakerId:string|null;attribution:'direct'|'reported';sourceIds:string[]}[]=[];
   const invalidDecisions:typeof rows[number][]=[];
@@ -125,11 +161,39 @@ export async function analyzeStakeholders(db:Database,datasetId:string,accountId
   const productOwnerIds=productOwners.length===1?[productOwners[0].id]:[];
   for(const candidate of productOwners)addEvidence(find('employees.csv',candidate.externalId)!,'jabatan');
   const action=selectAction({ownerId:owner.id,statements:allStatements,currentIds,prerequisites,baseEvidenceIds:[accountSource.source_id],productOwnerIds,preferred:'joint'});
+  const requirementAssessments:AccountDiagnosis['requirement_assessments']=[];
+  for(const statement of allStatements.filter(a=>a.current&&a.polarity==='affirmed'&&['REQUESTS_EVIDENCE','RAISES_CONCERN'].includes(a.predicate))){
+    const bundle=await retrieveConnected(db,{datasetId,accountId,asOf:dataset.asOf,seedSourceIds:[statement.evidence_ids[0]],dealId:scope.dealId,signalId:scope.signalId});
+    const assessment=assessRequirement(statement,bundle);
+    if((env.QA_JEV_ENABLED==='true'||modelOptions?.jev)&&!bundle.coverage.truncated&&!bundle.coverage.unresolved_links.length&&!bundle.sources.some(s=>s.attachment_unavailable)){
+      const requirement=bundle.sources.find(s=>s.interaction_id===statement.scope_id);
+      const followups=bundle.sources.filter(s=>assessment.source_ids.includes(s.id)&&s.interaction_id!==statement.scope_id);
+      if(requirement&&followups.length>0&&followups.length<=3){
+        const result=await (modelOptions?.runtime??runtimeFor(db).judgment).run({datasetId,accountId,subjectId:statement.person_id,candidates:people.slice(0,12).map(p=>({id:p.id,role:p.role,start:p.start,end:p.end})),claim:JSON.stringify({requirement_id:statement.id,decision_scope:statement.decision_scope_id,hashes:[requirement,...followups].map(s=>s.hash)}),sources:[requirement,...followups].map(s=>({id:s.id,field:'isi',text:s.text.slice(0,12000),eventDate:s.date,speakerId:s.interaction_id===statement.scope_id?statement.speaker_id:null}))},'concern_addressed',modelOptions?.jev??jevProvider(env.JEV_API_KEY,env.JEV_MODEL));
+        if(result.status==='succeeded'){assessment.status=(result.value as {choice:typeof assessment.status}).choice;assessment.method='jev-four-choice-v2';assessment.limitations.push('Fallible model interpretation; not fulfillment or customer acceptance.');}
+        const [usage]=await db.select().from(s.modelRuns).where(eq(s.modelRuns.id,result.runId));
+        assessment.model_run_id=result.runId;assessment.calls=result.calls;assessment.cost_usd=result.cached?'0':result.calls>1?null:usage.costUsd;assessment.prompt_version=usage.promptVersion;assessment.schema_version=usage.schemaVersion;
+        assessment.limitations.push(`Judgment ${result.status}; run ${result.runId}; calls ${result.calls}.`);
+      }
+    }
+    requirementAssessments.push(assessment);
+    for(const src of bundle.sources){const row=find('interactions.jsonl',src.external_id!);if(row)addEvidence(row,'isi',src.text);}
+    findings.push({type:'requirement_coverage',label:`Recorded requirement: ${assessment.status}. ${assessment.missing_details.length?'Missing requested details: '+assessment.missing_details.join(', '):''}`,evidence_ids:assessment.source_ids,check:{...assessment}});
+    if(['joint_decision_maker_discussion','prepare_through_intermediary'].includes(action.route)&&!prerequisites.length&&(assessment.status==='not_addressed'||assessment.status==='partially_addressed')){
+      const intermediaries=allStatements.filter(a=>a.current&&a.predicate==='INTERMEDIARY_FOR'&&a.decision_scope_id===statement.decision_scope_id);
+      const approvers=allStatements.filter(a=>a.current&&a.predicate==='APPROVER_FOR'&&a.decision_scope_id===statement.decision_scope_id&&a.polarity==='affirmed');
+      if(intermediaries.length&&approvers.length&&approvers.some(a=>authority(allStatements.filter(p=>p.person_id===a.person_id&&p.decision_scope_id===a.decision_scope_id))!=='conflicting_or_outdated')){
+        action.tasks.push({order:action.tasks.length+1,owner_ids:[...new Set(intermediaries.map(a=>a.person_id))],text:`Gather operational inputs and prepare the documented evidence requested by ${contacts.find(c=>c.id===statement.person_id)?.name??'the requirement holder'}: ${statement.text}`,requirement_ids:[statement.id],evidence_ids:[...new Set([...assessment.source_ids,...intermediaries.flatMap(a=>a.evidence_ids)])],status:'proposed'});
+        action.tasks.push({order:action.tasks.length+1,owner_ids:[owner.id,...new Set(intermediaries.map(a=>a.person_id)),...new Set(approvers.map(a=>a.person_id))],text:'Ask the intermediary to arrange a joint commercial discussion with the scoped decision-maker after preparing the requested evidence.',requirement_ids:[statement.id],evidence_ids:[...new Set(approvers.flatMap(a=>a.evidence_ids))],status:'proposed'});
+      }
+    }
+  }
+  if(action.tasks.length)action.task=action.tasks.map(t=>`${t.order}. ${t.text}`).join(' ');
   if(action.recipient_ids.length===0)action.recipient_ids=currentIds;
   for(const card of scopedCards)for(const point of card.next_action.discussion_points)action.discussion_points.push({audience_ids:card.people.contact&&currentIds.includes(card.people.contact.id)?[card.people.contact.id]:[],text:point.text,evidence_ids:point.evidence_ids});
   const diagnosis=diagnosisSchema.parse({id:stableId(datasetId,'diagnosis',scopeKey),dataset_id:datasetId,dataset_version:dataset.version,as_of:dataset.asOf,account_id:accountId,account,signal_id:scope.signalId??null,deal_id:scope.dealId??null,commercial_context:commercialContext,
     owner:{id:owner.id,external_id:owner.externalId,name:owner.name,role:owner.title,evidence_ids:[ownerSource.source_id,accountSource.source_id]},findings,stakeholder_context:stakeholders,action_plan:action,premise_check:null,value_scenario:selected?.value_scenario??null,internal_decisions:internal,evidence,
-    unknowns:['Current stakeholder requirements and authority must be confirmed in this decision scope.','No complete repeat-order or revenue ledger establishes a decline.'],limitations:['Deterministic statement candidates, not live model judgments or verified personality facts.','Internal decisions are KasirNusa approvals; they never establish customer purchasing authority.','No activity outside the supplied snapshot is established.','Requirements from another organization are not transferred into this account.'],method:STAKEHOLDER_VERSION,dependencies:{opportunity_hash:sha256(JSON.stringify(opportunityCards))}});
+    requirement_assessments:requirementAssessments,unknowns:['Current stakeholder requirements and authority must be confirmed in this decision scope.','No complete repeat-order or revenue ledger establishes a decline.'],limitations:['Deterministic statement candidates, not live model judgments or verified personality facts.','Internal decisions are KasirNusa approvals; they never establish customer purchasing authority.','No activity outside the supplied snapshot is established.','Requirements from another organization are not transferred into this account.'],method:STAKEHOLDER_VERSION,dependencies:{opportunity_hash:sha256(JSON.stringify(opportunityCards))}});
   await db.transaction(async tx=>{
     await tx.insert(s.analysisRuns).values({id:runId,datasetId,asOf:dataset.asOf,ruleVersion:STAKEHOLDER_VERSION,status:'running'});
     for(const decision of normalizedDecisions){await tx.insert(s.entities).values({id:decision.id!,datasetId,kind:'decision',externalId:decision.externalId}).onConflictDoNothing();await tx.insert(s.decisions).values(decision).onConflictDoNothing();await tx.insert(s.entitySources).values({datasetId,entityId:decision.id!,sourceId:decision.sourceId}).onConflictDoNothing();}

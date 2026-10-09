@@ -1,6 +1,6 @@
 // Assistant-curated synthetic labels. Human approval is pending; never a rollout gate.
 import type { Operation } from '../../apps/api/src/ai/schemas/interpretation.js';
-export type EvaluationCase={id:string;operation:Exclude<Operation,'extract_details'|'answer_plan'|'draft_plan'>;text:string;followup?:string;claim?:string;expected:string;quantity?:number|null;period?:string|null};
+export type EvaluationCase={id:string;operation:Exclude<Operation,'extract_details'|'answer_plan'|'draft_plan'|'query_plan'>;text:string;followup?:string;claim?:string;expected:string;quantity?:number|null;period?:string|null};
 export const evaluationCases:EvaluationCase[]=[
   {id:'quote-id',operation:'intent',text:'Kami berencana membuka 3 outlet di Testville pada kuartal 2 2027. Mohon penawaran.',expected:'quotation_request',quantity:3,period:'2027-Q2'},
   {id:'future-id',operation:'intent',text:'Awal 2027 kami buka 6 cabang di Testville.',expected:'explicit_plan',quantity:6,period:'2027-early'},

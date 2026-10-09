@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import { env,projectRoot } from '../../apps/api/src/config/env.js';
 import { sha256, type Manifest } from '../../apps/api/src/modules/ingestion/manifest.js';
 const csv=(columns:string[],rows:Record<string,string>[])=>columns.join(',')+'\n'+rows.map(row=>columns.map(key=>'"'+(row[key]??'').replaceAll('"','""')+'"').join(',')).join('\n')+(rows.length?'\n':'');
-export async function fixture(options:{tag?:string;stakeholderSlice?:boolean;ticketSlice?:boolean;invalidDecisionApprover?:boolean;messages?:{id:string;body:string;parent?:string;sender?:string;date?:string;participants?:string;recipient?:string}[];inconsistentTerms?:boolean;deal?:boolean;invalidOwner?:boolean;malformed?:boolean;missingDeals?:boolean;invalidDealHeader?:boolean;duplicate?:boolean;conflictingContracts?:boolean;finiteLimit?:boolean}={}){
+export async function fixture(options:{ownerIntermediary?:boolean;tag?:string;stakeholderSlice?:boolean;ticketSlice?:boolean;invalidDecisionApprover?:boolean;messages?:{id:string;body:string;parent?:string;sender?:string;date?:string;participants?:string;recipient?:string}[];inconsistentTerms?:boolean;deal?:boolean;invalidOwner?:boolean;malformed?:boolean;missingDeals?:boolean;invalidDealHeader?:boolean;duplicate?:boolean;conflictingContracts?:boolean;finiteLimit?:boolean}={}){
   const version=`phase1-test-${randomUUID()}`;const path=resolve(projectRoot,env.DATA_ROOT,version);await mkdir(path,{recursive:true});
   const inputs:Record<string,{columns:string[];rows:Record<string,string>[]}>={
     'employees.csv':{columns:['employee_id','nama','jabatan','email'],rows:[{employee_id:'E1',nama:'Sample Manager',jabatan:'Account Manager',email:'manager@example.test'}]},
@@ -16,6 +16,11 @@ export async function fixture(options:{tag?:string;stakeholderSlice?:boolean;tic
     'crm_deals.csv':{columns:options.invalidDealHeader?['deal_id']:['deal_id','account_id','tipe','stage','stage_sejak','dibuat','owner_id','outlet','nilai_tahunan','status','request_interaction_id'],rows:options.deal?[{deal_id:'DL1',account_id:'A1',tipe:'ekspansi',stage:'Proposal',stage_sejak:'2026-08-01',dibuat:'2026-08-01',owner_id:'E1',outlet:'3',nilai_tahunan:'3150',status:'Terbuka',request_interaction_id:'I1'}]:[]},
   };
   if(options.tag)inputs['crm_accounts.csv'].rows[0].nama+=` ${options.tag}`;
+  if(options.ownerIntermediary){
+    inputs['crm_contacts.csv'].rows[0].nama='Owner X';inputs['crm_contacts.csv'].rows[0].jabatan_saat_ini='Owner';inputs['contact_employment_history.csv'].rows[0].jabatan='Owner';
+    inputs['crm_contacts.csv'].rows.push({contact_id:'K2',nama:'Operator Y',email:'operator@example.test',account_id_saat_ini:'A1',jabatan_saat_ini:'Operations Lead'});
+    inputs['contact_employment_history.csv'].rows.push({contact_id:'K2',account_id:'A1',organisasi:'Sample Customer',jabatan:'Operations Lead',mulai:'2025-01-01',selesai:''});
+  }
   if(options.inconsistentTerms)inputs['contracts_billing.csv'].rows[0].nilai_tahunan='1';
   if(options.conflictingContracts)inputs['contracts_billing.csv'].rows.push({...inputs['contracts_billing.csv'].rows[0],contract_id:'CT2',harga_per_outlet_bulan:'200'});
   for(const filename of ['outlets.csv','product_usage_daily.csv','feature_usage_monthly.csv','support_tickets.csv','features.csv','bugs.csv','releases.csv','decision_log.csv'])inputs[filename]={columns:['id'],rows:[]};

@@ -1,6 +1,6 @@
 import { actionPlanSchema,premiseSchema,type StakeholderStatement } from '@kasirnusa/contracts';
 import { stableId } from '../ingestion/service.js';
-export const STAKEHOLDER_VERSION='stakeholder-rules-v1.2';
+export const STAKEHOLDER_VERSION='stakeholder-rules-v1.4-scoped';
 export type Candidate={id:string;name:string;email:string;role:string;start:string;end:string|null;current:boolean;evidenceIds:string[]};
 export type StatementInput={id:string;date:string;text:string;sourceId:string;speakerId:string|null;attendeeIds:string[]};
 const escape=(text:string)=>text.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
@@ -10,13 +10,13 @@ export function extractStatements(message:StatementInput,people:Candidate[]):Sta
   const mentions=eligible.filter(p=>message.attendeeIds.includes(p.id)&&new RegExp(`\\b(?:Pak|Bu|Mr|Ms)\\s+${escape(p.name.split(' ')[0])}\\b`,'i').test(message.text));
   const subject=direct??(mentions.length===1?mentions[0]:undefined);
   const out:StakeholderStatement[]=[];
-  const add=(person:Candidate,predicate:StakeholderStatement['predicate'],text:string,polarity:StakeholderStatement['polarity']='affirmed')=>out.push({id:stableId(message.id,person.id,predicate,text,STAKEHOLDER_VERSION),person_id:person.id,predicate,text,event_date:message.date,speaker_id:message.speakerId,attribution:person.id===message.speakerId?'direct':'reported',scope_id:message.id,scope_type:'interaction',method:STAKEHOLDER_VERSION,verification:'unreviewed_rules_candidate',current:person.current,polarity,evidence_ids:[message.sourceId,...person.evidenceIds]});
+  const add=(person:Candidate,predicate:StakeholderStatement['predicate'],text:string,polarity:StakeholderStatement['polarity']='affirmed')=>out.push({id:stableId(message.id,person.id,predicate,text,STAKEHOLDER_VERSION),person_id:person.id,predicate,text,event_date:message.date,speaker_id:message.speakerId,attribution:person.id===message.speakerId?'direct':'reported',scope_id:message.id,scope_type:'interaction',method:STAKEHOLDER_VERSION,verification:'unreviewed_rules_candidate',current:person.current,polarity,evidence_ids:[message.sourceId,...person.evidenceIds],decision_scope_id:null});
   if(direct){
     for(const sentence of message.text.split(/(?<=[.!?])\s+/)){
       if(/\bsaya\b.*(?:menyetujui|memutuskan).*(?:pembelian|pengadaan)|\bI approve this purchase\b/i.test(sentence))add(direct,'APPROVER_FOR',sentence,/tidak|bukan|no longer/i.test(sentence)?'denied':'affirmed');
       if(/\bsaya\b.*(?:menilai sisi teknis|evaluasi teknis|mengevaluasi aspek teknis)|\bI evaluate technical\b/i.test(sentence))add(direct,'EVALUATES_TECHNICAL_FOR',sentence);
-      if(/(?:proposal.*saya teruskan|saya.*(?:menyiapkan|siapkan).*business case|I prepare.*business case)/i.test(sentence))add(direct,'INTERMEDIARY_FOR',sentence);
-      if(/\b(?:saya|I)\b.*(?:memerlukan|membutuhkan|minta|need|require).*(?:ROI|referensi|reference|integrasi|integration|payback)/i.test(sentence))add(direct,'REQUESTS_EVIDENCE',sentence,/tidak lagi|no longer/i.test(sentence)?'denied':'affirmed');
+      if(/(?:proposal.*saya teruskan|saya.*(?:menyiapkan|siapkan).*business case|I (?:prepare|handle).*?(?:business case|operational inputs|proposal))/i.test(sentence))add(direct,'INTERMEDIARY_FOR',sentence);
+      if(/\b(?:saya|I)\b.*(?:memerlukan|membutuhkan|minta|need|require).*(?:ROI|referensi|reference|integrasi|integration|payback|pricing|harga|rollout|jadwal)/i.test(sentence))add(direct,'REQUESTS_EVIDENCE',sentence,/tidak lagi|no longer/i.test(sentence)?'denied':'affirmed');
     }
     // Resolve a reported role against unique employment in this account and at this date.
     const role=message.text.match(/(?:teruskan ke|forwarded to)\s+(GM Operations|CFO|pemilik)/i)?.[1]
@@ -40,22 +40,26 @@ export function authority(statements:StakeholderStatement[]){
   const valid=roles.filter(s=>s.current&&s.polarity==='affirmed');
   return valid.some(s=>s.attribution==='direct')?'supported_scoped' as const:valid.length?'reported_scoped' as const:'unknown' as const;
 }
-export function selectAction(input:{ownerId:string;statements:StakeholderStatement[];currentIds:string[];prerequisites:{text:string;evidenceIds:string[]}[];baseEvidenceIds:string[];productOwnerIds?:string[];preferred:'joint'|'intermediary'}){
+export function selectAction(input:{ownerId:string;statements:StakeholderStatement[];currentIds:string[];prerequisites:{text:string;evidenceIds:string[]}[];baseEvidenceIds:string[];productOwnerIds?:string[];preferred:'joint'|'intermediary'|'direct'}){
   const valid=input.statements.filter(s=>s.current&&input.currentIds.includes(s.person_id)&&s.polarity==='affirmed');
-  const approvers=valid.filter(s=>s.predicate==='APPROVER_FOR'&&authority(input.statements.filter(a=>a.person_id===s.person_id))!=='conflicting_or_outdated');
+  const approvers=valid.filter(s=>s.predicate==='APPROVER_FOR'&&s.decision_scope_id!==null&&authority(input.statements.filter(a=>a.person_id===s.person_id&&a.decision_scope_id===s.decision_scope_id))!=='conflicting_or_outdated');
   const intermediaries=valid.filter(s=>s.predicate==='INTERMEDIARY_FOR'||s.predicate==='EVALUATES_TECHNICAL_FOR');
   const requirements=valid.filter(s=>(s.predicate==='REQUESTS_EVIDENCE'||s.predicate==='RAISES_CONCERN')&&!input.statements.some(other=>other.person_id===s.person_id&&other.current&&other.predicate===s.predicate&&other.polarity==='denied'));
   const targetIds=[...new Set([...requirements,...approvers,...intermediaries].map(s=>s.person_id))];
-  let route:'joint_decision_maker_discussion'|'prepare_through_intermediary'|'resolve_prerequisite_first'|'clarify_authority_or_requirement'='clarify_authority_or_requirement';
+  let route:'direct_decision_maker_discussion'|'joint_decision_maker_discussion'|'prepare_through_intermediary'|'resolve_prerequisite_first'|'clarify_authority_or_requirement'='clarify_authority_or_requirement';
   if(input.prerequisites.length)route='resolve_prerequisite_first';
-  else if(approvers.length)route=input.preferred==='intermediary'&&intermediaries.length?'prepare_through_intermediary':'joint_decision_maker_discussion';
+  else if(approvers.length){
+    const scopes=new Set([...approvers,...requirements].map(a=>a.decision_scope_id??a.scope_id));
+    if(scopes.size===1&&intermediaries.every(a=>scopes.has(a.decision_scope_id??a.scope_id)))route=input.preferred==='intermediary'&&intermediaries.length?'prepare_through_intermediary':'joint_decision_maker_discussion';
+    if(route==='joint_decision_maker_discussion'&&input.preferred==='direct'&&approvers.every(a=>a.attribution==='direct'&&a.speaker_id===a.person_id))route='direct_decision_maker_discussion';
+  }
   const points=requirements.map(s=>({audience_ids:[s.person_id],text:`Address the documented requirement/concern of this stakeholder: ${s.text}`,evidence_ids:s.evidence_ids}));
   for(const prerequisite of input.prerequisites)points.push({audience_ids:targetIds,text:prerequisite.text,evidence_ids:prerequisite.evidenceIds});
-  if(approvers.length&&intermediaries.length)points.push({audience_ids:[...new Set(intermediaries.map(s=>s.person_id))],text:'Arrange a joint discussion or prepare the decision-maker business case; retain the technical/operational contributor and confirm current procurement requirements.',evidence_ids:[...new Set([...approvers,...intermediaries].flatMap(s=>s.evidence_ids))]});
+  if(['joint_decision_maker_discussion','prepare_through_intermediary'].includes(route)&&approvers.length&&intermediaries.length)points.push({audience_ids:[...new Set(intermediaries.map(s=>s.person_id))],text:'Arrange a joint discussion or prepare the decision-maker business case; retain the technical/operational contributor and confirm current procurement requirements.',evidence_ids:[...new Set([...approvers,...intermediaries].flatMap(s=>s.evidence_ids))]});
   if(route==='clarify_authority_or_requirement')points.push({audience_ids:targetIds,text:'Confirm who approves this specific purchase and what evidence they require; titles alone do not establish authority.',evidence_ids:input.baseEvidenceIds});
   for(const statement of input.statements.filter(s=>s.current&&s.predicate==='REQUESTS_EVIDENCE'&&s.polarity==='denied'))points.push({audience_ids:[statement.person_id],text:'Clarify which requirements still apply; retained evidence includes a denied or changed requirement.',evidence_ids:input.statements.filter(s=>s.person_id===statement.person_id&&s.predicate==='REQUESTS_EVIDENCE').flatMap(s=>s.evidence_ids)});
   return actionPlanSchema.parse({route,owner_id:input.ownerId,recipient_ids:targetIds,supporting_owner_ids:input.productOwnerIds??[],review_status:'proposed',
-    task:route==='resolve_prerequisite_first'?'Obtain a verified prerequisite/remediation plan before requesting a purchasing or renewal decision.':route==='prepare_through_intermediary'?'Equip the intermediary with the documented decision-maker evidence and business case.':route==='joint_decision_maker_discussion'?'Ask the existing contact to arrange a joint discussion with the scoped decision-maker.':'Clarify current authority and decision requirements.',
+    task:route==='resolve_prerequisite_first'?'Obtain a verified prerequisite/remediation plan before requesting a purchasing or renewal decision.':route==='prepare_through_intermediary'?'Equip the intermediary with the documented decision-maker evidence and business case.':route==='direct_decision_maker_discussion'?'Use the recorded direct customer contact path to discuss this scoped decision and its documented requirements.':route==='joint_decision_maker_discussion'?'Ask the existing contact to arrange a joint discussion with the scoped decision-maker.':'Clarify current authority and decision requirements.',
     rationale:'Route follows dated, scoped statements and documented prerequisites; all action is proposed for human review.',discussion_points:points,unknowns:['Confirm current authority for this scoped decision.','Confirm current requirements and any undocumented follow-up.']});
 }
 export type Periods={previous_start:string;previous_end:string;current_start:string;current_end:string};

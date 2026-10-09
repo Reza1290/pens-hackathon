@@ -28,7 +28,7 @@ export class Interpreter{
     try{return await this.execute(context,operation,provider);}finally{const next=this.waiters.shift();if(next)next();else this.active--;}
   }
   private async execute(context:Context,operation:Operation,provider:Provider):Promise<Outcome>{
-    const versions=operation==='answer_plan'||operation==='draft_plan'?{prompt:'grounded-generation-v1',schema:'fact-plan-v1',parameters:'qa-limits-v1'}:{prompt:PROMPT_VERSION,schema:SCHEMA_VERSION,parameters:PARAMETERS_VERSION};
+    const versions=operation==='query_plan'?{prompt:'operation-planner-v1',schema:'operation-plan-v1',parameters:'single-operation-v1'}:operation==='answer_plan'||operation==='draft_plan'?{prompt:'grounded-generation-v2',schema:'fact-plan-v1',parameters:'qa-limits-v2'}:{prompt:PROMPT_VERSION,schema:SCHEMA_VERSION,parameters:PARAMETERS_VERSION};
     const key=cacheKey(context,operation,provider,versions),inputHash=sha256(JSON.stringify(context));
     // Same key is serialized across CLI processes; locks end with this transaction.
     return this.db.transaction(async tx=>{

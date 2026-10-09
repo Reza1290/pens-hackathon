@@ -16,6 +16,7 @@ while implementation phase numbering starts at 0, matching AGENTS.md.
 | [PRD-0x5](PRD-0x5.md) | 4: Product workflow (locally verified) | Three views, evidence inspection, editable template drafts | 0x4 |
 | [PRD-0x6](PRD-0x6.md) | 5: Grounded Q&A (local regression verified) | Cited bilingual answers and customized drafts | 0x3, 0x5 |
 | [PRD-0x7](PRD-0x7.md) | 6: Conditional optimization (deferred) | Measured quality/cost decision | 0x6 and reviewed evaluation set |
+| [PRD-0x8](PRD-0x8.md) | 7: Stakeholder/Q&A integration (review gates open) | Connected evidence, scoped ordered actions, validated planner | 0x6; 0x7 optimization remains optional |
 
 ## Shared definition of done
 
@@ -52,6 +53,10 @@ requires both expansion discovery and stakeholder guidance, plus the workflow
 and grounded Q&A; C06 alone does not complete it.
 
 ## Current handover
+
+See [Phase 7 handover](PHASE-7-HANDOVER.md) for the latest integration, acceptance
+checks, provider smoke discrepancy, flags and rollback. This supersedes earlier
+global implementation-status statements; independent review remains pending.
 
 See [Phase 3 handover](PHASE-3-HANDOVER.md): 26 tables, 45 account diagnoses,
 30 internal decisions and source-verified C01/P01/C02 guidance and premise checks.

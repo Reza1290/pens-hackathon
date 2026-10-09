@@ -2,6 +2,22 @@ import { z } from 'zod';
 export const uuidSchema = z.uuid();
 export const dateSchema = z.iso.date();
 export const decimalSchema = z.string().regex(/^\d+(\.\d+)?$/);
+export const comparisonSchema=z.object({previous_start:dateSchema,previous_end:dateSchema,current_start:dateSchema,current_end:dateSchema}).strict();
+export const metricSchema=z.enum(['ambiguous_repeat_orders','repeat_expansion','renewal','revenue','closed_expansion_deal_proxy']);
+export const assessmentStatusSchema=z.enum(['addressed','partially_addressed','not_addressed','insufficient_evidence']);
+export const operationPlanSchema=z.discriminatedUnion('operation',[
+  z.object({operation:z.literal('account_diagnosis'),args:z.object({metric:metricSchema.nullable(),periods:comparisonSchema.nullable(),deal_id:uuidSchema.nullable(),signal_id:uuidSchema.nullable()}).strict()}).strict(),
+  z.object({operation:z.literal('stakeholder_guidance'),args:z.object({deal_id:uuidSchema.nullable(),signal_id:uuidSchema.nullable()}).strict()}).strict(),
+  z.object({operation:z.literal('value_scenario'),args:z.object({additional_outlets:z.number().int().positive().max(10000)}).strict()}).strict(),
+  z.object({operation:z.literal('expansion_listing'),args:z.object({}).strict()}).strict(),
+  z.object({operation:z.literal('commercial_precedent'),args:z.object({kind:z.enum(['discount','payment','package','commitment']),package:z.string().max(100).nullable(),quantity:z.number().int().positive().nullable()}).strict()}).strict(),
+  z.object({operation:z.literal('source_search'),args:z.object({query:z.string().min(1).max(500)}).strict()}).strict(),
+  z.object({operation:z.literal('draft'),args:z.object({deal_id:uuidSchema.nullable(),signal_id:uuidSchema.nullable()}).strict()}).strict(),
+  z.object({operation:z.literal('clarify'),args:z.object({question:z.string().min(1).max(500)}).strict()}).strict(),
+]);
+export type OperationPlan=z.infer<typeof operationPlanSchema>;
+export const requirementAssessmentSchema=z.object({id:uuidSchema,requirement_id:uuidSchema,holder_id:uuidSchema,speaker_id:uuidSchema.nullable(),attribution:z.enum(['direct','reported']),event_date:dateSchema,decision_scope_id:uuidSchema,status:assessmentStatusSchema,requirement:z.string(),missing_details:z.array(z.string()),source_ids:z.array(uuidSchema),method:z.string(),limitations:z.array(z.string()),model_run_id:uuidSchema.nullable().default(null),calls:z.number().int().default(0),cost_usd:z.string().nullable().default(null),prompt_version:z.string().default('literal-requirement-v1'),schema_version:z.string().default('four-choice-v2')});
+export const orderedTaskSchema=z.object({order:z.number().int(),owner_ids:z.array(uuidSchema),text:z.string(),requirement_ids:z.array(uuidSchema),evidence_ids:z.array(uuidSchema),status:z.literal('proposed')});
 export const evidenceSchema = z.object({ source_id: uuidSchema, source_external_id: z.string().nullable(), filename: z.string(), locator: z.number().int(), field: z.string(), passage: z.string() });
 export const findingSchema = z.object({ type: z.string(), label: z.string(), check: z.record(z.string(), z.unknown()).optional(), evidence_ids: z.array(uuidSchema) });
 export const personSchema = z.object({ id: uuidSchema, external_id: z.string(), name: z.string(), role: z.string(), evidence_ids: z.array(uuidSchema) });
@@ -30,6 +46,7 @@ export const stakeholderStatementSchema=z.object({
   text:z.string(),event_date:dateSchema,speaker_id:uuidSchema.nullable(),attribution:z.enum(['direct','reported']),
   scope_id:uuidSchema,scope_type:z.literal('interaction'),method:z.string(),verification:z.literal('unreviewed_rules_candidate'),
   current:z.boolean(),polarity:z.enum(['affirmed','denied']),evidence_ids:z.array(uuidSchema).min(1),
+  decision_scope_id:uuidSchema.nullable().default(null),
 });
 export type StakeholderStatement=z.infer<typeof stakeholderStatementSchema>;
 export const stakeholderSchema=z.object({
@@ -45,9 +62,10 @@ export const premiseSchema=z.object({
   evidence_ids:z.array(uuidSchema),limitations:z.array(z.string()),clarification:z.string().nullable(),
 });
 export const actionPlanSchema=z.object({
-  route:z.enum(['joint_decision_maker_discussion','prepare_through_intermediary','resolve_prerequisite_first','clarify_authority_or_requirement']),
+  route:z.enum(['direct_decision_maker_discussion','joint_decision_maker_discussion','prepare_through_intermediary','resolve_prerequisite_first','clarify_authority_or_requirement']),
   owner_id:uuidSchema,recipient_ids:z.array(uuidSchema),supporting_owner_ids:z.array(uuidSchema),review_status:z.literal('proposed'),
   task:z.string(),rationale:z.string(),discussion_points:z.array(z.object({audience_ids:z.array(uuidSchema),text:z.string(),evidence_ids:z.array(uuidSchema).min(1)})),unknowns:z.array(z.string()),
+  tasks:z.array(orderedTaskSchema).default([]),
 });
 export const diagnosisSchema=z.object({
   id:uuidSchema,dataset_id:uuidSchema,dataset_version:z.string(),as_of:dateSchema,account_id:uuidSchema,
@@ -58,6 +76,7 @@ export const diagnosisSchema=z.object({
   internal_decisions:z.array(z.object({id:uuidSchema,external_id:z.string(),date:dateSchema,requester_id:uuidSchema,approver_id:uuidSchema,outcome:z.string(),rationale:z.string(),commitment_status:z.string().nullable(),evidence_ids:z.array(uuidSchema)})),
   evidence:z.array(evidenceSchema),unknowns:z.array(z.string()),limitations:z.array(z.string()),method:z.string(),
   dependencies:z.object({opportunity_hash:z.string()}),
+  requirement_assessments:z.array(requirementAssessmentSchema).default([]),
 });
 export type AccountDiagnosis=z.infer<typeof diagnosisSchema>;
 export const draftRequestSchema=z.object({language:z.enum(['en','id']).default('en')}).strict();
@@ -68,7 +87,8 @@ export const qaRequestSchema=z.object({
   question:z.string().trim().min(1).max(500),language:z.enum(['en','id']).default('en'),
   history:z.array(z.object({question:z.string().max(500)}).strict()).max(3).default([]),
   additional_outlets:z.number().int().positive().max(10000).optional(),
-  route:z.enum(['joint','intermediary']).default('joint'),
+  route:z.enum(['joint','intermediary','direct']).default('joint'),
+  metric:metricSchema.optional(),periods:comparisonSchema.optional(),deal_id:uuidSchema.optional(),signal_id:uuidSchema.optional(),
 }).strict();
 export const qaClaimSchema=z.object({id:z.string(),kind:z.enum(['fact','check','proposed_action','source_quote']),text:z.string(),evidence_ids:z.array(uuidSchema),check:z.record(z.string(),z.unknown()).nullable()});
 export const qaResponseSchema=z.object({
@@ -78,6 +98,10 @@ export const qaResponseSchema=z.object({
   value_scenario:cardSchema.shape.value_scenario,draft:draftSchema.nullable(),limitations:z.array(z.string()),
   retrieval:z.object({method:z.literal('graph-and-simple-text-v1'),source_count:z.number(),truncated:z.boolean()}),
   generation:z.object({status:z.string(),cached:z.boolean(),run_id:uuidSchema.nullable(),calls:z.number().int(),cost_usd:z.string().nullable(),latency_ms:z.number()}),
+  plan:operationPlanSchema.nullable().default(null),
+  capabilities:z.record(z.string(),z.unknown()).default({}),
+  requirement_assessments:z.array(requirementAssessmentSchema).default([]),
+  evidence_bundle:z.unknown().optional(),
 });
 export type QaRequest=z.infer<typeof qaRequestSchema>;
 export type QaResponse=z.infer<typeof qaResponseSchema>;

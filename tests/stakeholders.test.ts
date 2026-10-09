@@ -9,11 +9,13 @@ describe('dated stakeholder guidance and premise checks',()=>{
   it('changes route and discussion content from actual requirements and retains intermediary',()=>{
     const owner=extractStatements(message(ownerId,'Saya menyetujui pembelian untuk rollout ini. Saya memerlukan bukti ROI.'),people);
     const operator=extractStatements(message(operatorId,'Saya menyiapkan business case untuk CFO.'),people);
+    for(const statement of [...owner,...operator])statement.decision_scope_id=owner[0].scope_id;
     const input={ownerId:employee,statements:[...owner,...operator],currentIds:[ownerId,operatorId],prerequisites:[],baseEvidenceIds:[randomUUID()],preferred:'joint' as const};
     const joint=selectAction(input),prepare=selectAction({...input,preferred:'intermediary'});
     expect(joint.route).toBe('joint_decision_maker_discussion');expect(prepare.route).toBe('prepare_through_intermediary');expect(prepare.recipient_ids).toContain(operatorId);
     const roi=prepare.discussion_points.find(p=>p.text.includes('ROI'));expect(roi?.audience_ids).toEqual([ownerId]);
     const reference=extractStatements(message(ownerId,'Saya menyetujui pembelian untuk rollout ini. Saya membutuhkan referensi.'),people);
+    for(const statement of reference)statement.decision_scope_id=owner[0].scope_id;
     expect(selectAction({...input,statements:[...reference,...operator]}).discussion_points.some(p=>p.text.includes('referensi'))).toBe(true);
     const denied=extractStatements(message(ownerId,'Saya tidak lagi memerlukan bukti ROI.'),people);
     const changed=selectAction({...input,statements:[...owner,...operator,...denied]});

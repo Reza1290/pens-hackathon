@@ -6,21 +6,24 @@ import { answerQuestion,clarification,outcomeQuestion,topic,type Resource } from
 import { Interpreter } from './ai/router.js';
 import { selectedGenerativeProvider } from './ai/providers/selected.js';
 import type { Provider } from './ai/providers/interface.js';
+import { planQuestion } from './modules/qa/planner.js';
+import { jevProvider } from './ai/providers/jev.js';
 import { prepareDraft } from './modules/recommendations/drafts.js';
 import type { Database } from './db/client.js';
 import * as s from './db/schema/index.js';
 import { allowedDatasets,env } from './config/env.js';
 import { projectEvidence } from './modules/graph/projection.js';
 import { projectDiagnosis } from './modules/graph/diagnosis.js';
-import { diagnosisScopeKey } from './modules/stakeholders/service.js';
+import { diagnosisScopeKey,analyzeStakeholders } from './modules/stakeholders/service.js';
 import { checkPremise,selectAction,STAKEHOLDER_VERSION,type Periods } from './modules/stakeholders/rules.js';
 import { sha256 } from './modules/ingestion/manifest.js';
 
 class HttpError extends Error { constructor(public status:number,message:string){super(message);} }
-export function createApp(db:Database,allowlist=allowedDatasets,qaOptions?:{runtime:Interpreter;provider:Provider}) {
+export function createApp(db:Database,allowlist=allowedDatasets,qaOptions?:{runtime:Interpreter;provider:Provider;planner?:boolean}) {
   const app=express(); app.disable('x-powered-by');
   const qaRuntime=qaOptions?.runtime??new Interpreter(db,{live:env.QA_LIVE_ENABLED==='true',maxCalls:env.MODEL_MAX_CALLS,timeoutMs:env.MODEL_TIMEOUT_MS,inputRate:env.LLM_INPUT_USD_PER_MILLION,outputRate:env.LLM_OUTPUT_USD_PER_MILLION});
   const qaProvider=qaOptions?.provider??selectedGenerativeProvider();
+  const plannerRuntime=qaOptions?.runtime??new Interpreter(db,{live:env.QA_PLANNER_ENABLED==='true',maxCalls:env.MODEL_MAX_CALLS,timeoutMs:env.MODEL_TIMEOUT_MS});
   app.use((req,res,next)=>{
     const host=req.hostname;
     if(!['localhost','127.0.0.1','[::1]','::1'].includes(host))return res.status(403).json({error:'Local access only'});
@@ -45,14 +48,14 @@ export function createApp(db:Database,allowlist=allowedDatasets,qaOptions?:{runt
   };
   const diagnosisFor=async(dataset:typeof s.datasets.$inferSelect,id:string,query:unknown)=>{
     z.uuid().parse(id);
-    const options=z.object({signal_id:z.uuid().optional(),deal_id:z.uuid().optional(),route:z.enum(['joint','intermediary']).default('joint'),question:z.string().max(500).optional(),metric:z.enum(['ambiguous_repeat_orders','repeat_expansion','renewal','revenue','closed_expansion_deal_proxy']).optional(),previous_start:z.iso.date().optional(),previous_end:z.iso.date().optional(),current_start:z.iso.date().optional(),current_end:z.iso.date().optional()}).parse(query);
+    const options=z.object({signal_id:z.uuid().optional(),deal_id:z.uuid().optional(),route:z.enum(['joint','intermediary','direct']).default('joint'),question:z.string().max(500).optional(),metric:z.enum(['ambiguous_repeat_orders','repeat_expansion','renewal','revenue','closed_expansion_deal_proxy']).optional(),previous_start:z.iso.date().optional(),previous_end:z.iso.date().optional(),current_start:z.iso.date().optional(),current_end:z.iso.date().optional()}).parse(query);
     const [saved]=await db.select().from(s.diagnoses).where(and(eq(s.diagnoses.datasetId,dataset.id),eq(s.diagnoses.accountId,id),eq(s.diagnoses.scopeKey,diagnosisScopeKey(id,options.signal_id,options.deal_id))));
     if(!saved)throw new HttpError(404,'No prepared diagnosis in selected account/scope; run data:diagnose');
     const result=diagnosisSchema.parse(saved.diagnosis);
     if(result.method!==STAKEHOLDER_VERSION)throw new HttpError(409,'Stakeholder rules changed; rebuild this account diagnosis with data:diagnose');
     const currentCards=await db.select({card:s.recommendations.card}).from(s.signals).innerJoin(s.recommendations,and(eq(s.signals.id,s.recommendations.signalId),eq(s.signals.runId,s.recommendations.runId),eq(s.signals.datasetId,s.recommendations.datasetId))).where(and(eq(s.signals.datasetId,dataset.id),eq(s.signals.accountId,id))).orderBy(s.signals.id);
     if(sha256(JSON.stringify(currentCards.map(row=>cardSchema.parse(row.card))))!==result.dependencies.opportunity_hash)throw new HttpError(409,'Opportunity analysis changed; rebuild this account diagnosis with data:diagnose');
-    if(options.route==='intermediary'&&result.action_plan.route==='joint_decision_maker_discussion')result.action_plan=selectAction({ownerId:result.owner.id,statements:result.stakeholder_context.flatMap(p=>p.statements),currentIds:result.stakeholder_context.filter(p=>p.current).map(p=>p.person.id),prerequisites:[],baseEvidenceIds:result.owner.evidence_ids,preferred:'intermediary'});
+    if(options.route!=='joint'&&result.action_plan.route==='joint_decision_maker_discussion'&&!result.action_plan.tasks.length)result.action_plan=selectAction({ownerId:result.owner.id,statements:result.stakeholder_context.flatMap(p=>p.statements),currentIds:result.stakeholder_context.filter(p=>p.current).map(p=>p.person.id),prerequisites:[],baseEvidenceIds:result.owner.evidence_ids,preferred:options.route as 'intermediary'|'direct'});
     if(options.question||options.metric){
       const metric=options.metric??(/revenue|pendapatan/i.test(options.question??'')?'revenue':/renewal|perpanjangan/i.test(options.question??'')?'renewal':'ambiguous_repeat_orders');
       const periodValues=[options.previous_start,options.previous_end,options.current_start,options.current_end];
@@ -125,6 +128,7 @@ export function createApp(db:Database,allowlist=allowedDatasets,qaOptions?:{runt
   });
   app.post('/api/qa',async(req,res)=>{
     const input=qaRequestSchema.parse(req.body);const dataset=await resolveDataset(input);
+    if(input.periods){try{checkPremise(input.metric??'ambiguous_repeat_orders',input.periods,[],dataset.asOf,false);}catch{throw new HttpError(400,'Comparison periods must be equal-length, ordered and within the snapshot');}}
     if(topic(input.question)==='value'&&(/[-−]\s*\d+\s*(?:outlet|cabang)|\d+[.,]\d+\s*(?:outlet|cabang)|\b0\s*(?:outlet|cabang)/i.test(input.question)||[...input.question.matchAll(/\b\d+\s*(?:outlet|cabang)/gi)].length>1))return res.json(clarification(dataset.id,dataset.asOf,input,input.language==='id'?'Gunakan satu jumlah outlet tambahan berupa bilangan bulat positif.':'Specify one positive whole number of additional outlets.'));
     let card=input.opportunity_id?await cardFor(dataset.id,input.opportunity_id):undefined;
     if(card&&input.account_id&&card.account.id!==input.account_id)throw new HttpError(404,'Opportunity not found in selected account');
@@ -140,15 +144,32 @@ export function createApp(db:Database,allowlist=allowedDatasets,qaOptions?:{runt
     accountId??=candidates[0]?.id;
     if(!accountId)return res.json(clarification(dataset.id,dataset.asOf,input,input.language==='id'?'Pilih akun atau sebutkan ID akun untuk membatasi bukti.':'Select an account or name its account ID to scope the evidence.'));
     if(!accounts.some(a=>a.id===accountId))throw new HttpError(404,'Account not found in selected dataset');
+    const [identity]=await db.select({r:s.sourceRecords}).from(s.entitySources).innerJoin(s.sourceRecords,and(eq(s.sourceRecords.datasetId,s.entitySources.datasetId),eq(s.sourceRecords.id,s.entitySources.sourceId))).where(and(eq(s.entitySources.datasetId,dataset.id),eq(s.entitySources.entityId,accountId))).limit(1);
+    const planning=await planQuestion(input,{datasetId:dataset.id,accountId,sources:[{id:identity.r.id,field:'account identity',text:JSON.stringify(identity.r.payload),eventDate:dataset.asOf,speakerId:null}],candidates:[],subjectId:null,claim:''},plannerRuntime,qaProvider,qaOptions?.planner??env.QA_PLANNER_ENABLED==='true');
+    const plan=planning.plan;
+    if(plan.operation==='clarify')return res.json({...clarification(dataset.id,dataset.asOf,input,plan.args.question),plan,capabilities:{planner:planning}});
+    const scopeArgs='signal_id' in plan.args?{signal_id:plan.args.signal_id,deal_id:plan.args.deal_id}:{};
+    if('signal_id' in scopeArgs&&scopeArgs.signal_id){const scoped=await cardFor(dataset.id,scopeArgs.signal_id);if(scoped.account.id!==accountId)throw new HttpError(404,'Planned signal outside selected account');}
+    const metric=plan.operation==='account_diagnosis'?input.metric??plan.args.metric:null;
+    const periods=input.periods??(plan.operation==='account_diagnosis'?plan.args.periods:null);
+    const queryArgs={route:input.route,...(scopeArgs??{}),...(input.signal_id?{signal_id:input.signal_id}:{}),...(input.deal_id?{deal_id:input.deal_id}:{}),...(metric?{metric}:{}),...(periods??{}),...(outcomeQuestion(input.question)?{question:input.question}:{})};
+    for(const key of ['signal_id','deal_id'] as const)if(queryArgs[key]===null)delete queryArgs[key];
+    if(queryArgs.deal_id){const [scopedDeal]=await db.select({id:s.deals.id}).from(s.deals).where(and(eq(s.deals.datasetId,dataset.id),eq(s.deals.accountId,accountId),eq(s.deals.id,queryArgs.deal_id)));if(!scopedDeal)throw new HttpError(404,'Planned deal outside selected account');}
     let resource:Resource;
-    if(card&&!outcomeQuestion(input.question))resource=card;
-    else if(topic(input.question)==='value'){
+    if(card&&!outcomeQuestion(input.question)&&['value_scenario','source_search'].includes(plan.operation))resource=card;
+    else if(plan.operation==='value_scenario'){
       const rows=await db.select({id:s.signals.id}).from(s.signals).where(and(eq(s.signals.datasetId,dataset.id),eq(s.signals.accountId,accountId),eq(s.signals.status,'active'))).limit(2);
       if(rows.length!==1)return res.json(clarification(dataset.id,dataset.asOf,input,input.language==='id'?'Pilih peluang dengan syarat harga terverifikasi untuk skenario outlet.':'Select an opportunity with verified pricing terms for the outlet scenario.'));
       resource=await cardFor(dataset.id,rows[0].id);
-    }else resource=await diagnosisFor(dataset,accountId,{route:input.route,...(outcomeQuestion(input.question)?{question:input.question}:{})});
+    }else{
+      await analyzeStakeholders(db,dataset.id,accountId,{signalId:queryArgs.signal_id??undefined,dealId:queryArgs.deal_id??undefined});
+      resource=await diagnosisFor(dataset,accountId,queryArgs);
+    }
     if('signal' in resource&&resource.signal.status==='cancelled'&&topic(input.question)==='draft')throw new HttpError(409,'Request was cancelled; review account context before preparing a draft');
-    res.json(await answerQuestion(db,resource,input,qaRuntime,qaProvider));
+    const result=await answerQuestion(db,resource,{...input,signal_id:queryArgs.signal_id??undefined,deal_id:queryArgs.deal_id??undefined,...(plan.operation==='value_scenario'?{additional_outlets:plan.args.additional_outlets}:{})},qaRuntime,qaProvider,plan);
+    const [plannerUsage]=planning.run_id?await db.select().from(s.modelRuns).where(eq(s.modelRuns.id,planning.run_id)):[];
+    result.capabilities={planner:{...planning,cost_usd:planning.calls?(planning.calls>1?null:plannerUsage?.costUsd??null):'0',input_tokens:plannerUsage?.inputTokens??null,output_tokens:plannerUsage?.outputTokens??null},answer_generation:result.generation,jev:result.requirement_assessments.filter(a=>a.model_run_id).map(a=>({run_id:a.model_run_id,calls:a.calls,cost_usd:a.cost_usd,assessment:a.status,execution:a.limitations.find(l=>l.startsWith('Judgment '))??'unknown'})),extraction:resource.findings.filter(f=>f.type==='unresolved_complex_interpretation').map(f=>f.check),mode:result.generation.status==='succeeded'?'grounded_model_selection':'degraded_template'};
+    res.json(result);
   });
   app.get('/api/sources/:id',async(req,res)=>{
     const dataset=await resolveDataset(req.query);const id=z.uuid().parse(req.params.id);

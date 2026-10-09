@@ -10,9 +10,9 @@ Build an Account Expansion Assistant for KasirNusa that answers:
 
 The product combines expansion discovery with stakeholder-aware sales guidance. Find buying signals that have not become documented action; connect current stakeholders to their expressed priorities, knowledge, authority, and past commitments; recommend who should act and how to address the purchasing decision. Stakeholder guidance is a core feature, not an optional response-time dashboard.
 
-This file records the agreed product direction and implementation requirements. No application, graph, integration, or model evaluation has been implemented. Selected source records were inspected on 9 October 2026 for the C01/P01 examples in Section 10; this is not a full dataset audit. Sections 15–19 define the engineering baseline: React/Vite frontend, Express/TypeScript backend, and PostgreSQL. Section 20 defines stakeholder guidance in detail. Exact dependency/model versions and hosting remain to be selected during implementation.
+This file records the agreed product direction and implementation requirements. The React/Vite UI, Express/TypeScript API, PostgreSQL relational context graph, repeatable imports, deterministic opportunities, stakeholder diagnoses and constrained Q&A are implemented. The supplied snapshot has source-verified C06/C01/P01/C02 cases; this does not establish generalization. Phase 7 adds scoped retrieval, four-choice assessments, operation planning and ordered actions; see [Phase 7 handover](docs/PHASE-7-HANDOVER.md) for validation and limitations. Provider adapters and a small synthetic live smoke set are exercised; independent review, production acceptance thresholds and hosting remain open. Classifier and semantic retrieval remain disabled.
 
-For the next implementation session, start with Section 12, Phase 0. Build C06 as the first expansion-discovery slice, then C01 as the required stakeholder-diagnosis slice. Both capabilities are required for the MVP. Do not start by building chat or training a classifier.
+For the next implementation session, use the current PRD/handover status before choosing work. C06 expansion discovery and C01 stakeholder diagnosis remain required regression cases. Complete Phase 7's recorded review and scope limitations before enabling model-dependent capabilities broadly. Do not train a classifier without a reviewed evaluation set.
 
 ## 2. Users, problem, and intended outcome
 
@@ -197,6 +197,31 @@ Example supported questions:
 When asked why revenue declined, first check whether available data establishes a decline. A delayed expansion is unrealized potential business, not necessarily a reduction in existing revenue.
 
 ## 8. Methods and model responsibilities
+
+Phase 7 query flow: selected authorized context → one allowlisted operation plan
+→ strict argument validation → bounded connected evidence → deterministic premise
+and commercial calculations → optional focused Jev assessment → validated fact
+selection → cited template answer/draft. Planning, Jev, complex extraction and
+answer selection have independent flags and bounded provider budgets. Invalid or
+unavailable planning falls back to clear deterministic routing or clarification.
+No plan executes SQL, arbitrary tools, URLs or filesystem paths.
+
+The evidence bundle preserves source hashes, passages, dates, speaker/recipient,
+reply paths, assertions and explicitly linked targets. Initial limits are two
+reply hops, 24 combined source records, 24,000 characters and 2,000 ms; these are
+operational bounds, not measured quality gates. Missing links/attachments or
+truncation require abstention when they affect the assessment. Same-account
+membership does not establish decision relevance. Historical commercial precedents
+are separately labeled and never authorize new terms.
+
+Requirement assessments use `addressed`, `partially_addressed`, `not_addressed`
+or `insufficient_evidence`. They preserve holder, speaker, attribution, decision
+scope and assessed source revisions. Addressing text is separate from fulfillment
+and customer acceptance. Thread roots supply decision scope only when links resolve;
+old ambiguous assertions remain unresolved. Templates support direct/joint contact,
+intermediary preparation, prerequisite resolution and clarification. Ordered tasks
+retain requirement/evidence bindings across API, UI, Q&A and drafts. Model-extracted
+complex candidates require semantic review before influencing authority/actions.
 
 | Component | Responsibility | Decision |
 | --- | --- | --- |
