@@ -528,7 +528,7 @@ export function App() {
                 <div>
                   <h3 className="text-sm font-semibold text-brand-text">AI Deep Scan Results</h3>
                   <p className="text-[11px] text-brand-subtle">
-                    Discovered buying signals bypassing deterministic regex
+                    Unrecorded expansion requests and buying signals detected in customer conversations
                   </p>
                 </div>
               </div>
@@ -544,11 +544,11 @@ export function App() {
                   <div className="font-bold text-gray-800 text-sm mt-0.5">{scanStats.scanned}</div>
                 </div>
                 <div className="p-2.5 bg-gray-50 border border-brand-border rounded">
-                  <div className="text-[10px] text-gray-400 uppercase font-mono">Candidates Found</div>
+                  <div className="text-[10px] text-gray-400 uppercase font-mono">Opportunities Found</div>
                   <div className="font-bold text-emerald-600 text-sm mt-0.5">{scanStats.found}</div>
                 </div>
                 <div className="p-2.5 bg-gray-50 border border-brand-border rounded">
-                  <div className="text-[10px] text-gray-400 uppercase font-mono">Model Invocations</div>
+                  <div className="text-[10px] text-gray-400 uppercase font-mono">AI Checks Completed</div>
                   <div className="font-bold text-brand-blue text-sm mt-0.5">{scanStats.calls}</div>
                 </div>
               </div>
@@ -557,7 +557,7 @@ export function App() {
             <div className="max-h-72 overflow-y-auto divide-y divide-gray-100 border border-brand-border rounded-lg">
               {scanCandidates.length === 0 ? (
                 <div className="p-6 text-center text-xs text-brand-subtle">
-                  No additional non-regex candidates detected in current message window.
+                  No unrecorded expansion signals found in the scanned messages. All detected opportunities are already on your dashboard.
                 </div>
               ) : (
                 scanCandidates.map((c) => (
@@ -566,8 +566,8 @@ export function App() {
                       <span className="font-bold text-brand-text">
                         {c.account_external_id} · {c.account_name}
                       </span>
-                      <span className="text-[10px] font-mono bg-blue-50 text-brand-blue px-2 py-0.5 rounded-full border border-blue-200">
-                        {c.signal.kind}
+                      <span className="text-[10px] font-mono bg-blue-50 text-brand-blue px-2 py-0.5 rounded-full border border-blue-200 capitalize">
+                        {words(c.signal.kind)}
                       </span>
                     </div>
                     <blockquote className="text-xs italic text-gray-700 bg-gray-50 p-2 rounded border-l-2 border-brand-orange">
@@ -577,7 +577,7 @@ export function App() {
                       <span>
                         Quantity: {c.signal.quantity} {c.signal.unit} · {c.signal.location ?? 'Location unstated'}
                       </span>
-                      <span>Intent: {c.intent_assessment.choice} ({Math.round(c.intent_assessment.confidence * 100)}%)</span>
+                      <span>Intent: {words(c.intent_assessment.choice)} ({Math.round(c.intent_assessment.confidence * 100)}%)</span>
                     </div>
                   </div>
                 ))
@@ -1778,7 +1778,7 @@ function Opportunities({ dataset, onOpenScan }: { dataset: string; onOpenScan: (
           <button
             onClick={onOpenScan}
             className="inline-flex items-center space-x-1.5 h-8 px-3 rounded-md bg-white hover:bg-orange-50 border border-brand-border hover:border-brand-orange text-brand-text hover:text-brand-orange text-xs font-medium transition shadow-2xs"
-            title="Scan customer communications for unrecorded expansion intent"
+            title="Scan customer messages for unrecorded expansion opportunities"
           >
             <svg className="w-3.5 h-3.5 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
