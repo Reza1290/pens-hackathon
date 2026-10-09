@@ -1,0 +1,862 @@
+{
+  "version": "phase8-heldout-v1",
+  "independently_reviewed": false,
+  "cases": [
+    {
+      "id": "holdout_roi_number-en",
+      "family": "holdout_roi_number",
+      "language": "en",
+      "split": "held_out",
+      "account_id": "A",
+      "decision_id": "S1",
+      "as_of": "2026-09-01",
+      "question": "What should we do next?",
+      "people": [
+        {
+          "id": "X",
+          "account_id": "A",
+          "role": "customer stakeholder (authority not inferred)",
+          "start": "2025-01-01",
+          "end": null
+        },
+        {
+          "id": "Y",
+          "account_id": "A",
+          "role": "customer colleague (intermediary not inferred)",
+          "start": "2025-01-01",
+          "end": null
+        },
+        {
+          "id": "AM",
+          "account_id": "KasirNusa",
+          "role": "assigned account manager for A",
+          "start": "2025-01-01",
+          "end": null
+        }
+      ],
+      "sources": [
+        {
+          "id": "holdout_roi_number-en-request",
+          "speaker_id": "X",
+          "account_id": "A",
+          "decision_id": "S1",
+          "event_date": "2026-08-01",
+          "parent_id": null,
+          "text": "For S1 I require a numeric ROI value.",
+          "attachment_unavailable": false
+        },
+        {
+          "id": "holdout_roi_number-en-reply",
+          "speaker_id": "AM",
+          "account_id": "A",
+          "decision_id": "S1",
+          "event_date": "2026-08-02",
+          "parent_id": "holdout_roi_number-en-request",
+          "text": "For S1 here is ROI 17%.",
+          "attachment_unavailable": false
+        }
+      ],
+      "dataset_metadata": {
+        "id": "holdout_roi_number-en-metadata",
+        "account_owner_id": "AM",
+        "searched_decision": "S1",
+        "as_of": "2026-09-01",
+        "no_supplied_records": false,
+        "complete_real_world_history": false,
+        "metric": null,
+        "periods": null
+      },
+      "expectations": {
+        "response_coverage": {
+          "applicable": true,
+          "status": "addressed",
+          "evidence_ids": [
+            "holdout_roi_number-en-request",
+            "holdout_roi_number-en-reply"
+          ],
+          "reply_id": "holdout_roi_number-en-reply"
+        },
+        "fulfillment": {
+          "applicable": true,
+          "status": "established",
+          "customer_acceptance": "not_established",
+          "evidence_ids": [
+            "holdout_roi_number-en-request",
+            "holdout_roi_number-en-reply"
+          ],
+          "reason": "Narrow request for one numeric value is fulfilled by the visible value, not validation of its accuracy or customer acceptance."
+        },
+        "next_action": {
+          "task": "verify_requirement_evidence",
+          "responsible_ids": [
+            "AM"
+          ],
+          "allowed_participant_ids": [
+            "X"
+          ],
+          "approver_ids": [],
+          "route": "clarify_authority_or_requirement",
+          "evidence_ids": [
+            "holdout_roi_number-en-request",
+            "holdout_roi_number-en-reply",
+            "holdout_roi_number-en-metadata"
+          ],
+          "reason": "Assigned account manager may prepare/obtain evidence and consult the documented requester without asserting purchasing authority."
+        }
+      },
+      "change_reason": "Fresh authored before first execution; no independent approval.",
+      "author": "implementation-agent",
+      "reviewer": null,
+      "review_status": "pending_review"
+    },
+    {
+      "id": "holdout_roi_number-id",
+      "family": "holdout_roi_number",
+      "language": "id",
+      "split": "held_out",
+      "account_id": "A",
+      "decision_id": "S1",
+      "as_of": "2026-09-01",
+      "question": "Apa langkah berikutnya?",
+      "people": [
+        {
+          "id": "X",
+          "account_id": "A",
+          "role": "customer stakeholder (authority not inferred)",
+          "start": "2025-01-01",
+          "end": null
+        },
+        {
+          "id": "Y",
+          "account_id": "A",
+          "role": "customer colleague (intermediary not inferred)",
+          "start": "2025-01-01",
+          "end": null
+        },
+        {
+          "id": "AM",
+          "account_id": "KasirNusa",
+          "role": "assigned account manager for A",
+          "start": "2025-01-01",
+          "end": null
+        }
+      ],
+      "sources": [
+        {
+          "id": "holdout_roi_number-id-request",
+          "speaker_id": "X",
+          "account_id": "A",
+          "decision_id": "S1",
+          "event_date": "2026-08-01",
+          "parent_id": null,
+          "text": "Untuk S1 saya memerlukan angka ROI.",
+          "attachment_unavailable": false
+        },
+        {
+          "id": "holdout_roi_number-id-reply",
+          "speaker_id": "AM",
+          "account_id": "A",
+          "decision_id": "S1",
+          "event_date": "2026-08-02",
+          "parent_id": "holdout_roi_number-id-request",
+          "text": "Untuk S1 berikut ROI 17%.",
+          "attachment_unavailable": false
+        }
+      ],
+      "dataset_metadata": {
+        "id": "holdout_roi_number-id-metadata",
+        "account_owner_id": "AM",
+        "searched_decision": "S1",
+        "as_of": "2026-09-01",
+        "no_supplied_records": false,
+        "complete_real_world_history": false,
+        "metric": null,
+        "periods": null
+      },
+      "expectations": {
+        "response_coverage": {
+          "applicable": true,
+          "status": "addressed",
+          "evidence_ids": [
+            "holdout_roi_number-id-request",
+            "holdout_roi_number-id-reply"
+          ],
+          "reply_id": "holdout_roi_number-id-reply"
+        },
+        "fulfillment": {
+          "applicable": true,
+          "status": "established",
+          "customer_acceptance": "not_established",
+          "evidence_ids": [
+            "holdout_roi_number-id-request",
+            "holdout_roi_number-id-reply"
+          ],
+          "reason": "Narrow request for one numeric value is fulfilled by the visible value, not validation of its accuracy or customer acceptance."
+        },
+        "next_action": {
+          "task": "verify_requirement_evidence",
+          "responsible_ids": [
+            "AM"
+          ],
+          "allowed_participant_ids": [
+            "X"
+          ],
+          "approver_ids": [],
+          "route": "clarify_authority_or_requirement",
+          "evidence_ids": [
+            "holdout_roi_number-id-request",
+            "holdout_roi_number-id-reply",
+            "holdout_roi_number-id-metadata"
+          ],
+          "reason": "Assigned account manager may prepare/obtain evidence and consult the documented requester without asserting purchasing authority."
+        }
+      },
+      "change_reason": "Fresh authored before first execution; no independent approval.",
+      "author": "implementation-agent",
+      "reviewer": null,
+      "review_status": "pending_review"
+    },
+    {
+      "id": "holdout_payback_pending-en",
+      "family": "holdout_payback_pending",
+      "language": "en",
+      "split": "held_out",
+      "account_id": "A",
+      "decision_id": "S1",
+      "as_of": "2026-09-01",
+      "question": "What should we do next?",
+      "people": [
+        {
+          "id": "X",
+          "account_id": "A",
+          "role": "customer stakeholder (authority not inferred)",
+          "start": "2025-01-01",
+          "end": null
+        },
+        {
+          "id": "Y",
+          "account_id": "A",
+          "role": "customer colleague (intermediary not inferred)",
+          "start": "2025-01-01",
+          "end": null
+        },
+        {
+          "id": "AM",
+          "account_id": "KasirNusa",
+          "role": "assigned account manager for A",
+          "start": "2025-01-01",
+          "end": null
+        }
+      ],
+      "sources": [
+        {
+          "id": "holdout_payback_pending-en-request",
+          "speaker_id": "X",
+          "account_id": "A",
+          "decision_id": "S1",
+          "event_date": "2026-08-01",
+          "parent_id": null,
+          "text": "For S1 I require payback evidence.",
+          "attachment_unavailable": false
+        },
+        {
+          "id": "holdout_payback_pending-en-reply",
+          "speaker_id": "AM",
+          "account_id": "A",
+          "decision_id": "S1",
+          "event_date": "2026-08-02",
+          "parent_id": "holdout_payback_pending-en-request",
+          "text": "For S1 I will prepare payback evidence next week.",
+          "attachment_unavailable": false
+        }
+      ],
+      "dataset_metadata": {
+        "id": "holdout_payback_pending-en-metadata",
+        "account_owner_id": "AM",
+        "searched_decision": "S1",
+        "as_of": "2026-09-01",
+        "no_supplied_records": false,
+        "complete_real_world_history": false,
+        "metric": null,
+        "periods": null
+      },
+      "expectations": {
+        "response_coverage": {
+          "applicable": true,
+          "status": "partially_addressed",
+          "evidence_ids": [
+            "holdout_payback_pending-en-request",
+            "holdout_payback_pending-en-reply"
+          ],
+          "reply_id": "holdout_payback_pending-en-reply"
+        },
+        "fulfillment": {
+          "applicable": true,
+          "status": "insufficient_evidence",
+          "customer_acceptance": "not_established",
+          "evidence_ids": [
+            "holdout_payback_pending-en-request",
+            "holdout_payback_pending-en-reply"
+          ],
+          "reason": "No independent fulfillment evidence; coverage does not establish delivery or acceptance."
+        },
+        "next_action": {
+          "task": "prepare_requirement_evidence",
+          "responsible_ids": [
+            "AM"
+          ],
+          "allowed_participant_ids": [
+            "X"
+          ],
+          "approver_ids": [],
+          "route": "clarify_authority_or_requirement",
+          "evidence_ids": [
+            "holdout_payback_pending-en-request",
+            "holdout_payback_pending-en-reply",
+            "holdout_payback_pending-en-metadata"
+          ],
+          "reason": "Assigned account manager may prepare/obtain evidence and consult the documented requester without asserting purchasing authority."
+        }
+      },
+      "change_reason": "Fresh authored before first execution; no independent approval.",
+      "author": "implementation-agent",
+      "reviewer": null,
+      "review_status": "pending_review"
+    },
+    {
+      "id": "holdout_payback_pending-id",
+      "family": "holdout_payback_pending",
+      "language": "id",
+      "split": "held_out",
+      "account_id": "A",
+      "decision_id": "S1",
+      "as_of": "2026-09-01",
+      "question": "Apa langkah berikutnya?",
+      "people": [
+        {
+          "id": "X",
+          "account_id": "A",
+          "role": "customer stakeholder (authority not inferred)",
+          "start": "2025-01-01",
+          "end": null
+        },
+        {
+          "id": "Y",
+          "account_id": "A",
+          "role": "customer colleague (intermediary not inferred)",
+          "start": "2025-01-01",
+          "end": null
+        },
+        {
+          "id": "AM",
+          "account_id": "KasirNusa",
+          "role": "assigned account manager for A",
+          "start": "2025-01-01",
+          "end": null
+        }
+      ],
+      "sources": [
+        {
+          "id": "holdout_payback_pending-id-request",
+          "speaker_id": "X",
+          "account_id": "A",
+          "decision_id": "S1",
+          "event_date": "2026-08-01",
+          "parent_id": null,
+          "text": "Untuk S1 saya memerlukan bukti payback.",
+          "attachment_unavailable": false
+        },
+        {
+          "id": "holdout_payback_pending-id-reply",
+          "speaker_id": "AM",
+          "account_id": "A",
+          "decision_id": "S1",
+          "event_date": "2026-08-02",
+          "parent_id": "holdout_payback_pending-id-request",
+          "text": "Untuk S1 saya akan siapkan bukti payback minggu depan.",
+          "attachment_unavailable": false
+        }
+      ],
+      "dataset_metadata": {
+        "id": "holdout_payback_pending-id-metadata",
+        "account_owner_id": "AM",
+        "searched_decision": "S1",
+        "as_of": "2026-09-01",
+        "no_supplied_records": false,
+        "complete_real_world_history": false,
+        "metric": null,
+        "periods": null
+      },
+      "expectations": {
+        "response_coverage": {
+          "applicable": true,
+          "status": "partially_addressed",
+          "evidence_ids": [
+            "holdout_payback_pending-id-request",
+            "holdout_payback_pending-id-reply"
+          ],
+          "reply_id": "holdout_payback_pending-id-reply"
+        },
+        "fulfillment": {
+          "applicable": true,
+          "status": "insufficient_evidence",
+          "customer_acceptance": "not_established",
+          "evidence_ids": [
+            "holdout_payback_pending-id-request",
+            "holdout_payback_pending-id-reply"
+          ],
+          "reason": "No independent fulfillment evidence; coverage does not establish delivery or acceptance."
+        },
+        "next_action": {
+          "task": "prepare_requirement_evidence",
+          "responsible_ids": [
+            "AM"
+          ],
+          "allowed_participant_ids": [
+            "X"
+          ],
+          "approver_ids": [],
+          "route": "clarify_authority_or_requirement",
+          "evidence_ids": [
+            "holdout_payback_pending-id-request",
+            "holdout_payback_pending-id-reply",
+            "holdout_payback_pending-id-metadata"
+          ],
+          "reason": "Assigned account manager may prepare/obtain evidence and consult the documented requester without asserting purchasing authority."
+        }
+      },
+      "change_reason": "Fresh authored before first execution; no independent approval.",
+      "author": "implementation-agent",
+      "reviewer": null,
+      "review_status": "pending_review"
+    },
+    {
+      "id": "holdout_reference_pointer-en",
+      "family": "holdout_reference_pointer",
+      "language": "en",
+      "split": "held_out",
+      "account_id": "A",
+      "decision_id": "S1",
+      "as_of": "2026-09-01",
+      "question": "What should we do next?",
+      "people": [
+        {
+          "id": "X",
+          "account_id": "A",
+          "role": "customer stakeholder (authority not inferred)",
+          "start": "2025-01-01",
+          "end": null
+        },
+        {
+          "id": "Y",
+          "account_id": "A",
+          "role": "customer colleague (intermediary not inferred)",
+          "start": "2025-01-01",
+          "end": null
+        },
+        {
+          "id": "AM",
+          "account_id": "KasirNusa",
+          "role": "assigned account manager for A",
+          "start": "2025-01-01",
+          "end": null
+        }
+      ],
+      "sources": [
+        {
+          "id": "holdout_reference_pointer-en-request",
+          "speaker_id": "X",
+          "account_id": "A",
+          "decision_id": "S1",
+          "event_date": "2026-08-01",
+          "parent_id": null,
+          "text": "For S1 I require a reference.",
+          "attachment_unavailable": false
+        },
+        {
+          "id": "holdout_reference_pointer-en-reply",
+          "speaker_id": "AM",
+          "account_id": "A",
+          "decision_id": "S1",
+          "event_date": "2026-08-02",
+          "parent_id": "holdout_reference_pointer-en-request",
+          "text": "For S1 here is the requested reference in the attachment.",
+          "attachment_unavailable": true
+        }
+      ],
+      "dataset_metadata": {
+        "id": "holdout_reference_pointer-en-metadata",
+        "account_owner_id": "AM",
+        "searched_decision": "S1",
+        "as_of": "2026-09-01",
+        "no_supplied_records": false,
+        "complete_real_world_history": false,
+        "metric": null,
+        "periods": null
+      },
+      "expectations": {
+        "response_coverage": {
+          "applicable": true,
+          "status": "addressed",
+          "evidence_ids": [
+            "holdout_reference_pointer-en-request",
+            "holdout_reference_pointer-en-reply"
+          ],
+          "reply_id": "holdout_reference_pointer-en-reply"
+        },
+        "fulfillment": {
+          "applicable": true,
+          "status": "insufficient_evidence",
+          "customer_acceptance": "not_established",
+          "evidence_ids": [
+            "holdout_reference_pointer-en-request",
+            "holdout_reference_pointer-en-reply"
+          ],
+          "reason": "No independent fulfillment evidence; coverage does not establish delivery or acceptance."
+        },
+        "next_action": {
+          "task": "prepare_requirement_evidence",
+          "responsible_ids": [
+            "AM"
+          ],
+          "allowed_participant_ids": [
+            "X"
+          ],
+          "approver_ids": [],
+          "route": "clarify_authority_or_requirement",
+          "evidence_ids": [
+            "holdout_reference_pointer-en-request",
+            "holdout_reference_pointer-en-reply",
+            "holdout_reference_pointer-en-metadata"
+          ],
+          "reason": "Assigned account manager may prepare/obtain evidence and consult the documented requester without asserting purchasing authority."
+        }
+      },
+      "change_reason": "Fresh authored before first execution; no independent approval.",
+      "author": "implementation-agent",
+      "reviewer": null,
+      "review_status": "pending_review"
+    },
+    {
+      "id": "holdout_reference_pointer-id",
+      "family": "holdout_reference_pointer",
+      "language": "id",
+      "split": "held_out",
+      "account_id": "A",
+      "decision_id": "S1",
+      "as_of": "2026-09-01",
+      "question": "Apa langkah berikutnya?",
+      "people": [
+        {
+          "id": "X",
+          "account_id": "A",
+          "role": "customer stakeholder (authority not inferred)",
+          "start": "2025-01-01",
+          "end": null
+        },
+        {
+          "id": "Y",
+          "account_id": "A",
+          "role": "customer colleague (intermediary not inferred)",
+          "start": "2025-01-01",
+          "end": null
+        },
+        {
+          "id": "AM",
+          "account_id": "KasirNusa",
+          "role": "assigned account manager for A",
+          "start": "2025-01-01",
+          "end": null
+        }
+      ],
+      "sources": [
+        {
+          "id": "holdout_reference_pointer-id-request",
+          "speaker_id": "X",
+          "account_id": "A",
+          "decision_id": "S1",
+          "event_date": "2026-08-01",
+          "parent_id": null,
+          "text": "Untuk S1 saya memerlukan referensi.",
+          "attachment_unavailable": false
+        },
+        {
+          "id": "holdout_reference_pointer-id-reply",
+          "speaker_id": "AM",
+          "account_id": "A",
+          "decision_id": "S1",
+          "event_date": "2026-08-02",
+          "parent_id": "holdout_reference_pointer-id-request",
+          "text": "Untuk S1 berikut referensi yang diminta dalam lampiran.",
+          "attachment_unavailable": true
+        }
+      ],
+      "dataset_metadata": {
+        "id": "holdout_reference_pointer-id-metadata",
+        "account_owner_id": "AM",
+        "searched_decision": "S1",
+        "as_of": "2026-09-01",
+        "no_supplied_records": false,
+        "complete_real_world_history": false,
+        "metric": null,
+        "periods": null
+      },
+      "expectations": {
+        "response_coverage": {
+          "applicable": true,
+          "status": "addressed",
+          "evidence_ids": [
+            "holdout_reference_pointer-id-request",
+            "holdout_reference_pointer-id-reply"
+          ],
+          "reply_id": "holdout_reference_pointer-id-reply"
+        },
+        "fulfillment": {
+          "applicable": true,
+          "status": "insufficient_evidence",
+          "customer_acceptance": "not_established",
+          "evidence_ids": [
+            "holdout_reference_pointer-id-request",
+            "holdout_reference_pointer-id-reply"
+          ],
+          "reason": "No independent fulfillment evidence; coverage does not establish delivery or acceptance."
+        },
+        "next_action": {
+          "task": "prepare_requirement_evidence",
+          "responsible_ids": [
+            "AM"
+          ],
+          "allowed_participant_ids": [
+            "X"
+          ],
+          "approver_ids": [],
+          "route": "clarify_authority_or_requirement",
+          "evidence_ids": [
+            "holdout_reference_pointer-id-request",
+            "holdout_reference_pointer-id-reply",
+            "holdout_reference_pointer-id-metadata"
+          ],
+          "reason": "Assigned account manager may prepare/obtain evidence and consult the documented requester without asserting purchasing authority."
+        }
+      },
+      "change_reason": "Fresh authored before first execution; no independent approval.",
+      "author": "implementation-agent",
+      "reviewer": null,
+      "review_status": "pending_review"
+    },
+    {
+      "id": "holdout_pricing_noise-en",
+      "family": "holdout_pricing_noise",
+      "language": "en",
+      "split": "held_out",
+      "account_id": "A",
+      "decision_id": "S1",
+      "as_of": "2026-09-01",
+      "question": "What should we do next?",
+      "people": [
+        {
+          "id": "X",
+          "account_id": "A",
+          "role": "customer stakeholder (authority not inferred)",
+          "start": "2025-01-01",
+          "end": null
+        },
+        {
+          "id": "Y",
+          "account_id": "A",
+          "role": "customer colleague (intermediary not inferred)",
+          "start": "2025-01-01",
+          "end": null
+        },
+        {
+          "id": "AM",
+          "account_id": "KasirNusa",
+          "role": "assigned account manager for A",
+          "start": "2025-01-01",
+          "end": null
+        }
+      ],
+      "sources": [
+        {
+          "id": "holdout_pricing_noise-en-request",
+          "speaker_id": "X",
+          "account_id": "A",
+          "decision_id": "S1",
+          "event_date": "2026-08-01",
+          "parent_id": null,
+          "text": "For S1 I require pricing.",
+          "attachment_unavailable": false
+        },
+        {
+          "id": "holdout_pricing_noise-en-reply",
+          "speaker_id": "AM",
+          "account_id": "A",
+          "decision_id": "S1",
+          "event_date": "2026-08-02",
+          "parent_id": "holdout_pricing_noise-en-request",
+          "text": "For S1 here is the implementation schedule: 15 October 2026.",
+          "attachment_unavailable": false
+        }
+      ],
+      "dataset_metadata": {
+        "id": "holdout_pricing_noise-en-metadata",
+        "account_owner_id": "AM",
+        "searched_decision": "S1",
+        "as_of": "2026-09-01",
+        "no_supplied_records": false,
+        "complete_real_world_history": false,
+        "metric": null,
+        "periods": null
+      },
+      "expectations": {
+        "response_coverage": {
+          "applicable": true,
+          "status": "not_addressed",
+          "evidence_ids": [
+            "holdout_pricing_noise-en-request",
+            "holdout_pricing_noise-en-reply"
+          ],
+          "reply_id": "holdout_pricing_noise-en-reply"
+        },
+        "fulfillment": {
+          "applicable": true,
+          "status": "insufficient_evidence",
+          "customer_acceptance": "not_established",
+          "evidence_ids": [
+            "holdout_pricing_noise-en-request",
+            "holdout_pricing_noise-en-reply"
+          ],
+          "reason": "No independent fulfillment evidence; coverage does not establish delivery or acceptance."
+        },
+        "next_action": {
+          "task": "prepare_requirement_evidence",
+          "responsible_ids": [
+            "AM"
+          ],
+          "allowed_participant_ids": [
+            "X"
+          ],
+          "approver_ids": [],
+          "route": "clarify_authority_or_requirement",
+          "evidence_ids": [
+            "holdout_pricing_noise-en-request",
+            "holdout_pricing_noise-en-reply",
+            "holdout_pricing_noise-en-metadata"
+          ],
+          "reason": "Assigned account manager may prepare/obtain evidence and consult the documented requester without asserting purchasing authority."
+        }
+      },
+      "change_reason": "Fresh authored before first execution; no independent approval.",
+      "author": "implementation-agent",
+      "reviewer": null,
+      "review_status": "pending_review"
+    },
+    {
+      "id": "holdout_pricing_noise-id",
+      "family": "holdout_pricing_noise",
+      "language": "id",
+      "split": "held_out",
+      "account_id": "A",
+      "decision_id": "S1",
+      "as_of": "2026-09-01",
+      "question": "Apa langkah berikutnya?",
+      "people": [
+        {
+          "id": "X",
+          "account_id": "A",
+          "role": "customer stakeholder (authority not inferred)",
+          "start": "2025-01-01",
+          "end": null
+        },
+        {
+          "id": "Y",
+          "account_id": "A",
+          "role": "customer colleague (intermediary not inferred)",
+          "start": "2025-01-01",
+          "end": null
+        },
+        {
+          "id": "AM",
+          "account_id": "KasirNusa",
+          "role": "assigned account manager for A",
+          "start": "2025-01-01",
+          "end": null
+        }
+      ],
+      "sources": [
+        {
+          "id": "holdout_pricing_noise-id-request",
+          "speaker_id": "X",
+          "account_id": "A",
+          "decision_id": "S1",
+          "event_date": "2026-08-01",
+          "parent_id": null,
+          "text": "Untuk S1 saya memerlukan harga.",
+          "attachment_unavailable": false
+        },
+        {
+          "id": "holdout_pricing_noise-id-reply",
+          "speaker_id": "AM",
+          "account_id": "A",
+          "decision_id": "S1",
+          "event_date": "2026-08-02",
+          "parent_id": "holdout_pricing_noise-id-request",
+          "text": "Untuk S1 berikut jadwal implementasi: 15 Oktober 2026.",
+          "attachment_unavailable": false
+        }
+      ],
+      "dataset_metadata": {
+        "id": "holdout_pricing_noise-id-metadata",
+        "account_owner_id": "AM",
+        "searched_decision": "S1",
+        "as_of": "2026-09-01",
+        "no_supplied_records": false,
+        "complete_real_world_history": false,
+        "metric": null,
+        "periods": null
+      },
+      "expectations": {
+        "response_coverage": {
+          "applicable": true,
+          "status": "not_addressed",
+          "evidence_ids": [
+            "holdout_pricing_noise-id-request",
+            "holdout_pricing_noise-id-reply"
+          ],
+          "reply_id": "holdout_pricing_noise-id-reply"
+        },
+        "fulfillment": {
+          "applicable": true,
+          "status": "insufficient_evidence",
+          "customer_acceptance": "not_established",
+          "evidence_ids": [
+            "holdout_pricing_noise-id-request",
+            "holdout_pricing_noise-id-reply"
+          ],
+          "reason": "No independent fulfillment evidence; coverage does not establish delivery or acceptance."
+        },
+        "next_action": {
+          "task": "prepare_requirement_evidence",
+          "responsible_ids": [
+            "AM"
+          ],
+          "allowed_participant_ids": [
+            "X"
+          ],
+          "approver_ids": [],
+          "route": "clarify_authority_or_requirement",
+          "evidence_ids": [
+            "holdout_pricing_noise-id-request",
+            "holdout_pricing_noise-id-reply",
+            "holdout_pricing_noise-id-metadata"
+          ],
+          "reason": "Assigned account manager may prepare/obtain evidence and consult the documented requester without asserting purchasing authority."
+        }
+      },
+      "change_reason": "Fresh authored before first execution; no independent approval.",
+      "author": "implementation-agent",
+      "reviewer": null,
+      "review_status": "pending_review"
+    }
+  ]
+}

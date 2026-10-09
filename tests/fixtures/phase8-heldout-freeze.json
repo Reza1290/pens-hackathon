@@ -1,0 +1,11 @@
+{
+  "packet": "phase8-heldout-v1.json",
+  "sha256": "1c9fe7de0eae7f30996fe609a743692d699bcba72494799e86ac15138f489a6f",
+  "frozen_at": "2026-10-09T19:27:43.283615+00:00",
+  "first_execution": null,
+  "label_author": "implementation-agent",
+  "independent_approval": false,
+  "blind_to_implementer": false,
+  "limitations": "Fresh regression holdout authored by the implementer, not an independent blind benchmark. Families and both languages held together.",
+  "post_freeze_tuning": []
+}
