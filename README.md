@@ -214,8 +214,11 @@ See [Phase 6 handover](docs/PHASE-6-HANDOVER.md) and
 
 The [TypeSafe skill](.agents/skills/typesafe-ai/SKILL.md) is installed for Codex in
 this repository. Use it for TypeSafe/Jev work. The user-selected generative provider
-is Gemini; configure `LLM_PROVIDER=gemini` plus credentials/model in ignored `.env`.
+is DeepSeek; configure `LLM_PROVIDER=deepseek` plus credentials/model in ignored `.env`.
 `npm run providers:check -- --dataset <uuid> --live` checks both providers using
-synthetic input with at most one physical attempt each. Jev connectivity is verified;
-Gemini generation currently returns HTTP 402. Live UI generation remains disabled.
+synthetic input with at most one physical attempt each. Jev and DeepSeek connectivity are verified;
+Gemini remains available but its last generation test returned HTTP 402. Live UI generation remains disabled.
 See [provider setup handover](docs/PROVIDER-SETUP-HANDOVER.md).
+
+See [DeepSeek setup and live-check results](docs/DEEPSEEK-SETUP.md) for the current
+provider selection and remaining evaluation gates.

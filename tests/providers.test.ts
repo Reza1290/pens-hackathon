@@ -5,9 +5,26 @@ import { cacheKey } from '../apps/api/src/ai/router.js';
 import { jevProvider } from '../apps/api/src/ai/providers/jev.js';
 import { generativeProvider } from '../apps/api/src/ai/providers/generative.js';
 import { geminiProvider } from '../apps/api/src/ai/providers/gemini.js';
+import { deepseekProvider } from '../apps/api/src/ai/providers/deepseek.js';
 const person=randomUUID(),source=randomUUID();
 const context:Context={datasetId:randomUUID(),accountId:randomUUID(),sources:[{id:source,field:'isi',text:'Need ROI evidence.',eventDate:'2026-08-01',speakerId:person}],candidates:[{id:person,role:'unknown',start:'2025-01-01',end:null}],subjectId:person,claim:''};
 describe('synthetic provider contract checks (no live inference)',()=>{
+  it('uses DeepSeek JSON mode with explicit schema instructions and safe authentication',async()=>{
+    const transport:typeof fetch=async(url,options)=>{
+      expect(url).toBe('https://api.deepseek.com/chat/completions');expect(options?.redirect).toBe('error');
+      expect((options?.headers as Record<string,string>).Authorization).toBe('Bearer synthetic-key');
+      const body=JSON.parse(String(options?.body));expect(body.response_format).toEqual({type:'json_object'});expect(body.thinking.type).toBe('disabled');expect(body.stream).toBe(false);expect(body.messages[0].content).toContain('JSON schema');expect(body.messages[0].content).toContain('untrusted data');
+      return Response.json({model:'deepseek-flash',choices:[{finish_reason:'stop',message:{role:'assistant',content:'{"fact_ids":["one"]}'}}],usage:{prompt_tokens:30,completion_tokens:4}});
+    };
+    expect(await deepseekProvider('synthetic-key','deepseek-flash',transport).invoke('answer_plan',context,new AbortController().signal)).toMatchObject({value:{fact_ids:['one']},inputTokens:30,outputTokens:4});
+    expect(deepseekProvider('test','arbitrary-model').configured).toBe(false);
+  });
+  it('rejects DeepSeek malformed/schema-invalid JSON, truncation and model drift',async()=>{
+    for(const change of [{model:'other-model'},{choices:[{finish_reason:'length',message:{role:'assistant',content:'{"fact_ids":["one"]}'}}]},{choices:[{finish_reason:'stop',message:{role:'assistant',content:'not JSON'}}]},{choices:[{finish_reason:'stop',message:{role:'assistant',content:'{"fact_ids":["one"],"new_claim":"Guaranteed sale"}'}}]}]){
+      const transport:typeof fetch=async()=>Response.json({model:'deepseek-flash',choices:[{finish_reason:'stop',message:{role:'assistant',content:'{"fact_ids":["one"]}'}}],usage:{prompt_tokens:10,completion_tokens:2},...change});
+      await expect(deepseekProvider('test','deepseek-flash',transport).invoke('answer_plan',context,new AbortController().signal)).rejects.toThrow();
+    }
+  });
   it('uses Gemini structured JSON and header auth while including thinking usage',async()=>{
     const transport:typeof fetch=async(url,options)=>{
       expect(url).toBe('https://generativelanguage.googleapis.com/v1beta/models/gemini-test-model:generateContent');

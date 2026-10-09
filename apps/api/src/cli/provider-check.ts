@@ -5,8 +5,7 @@ import { env } from '../config/env.js';
 import { requiredArg } from './args.js';
 import { Interpreter } from '../ai/router.js';
 import { jevProvider } from '../ai/providers/jev.js';
-import { geminiProvider } from '../ai/providers/gemini.js';
-import { generativeProvider } from '../ai/providers/generative.js';
+import { selectedGenerativeProvider } from '../ai/providers/selected.js';
 import { stableId } from '../modules/ingestion/service.js';
 import type { Context } from '../ai/schemas/interpretation.js';
 try{
@@ -20,7 +19,7 @@ try{
   for(const kind of ['jev','generative'] as const){
     let httpStatus:number|null=null;
     const transport:typeof fetch=async(url,options)=>{const response=await fetch(url,options);httpStatus=response.status;return response;};
-    const provider=kind==='jev'?jevProvider(env.JEV_API_KEY,env.JEV_MODEL,transport):env.LLM_PROVIDER==='gemini'?geminiProvider(env.LLM_API_KEY,env.LLM_MODEL,transport):generativeProvider(env.LLM_API_KEY,env.LLM_MODEL,transport);
+    const provider=kind==='jev'?jevProvider(env.JEV_API_KEY,env.JEV_MODEL,transport):selectedGenerativeProvider(transport);
     const context=kind==='jev'?base:{...base,grounding:{language:'en' as const,question:'What action is supported?',facts:[{id:'synthetic-fact-1',text:'Prepare a quotation for the recorded request.',evidence_ids:[source]}]}};
     // One physical attempt per provider; no hidden retry or customer content.
     const runtime=new Interpreter(db,{live:process.argv.includes('--live'),maxCalls:1,timeoutMs:env.MODEL_TIMEOUT_MS,inputRate:env.LLM_INPUT_USD_PER_MILLION,outputRate:env.LLM_OUTPUT_USD_PER_MILLION});

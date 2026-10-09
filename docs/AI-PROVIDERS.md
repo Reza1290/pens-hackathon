@@ -105,3 +105,13 @@ This command uses synthetic text, at most one attempt per provider, and prints
 safe status/usage references. Model listing succeeded, but actual Gemini generation
 returned HTTP 402. Resolve the Google billing/prepay condition before retesting.
 See [setup results](PROVIDER-SETUP-HANDOVER.md).
+
+## DeepSeek (current local provider)
+
+Local setup now uses `LLM_PROVIDER=deepseek` and `LLM_MODEL=deepseek-flash`.
+The live synthetic provider check succeeded; Gemini is no longer selected.
+DeepSeek JSON mode is validated locally against the operation schema and evidence
+scope. Cost remains unknown without reviewed rate handling. The advertised model
+name can change underlying versions, so vendor upgrades require cache invalidation
+and reevaluation. Live UI generation stays disabled. See
+[DeepSeek setup](DEEPSEEK-SETUP.md).

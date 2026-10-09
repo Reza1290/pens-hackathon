@@ -672,5 +672,5 @@ For TypeSafe/Jev provider work, use the installed
 before changing API/question contracts. Preserve the bounded, scoped judgment
 role and independent evaluation gates above. The skill does not authorize new
 databases, autonomous messages, orchestration or automatic acceptance of judgments.
-The user selected Gemini as the current generative provider; credentials stay
+The user selected DeepSeek as the current generative provider; credentials stay
 in ignored server configuration and never in committed code or browser bundles.
