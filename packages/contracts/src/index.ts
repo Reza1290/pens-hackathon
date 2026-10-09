@@ -106,3 +106,77 @@ export const qaResponseSchema=z.object({
 export type QaRequest=z.infer<typeof qaRequestSchema>;
 export type QaResponse=z.infer<typeof qaResponseSchema>;
 export type QaClaim=z.infer<typeof qaClaimSchema>;
+
+export const aiCandidateOpportunitySchema = z.object({
+  id: uuidSchema,
+  account_id: uuidSchema,
+  account_external_id: z.string(),
+  account_name: z.string(),
+  signal: z.object({
+    kind: z.enum(['quotation_request', 'explicit_plan']),
+    quantity: z.number().int().positive().nullable(),
+    unit: z.enum(['outlet', 'terminal', 'license', 'other']),
+    location: z.string().nullable(),
+    target_period: z.string().nullable(),
+    raw_quote: z.string(),
+  }),
+  intent_assessment: z.object({
+    choice: z.string(),
+    confidence: z.number(),
+    model: z.string(),
+  }),
+  source: evidenceSchema,
+  value_scenario: cardSchema.shape.value_scenario,
+  review_status: z.literal('candidate_requiring_human_review'),
+  limitations: z.array(z.string()),
+});
+export type AiCandidateOpportunity = z.infer<typeof aiCandidateOpportunitySchema>;
+
+export const aiScanResponseSchema = z.object({
+  dataset_id: uuidSchema,
+  as_of: dateSchema,
+  account_id: uuidSchema.nullable(),
+  messages_scanned: z.number().int().nonnegative(),
+  candidates_found: z.number().int().nonnegative(),
+  candidates: z.array(aiCandidateOpportunitySchema),
+  model_calls: z.number().int().nonnegative(),
+  cache_hits: z.number().int().nonnegative(),
+});
+export type AiScanResponse = z.infer<typeof aiScanResponseSchema>;
+
+export const userRoleSchema = z.enum(['admin', 'account_manager', 'sales_rep', 'viewer']);
+export type UserRole = z.infer<typeof userRoleSchema>;
+
+export const userSchema = z.object({
+  id: uuidSchema,
+  email: z.string().email(),
+  name: z.string().min(1),
+  employee_external_id: z.string().nullable().optional(),
+  role: userRoleSchema,
+  is_active: z.boolean(),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+export type User = z.infer<typeof userSchema>;
+
+export const loginRequestSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6).max(100),
+});
+export type LoginRequest = z.infer<typeof loginRequestSchema>;
+
+export const registerRequestSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6).max(100),
+  name: z.string().min(1).max(200),
+  employee_external_id: z.string().optional(),
+  role: userRoleSchema.default('account_manager'),
+});
+export type RegisterRequest = z.infer<typeof registerRequestSchema>;
+
+export const sessionSchema = z.object({
+  token: z.string(),
+  expires_at: z.string(),
+  user: userSchema,
+});
+export type Session = z.infer<typeof sessionSchema>;

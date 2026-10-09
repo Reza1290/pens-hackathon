@@ -20,6 +20,7 @@
     "test": "vitest run",
     "db:generate": "npm run db:generate -w @kasirnusa/api",
     "db:migrate": "tsx apps/api/src/cli/migrate.ts",
+    "auth:seed": "tsx apps/api/src/cli/seed-auth.ts",
     "data:prepare": "tsx apps/api/src/cli/prepare.ts",
     "data:import": "tsx apps/api/src/cli/import.ts",
     "data:analyze": "tsx apps/api/src/cli/analyze.ts",

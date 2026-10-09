@@ -1,7 +1,7 @@
 import express from 'express';
 import { and, eq, desc, ilike, or, count, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { cardSchema,datasetSchema,accountSchema,healthSchema,sourceSchema,paginationSchema,diagnosisSchema,draftRequestSchema,qaRequestSchema } from '@kasirnusa/contracts';
+import { cardSchema,datasetSchema,accountSchema,healthSchema,sourceSchema,paginationSchema,diagnosisSchema,draftRequestSchema,qaRequestSchema,loginRequestSchema,registerRequestSchema,sessionSchema,userSchema } from '@kasirnusa/contracts';
 import { answerQuestion,clarification,outcomeQuestion,topic,type Resource } from './modules/qa/service.js';
 import { Interpreter } from './ai/router.js';
 import { selectedGenerativeProvider } from './ai/providers/selected.js';
@@ -18,6 +18,8 @@ import { projectDiagnosis } from './modules/graph/diagnosis.js';
 import { diagnosisScopeKey,analyzeStakeholders } from './modules/stakeholders/service.js';
 import { checkPremise,selectAction,STAKEHOLDER_VERSION,type Periods } from './modules/stakeholders/rules.js';
 import { sha256 } from './modules/ingestion/manifest.js';
+import { deepScanOpportunities } from './modules/opportunities/deep-scan.js';
+import { createUser,authenticate,createSession,verifySession,revokeSession,seedDefaultUsers } from './modules/auth/service.js';
 
 class HttpError extends Error { constructor(public status:number,message:string){super(message);} }
 export function createApp(db:Database,allowlist=allowedDatasets,qaOptions?:{runtime:Interpreter;provider:Provider;planner?:boolean;plannerRuntime?:Interpreter;analysis?:{runtime:Interpreter;jev?:Provider;extractor?:Provider}}) {
@@ -79,6 +81,48 @@ export function createApp(db:Database,allowlist=allowedDatasets,qaOptions?:{runt
     try {const result=await db.execute(sql`select to_regclass('public.datasets') is not null as schema_ready`);const ready=Boolean(result.rows[0]?.schema_ready);res.status(ready?200:503).json(healthSchema.parse({process:'ready',database:'ready',schema:ready?'ready':'unavailable'}));}
     catch{res.status(503).json(healthSchema.parse({process:'ready',database:'unavailable',schema:'unavailable'}));}
   });
+  app.post('/api/auth/register',async(req,res)=>{
+    const body=registerRequestSchema.parse(req.body);
+    try{
+      const user=await createUser(db,{
+        email:body.email,
+        name:body.name,
+        password:body.password,
+        role:body.role,
+        employeeExternalId:body.employee_external_id,
+      });
+      const session=await createSession(db,user.id,{userAgent:req.get('user-agent'),ipAddress:req.ip});
+      res.status(201).json(sessionSchema.parse(session));
+    }catch(err:any){
+      if(err?.message==='Email already registered')throw new HttpError(409,'Email already registered');
+      throw err;
+    }
+  });
+  app.post('/api/auth/login',async(req,res)=>{
+    const body=loginRequestSchema.parse(req.body);
+    const user=await authenticate(db,body.email,body.password);
+    if(!user)throw new HttpError(401,'Invalid email or password');
+    const session=await createSession(db,user.id,{userAgent:req.get('user-agent'),ipAddress:req.ip});
+    res.json(sessionSchema.parse(session));
+  });
+  app.get('/api/auth/me',async(req,res)=>{
+    const header=req.get('authorization');
+    const token=header?.startsWith('Bearer ')?header.slice(7).trim():null;
+    if(!token)throw new HttpError(401,'Authentication token required');
+    const session=await verifySession(db,token);
+    if(!session)throw new HttpError(401,'Invalid or expired session');
+    res.json({user:userSchema.parse(session.user)});
+  });
+  app.post('/api/auth/logout',async(req,res)=>{
+    const header=req.get('authorization');
+    const token=header?.startsWith('Bearer ')?header.slice(7).trim():null;
+    if(token)await revokeSession(db,token);
+    res.json({success:true});
+  });
+  app.post('/api/auth/seed',async(_req,res)=>{
+    const result=await seedDefaultUsers(db);
+    res.json(result);
+  });
   app.get('/api/datasets',async(_req,res)=>{
     const rows=await db.select().from(s.datasets).where(eq(s.datasets.status,'ready')).orderBy(desc(s.datasets.asOf));
     res.json({items:z.array(datasetSchema).parse(rows.filter(d=>!allowlist.size||allowlist.has(d.id)))});
@@ -117,6 +161,17 @@ export function createApp(db:Database,allowlist=allowedDatasets,qaOptions?:{runt
   app.get('/api/opportunities/:id/evidence',async(req,res)=>{
     const dataset=await resolveDataset(req.query);const maxNodes=z.coerce.number().int().min(10).max(100).parse(req.query.max_nodes??50);
     const card=await cardFor(dataset.id,req.params.id);res.json({dataset_id:dataset.id,as_of:dataset.asOf,...projectEvidence(card,maxNodes)});
+  });
+  app.post('/api/opportunities/scan',async(req,res)=>{
+    const dataset=await resolveDataset(req.query);
+    const body=z.object({account_id:z.uuid().optional(),max_scan:z.number().int().min(1).max(50).optional()}).parse(req.body??{});
+    const jev=qaOptions?.analysis?.jev??jevProvider(env.JEV_API_KEY,env.JEV_MODEL);
+    const extractor=qaOptions?.analysis?.extractor??qaProvider;
+    const runtime=qaOptions?.analysis?.runtime??qaRuntime;
+    const response=await deepScanOpportunities(db,dataset.id,{
+      accountId:body.account_id,runtime,jevProvider:jev,extractorProvider:extractor,maxScan:body.max_scan,
+    });
+    res.json(response);
   });
   app.post('/api/opportunities/:id/draft',async(req,res)=>{
     const dataset=await resolveDataset(req.query);const options=draftRequestSchema.parse(req.body??{});

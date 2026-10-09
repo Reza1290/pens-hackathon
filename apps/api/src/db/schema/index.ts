@@ -185,3 +185,32 @@ export const extractionReviews=pgTable('extraction_reviews',{
   foreignKey({columns:[t.datasetId,t.sourceId],foreignColumns:[sourceRecords.datasetId,sourceRecords.id]}),
   unique().on(t.supersedes),check('review_state',sql`${t.state} in ('pending_review','accepted','rejected')`),
   check('review_candidate_index',sql`${t.candidateIndex} >= 0`)]);
+
+// User accounts for dashboard access and action plan ownership
+export const users = pgTable('users', {
+  id: uuid().primaryKey(),
+  email: text().notNull().unique(),
+  name: text().notNull(),
+  passwordHash: text('password_hash').notNull(),
+  employeeExternalId: text('employee_external_id'),
+  role: text().notNull().default('account_manager'),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, t => [
+  check('user_role', sql`${t.role} in ('admin', 'account_manager', 'sales_rep', 'viewer')`),
+]);
+
+// Active sessions for authenticated dashboard users
+export const sessions = pgTable('sessions', {
+  id: uuid().primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  token: text().notNull().unique(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  userAgent: text('user_agent'),
+  ipAddress: text('ip_address'),
+}, t => [
+  index('session_user_idx').on(t.userId),
+  index('session_token_idx').on(t.token),
+]);
