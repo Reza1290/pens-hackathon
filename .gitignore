@@ -1,0 +1,29 @@
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+*.log
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+
+# Supplied data and generated outputs; commit only placeholders
+data/raw/**
+data/processed/**
+models/**
+!models/**/
+!models/**/.gitkeep
+artifacts/**
+!artifacts/**/
+!artifacts/**/.gitkeep
+*.joblib
+__pycache__/
+.venv/
+
+# Local database volumes and editor/system files
+.postgres/
+.DS_Store
+Thumbs.db
