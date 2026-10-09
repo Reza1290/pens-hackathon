@@ -1921,10 +1921,10 @@ function Opportunities({ dataset, onOpenScan }: { dataset: string; onOpenScan: (
           <table className="w-full text-left text-xs border-collapse">
             <thead className="bg-brand-canvas border-b border-brand-border text-brand-subtle font-medium">
               <tr>
-                <th className="py-2.5 px-4">Account</th>
-                <th className="py-2.5 px-4">Estimate Revenue</th>
-                <th className="py-2.5 px-4">Langkah Tindak Lanjut</th>
-                <th className="py-2.5 px-4 text-right">Aksi</th>
+                <th className="py-2.5 px-4 font-medium text-gray-500">Account</th>
+                <th className="py-2.5 px-4 font-medium text-gray-500">Estimate Revenue</th>
+                <th className="py-2.5 px-4 font-medium text-gray-500">Langkah Tindak Lanjut</th>
+                <th className="py-2.5 px-4 text-right font-medium text-gray-500 w-16">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-brand-border text-brand-text">
@@ -1933,46 +1933,48 @@ function Opportunities({ dataset, onOpenScan }: { dataset: string; onOpenScan: (
                 return (
                   <tr
                     key={card.id}
-                    className="hover:bg-brand-canvas/80 transition"
+                    className="hover:bg-gray-50/80 transition"
                   >
-                    {/* Account */}
-                    <td className="py-3 px-4 font-mono font-medium text-brand-blue">
+                    {/* Account: flat, uniform font, neutral text */}
+                    <td className="py-3 px-4 font-medium text-gray-900">
                       <Link
                         to={scoped('/opportunities/' + card.id, dataset)}
-                        className="hover:underline"
+                        className="hover:underline text-gray-900"
                       >
                         {card.account.external_id} · {card.account.name}
                       </Link>
                     </td>
 
-                    {/* Estimate Revenue */}
-                    <td className="py-3 px-4 font-mono">
+                    {/* Estimate Revenue: flat, uniform font */}
+                    <td className="py-3 px-4 text-gray-700">
                       {card.value_scenario ? (
-                        <span className="font-semibold text-brand-text">
+                        <span>
                           Rp {amount(card.value_scenario.amount)}
                         </span>
                       ) : (
-                        <span className="text-amber-700 font-medium">
+                        <span className="text-gray-500">
                           Perlu penyesuaian paket
                         </span>
                       )}
                     </td>
 
-                    {/* Langkah Tindak Lanjut (in number) */}
-                    <td className="py-3 px-4 font-mono">
-                      <span className="font-semibold text-brand-text text-sm">
-                        {stepsCount}
-                      </span>
+                    {/* Langkah Tindak Lanjut: flat number, uniform font */}
+                    <td className="py-3 px-4 text-gray-700">
+                      {stepsCount}
                     </td>
 
-                    {/* Aksi (only view detail) */}
+                    {/* Aksi: eye icon only */}
                     <td className="py-3 px-4 text-right">
                       <Link
                         to={scoped('/opportunities/' + card.id, dataset)}
-                        className="inline-flex items-center space-x-1 text-xs font-medium text-brand-blue hover:text-brand-blue-hover hover:underline"
+                        className="inline-flex items-center justify-center p-1.5 text-gray-400 hover:text-gray-700 rounded transition"
+                        title="View detail"
+                        aria-label="View detail"
                       >
-                        <span>View Detail</span>
-                        <span>→</span>
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
                       </Link>
                     </td>
                   </tr>
