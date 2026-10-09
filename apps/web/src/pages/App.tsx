@@ -605,6 +605,70 @@ export function App() {
   );
 }
 
+// ================= COMPONENT: COPILOT RELATIONSHIP GRAPH VIEWER =================
+function CopilotGraphViewer({
+  dataset,
+  accountId,
+  openSource,
+}: {
+  dataset: string;
+  accountId: string;
+  openSource: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const graph = useLoad(
+    open ? 'graph:' + dataset + 'accounts' + accountId : '',
+    (s) => (open ? api.graph(dataset, 'accounts', accountId, s) : Promise.resolve(null))
+  );
+
+  return (
+    <div className="border border-brand-border rounded-lg bg-gray-50/60 p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <svg className="w-4 h-4 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          </svg>
+          <span className="text-xs font-semibold text-brand-text">Context Relationship Graph</span>
+          {graph.data && (
+            <span className="text-[10px] font-mono text-gray-500 bg-white border border-gray-200 px-1.5 py-0.5 rounded">
+              {graph.data.nodes.length} nodes · {graph.data.edges.length} edges
+            </span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className="h-7 px-2.5 text-[11px] font-medium border border-brand-border rounded bg-white hover:bg-gray-50 text-brand-text flex items-center space-x-1.5 transition shadow-2xs"
+        >
+          <span>{open ? 'Hide Context Graph' : 'View Context Graph'}</span>
+          <svg
+            className={`w-3 h-3 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
+
+      {open && (
+        <div className="pt-2">
+          {!graph.data ? (
+            <Pending error={graph.error} />
+          ) : (
+            <Suspense fallback={<p className="text-xs text-brand-subtle py-4 text-center">Rendering relationship network…</p>}>
+              <div className="rounded-lg overflow-hidden border border-brand-border bg-white shadow-2xs">
+                <Graph graph={graph.data} onEvidence={openSource} />
+              </div>
+            </Suspense>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ================= VIEW: ACCOUNT COPILOT (STANDALONE FULL-PAGE CHAT) =================
 interface ChatMessage {
   id: string;
@@ -629,6 +693,7 @@ function CopilotView({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [source, setSource] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const activeAccount = accounts.find((a) => a.id === currentAccountId);
@@ -636,6 +701,13 @@ function CopilotView({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
+
+  // Clear conversation state when switching account scope
+  useEffect(() => {
+    setMessages([]);
+    setError('');
+    setInputQuestion('');
+  }, [currentAccountId]);
 
   const handleSend = async (qText?: string) => {
     const textToSend = qText ?? inputQuestion;
@@ -782,25 +854,150 @@ function CopilotView({
                   {m.text}
                 </div>
               ) : (
-                <div className="max-w-[95%] bg-white border border-brand-border rounded-xl p-4 space-y-3.5 text-xs shadow-2xs w-full">
-                  {/* Operation Plan Pill */}
-                  {m.response?.plan && (
-                    <div className="flex items-center space-x-2 pb-2 border-b border-brand-border">
-                      <span className="text-[10px] uppercase font-mono text-brand-subtle">Allowlisted Plan:</span>
-                      <span className="text-[10px] font-mono bg-blue-50 text-brand-blue px-2 py-0.5 rounded-full border border-blue-200 font-medium">
-                        {m.response.plan.operation}
+                <div className="max-w-[98%] bg-white border border-brand-border rounded-xl p-4 sm:p-5 space-y-4 text-xs shadow-2xs w-full">
+                  {/* Header Row: Plan, Context, As of */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-brand-border">
+                    <div className="flex items-center space-x-2">
+                      {m.response?.plan && (
+                        <span className="text-[10px] font-mono bg-blue-50 text-brand-blue px-2 py-0.5 rounded-full border border-blue-200 font-medium">
+                          {m.response.plan.operation.replaceAll('_', ' ')}
+                        </span>
+                      )}
+                      {m.response?.commercial_context && (
+                        <span className="text-[10px] font-mono bg-gray-100 text-gray-700 px-2 py-0.5 rounded border border-gray-200 capitalize">
+                          {m.response.commercial_context}
+                        </span>
+                      )}
+                    </div>
+                    {m.response?.as_of && (
+                      <span className="text-[10px] font-mono text-brand-subtle">
+                        As of snapshot: {m.response.as_of}
                       </span>
+                    )}
+                  </div>
+
+                  {/* Main Documented Finding / Synthesis */}
+                  <div className="p-3.5 bg-brand-canvas/70 border border-brand-border rounded-lg space-y-1.5">
+                    <div className="text-[11px] font-semibold uppercase tracking-wider text-brand-subtle">
+                      Documented findings
+                    </div>
+                    <div className="text-brand-text leading-relaxed whitespace-pre-line text-xs font-normal">
+                      {m.text}
+                    </div>
+                  </div>
+
+                  {/* Premise Check Notice (if checking outcome questions) */}
+                  {m.response?.premise_check && (
+                    <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-lg space-y-1.5 text-xs">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-semibold text-amber-900 text-xs">
+                          Question Premise: {words(m.response.premise_check.status)}
+                        </h4>
+                        <span className="text-[10px] font-mono bg-amber-100/80 px-2 py-0.5 rounded text-amber-900 border border-amber-200 font-medium uppercase">
+                          {m.response.premise_check.status}
+                        </span>
+                      </div>
+                      <p className="text-amber-800 leading-relaxed">{m.response.premise_check.coverage}</p>
+                      {m.response.premise_check.clarification && (
+                        <p className="text-amber-800 leading-relaxed">{m.response.premise_check.clarification}</p>
+                      )}
+                      {m.response.premise_check.calculation && (
+                        <pre className="font-mono text-[10px] bg-white/90 p-2.5 rounded border border-amber-200 text-amber-950 overflow-x-auto">
+                          {JSON.stringify(m.response.premise_check.calculation, null, 2)}
+                        </pre>
+                      )}
                     </div>
                   )}
 
-                  {/* Main Answer Prose */}
-                  <div className="text-brand-text leading-relaxed whitespace-pre-line text-xs font-normal">
-                    {m.text}
-                  </div>
+                  {/* Requirement Assessments (if present) */}
+                  {m.response?.requirement_assessments && m.response.requirement_assessments.length > 0 && (
+                    <div className="space-y-2 pt-1 border-t border-brand-border">
+                      <div className="text-[11px] font-semibold uppercase tracking-wider text-brand-subtle">
+                        Requirement Assessments
+                      </div>
+                      <div className="space-y-2">
+                        {m.response.requirement_assessments.map((a) => (
+                          <article key={a.id} className="border border-brand-border rounded-lg p-3 bg-white text-xs space-y-1.5 shadow-2xs">
+                            <div className="flex items-center justify-between">
+                              <span className="font-semibold text-brand-text">{a.requirement}</span>
+                              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-200 uppercase font-medium">
+                                {a.status.replaceAll('_', ' ')}
+                              </span>
+                            </div>
+                            <p className="text-brand-subtle text-[11px]">
+                              Fulfillment: {a.fulfillment.status.replaceAll('_', ' ')}. {a.fulfillment.reason}
+                            </p>
+                            {a.missing_details.length > 0 && (
+                              <p className="text-brand-subtle text-[11px]">
+                                Missing: {a.missing_details.join(', ')}
+                              </p>
+                            )}
+                            <div className="pt-0.5">
+                              <Refs ids={a.source_ids} evidence={m.response?.evidence ?? []} open={(id) => setSource(id)} />
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Grounded Claims & Citations (if present) */}
+                  {m.response?.claims && m.response.claims.length > 0 && (
+                    <div className="space-y-2 pt-1 border-t border-brand-border">
+                      <div className="text-[11px] font-semibold uppercase tracking-wider text-brand-subtle">
+                        Grounded Claims & Verifiable Citations
+                      </div>
+                      <div className="space-y-2">
+                        {m.response.claims.map((claim) => (
+                          <article key={claim.id} className="border border-brand-border rounded-lg p-3 bg-white text-xs space-y-1.5 shadow-2xs">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-[10px] font-mono uppercase bg-blue-50 text-brand-blue border border-blue-200 px-1.5 py-0.5 rounded font-medium">
+                                {claim.kind.replaceAll('_', ' ')}
+                              </span>
+                            </div>
+                            <p className="text-brand-text leading-relaxed font-medium">{claim.text}</p>
+                            {claim.evidence_ids.length > 0 && (
+                              <div className="pt-0.5">
+                                <Refs ids={claim.evidence_ids} evidence={m.response?.evidence ?? []} open={(id) => setSource(id)} />
+                              </div>
+                            )}
+                            {claim.check && (
+                              <details className="text-[11px] text-gray-500 pt-1">
+                                <summary className="cursor-pointer hover:text-brand-text font-medium select-none">
+                                  Scope, calculation or recorded check
+                                </summary>
+                                <pre className="mt-1 font-mono text-[10px] bg-gray-50 p-2 rounded border border-gray-200 overflow-x-auto">
+                                  {JSON.stringify(claim.check, null, 2)}
+                                </pre>
+                              </details>
+                            )}
+                          </article>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Commercial Value Scenario (if present) */}
+                  {m.response?.value_scenario && (
+                    <div className="p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-lg space-y-1.5 text-xs">
+                      <div className="text-[11px] font-semibold uppercase tracking-wider text-emerald-800">
+                        Commercial Scenario
+                      </div>
+                      <div className="text-base font-bold font-mono text-emerald-700">
+                        {amount(m.response.value_scenario.amount)} IDR / year (conditional annual increment)
+                      </div>
+                      <div className="font-mono text-[11px] text-brand-muted">
+                        {m.response.value_scenario.formula}
+                      </div>
+                      <pre className="font-mono text-[10px] bg-white p-2 rounded border border-emerald-100 overflow-x-auto">
+                        {JSON.stringify(m.response.value_scenario.inputs, null, 2)}
+                      </pre>
+                    </div>
+                  )}
 
                   {/* Follow-up Draft if present */}
                   {m.response?.draft && (
-                    <div className="p-3 bg-gray-50 border border-brand-border rounded-lg space-y-1.5">
+                    <div className="p-3.5 bg-gray-50 border border-brand-border rounded-lg space-y-2">
                       <div className="flex items-center justify-between text-[11px] font-semibold text-brand-text">
                         <span>Drafted Follow-Up ({m.response.draft.route} route)</span>
                         <span className="text-[10px] font-mono text-brand-subtle">Review before sending</span>
@@ -808,25 +1005,67 @@ function CopilotView({
                       <div className="text-[11px] text-brand-muted font-medium">
                         Subject: {m.response.draft.subject}
                       </div>
-                      <div className="text-xs text-brand-muted bg-white p-2.5 rounded border border-gray-200 font-mono text-[11px] whitespace-pre-wrap">
+                      <div className="text-xs text-brand-muted bg-white p-2.5 rounded border border-gray-200 font-mono text-[11px] whitespace-pre-wrap leading-relaxed">
                         {m.response.draft.body}
                       </div>
                     </div>
                   )}
 
-                  {/* Sourced Evidence Citations */}
+                  {/* Context Relationship Graph (Cytoscape Nodes & Edges) */}
+                  {(m.response?.account_id || currentAccountId) && (
+                    <CopilotGraphViewer
+                      dataset={dataset}
+                      accountId={(m.response?.account_id ?? currentAccountId)!}
+                      openSource={(id) => setSource(id)}
+                    />
+                  )}
+
+                  {/* Cited Evidence Passages */}
                   {m.response?.evidence && m.response.evidence.length > 0 && (
-                    <div className="pt-2 border-t border-brand-border flex items-center flex-wrap gap-1.5">
-                      <span className="text-[10px] text-brand-subtle font-mono mr-1">Cited Evidence:</span>
-                      {m.response.evidence.slice(0, 5).map((ev: Evidence) => (
-                        <span
-                          key={ev.source_id}
-                          className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono bg-gray-100 text-gray-700 border border-gray-200"
-                          title={ev.passage}
-                        >
-                          {ev.source_external_id || ev.filename}
+                    <details className="border border-brand-border rounded-lg bg-gray-50/50 p-3 space-y-2 text-xs">
+                      <summary className="font-semibold text-brand-text cursor-pointer select-none flex items-center justify-between">
+                        <span className="flex items-center space-x-1.5">
+                          <svg className="w-3.5 h-3.5 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          <span>Cited Evidence Passages ({m.response.evidence.length})</span>
                         </span>
-                      ))}
+                        <span className="text-[10px] font-mono text-brand-subtle font-normal">Click to expand</span>
+                      </summary>
+                      <div className="space-y-2 pt-2">
+                        {m.response.evidence.map((e, idx) => (
+                          <div key={idx} className="p-2.5 bg-white border border-brand-border rounded-md space-y-1">
+                            <div className="flex items-center justify-between text-[11px] font-mono text-brand-blue">
+                              <span>{e.source_external_id ?? e.filename} · {e.field}</span>
+                              <span className="text-gray-400">{e.filename}:{e.locator}</span>
+                            </div>
+                            <blockquote className="p-2 bg-gray-50 border-l-2 border-brand-blue text-[11px] font-mono text-gray-700 whitespace-pre-wrap">
+                              {e.passage}
+                            </blockquote>
+                            <div className="pt-1 flex justify-end">
+                              <button
+                                type="button"
+                                onClick={() => setSource(e.source_id)}
+                                className="h-6 px-2.5 text-[10px] font-medium border border-brand-border rounded bg-white hover:bg-gray-100 text-brand-text transition"
+                              >
+                                Open original record
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  )}
+
+                  {/* Method Limitations */}
+                  {m.response?.limitations && m.response.limitations.length > 0 && (
+                    <div className="text-[11px] text-brand-subtle border-t border-dashed border-brand-border pt-2 space-y-0.5">
+                      <span className="font-semibold text-gray-500">Method limitations:</span>
+                      <ul className="list-disc list-inside">
+                        {m.response.limitations.map((lim, i) => (
+                          <li key={i}>{lim}</li>
+                        ))}
+                      </ul>
                     </div>
                   )}
                 </div>
@@ -887,6 +1126,8 @@ function CopilotView({
           </button>
         </form>
       </div>
+
+      {source && <Source dataset={dataset} id={source} close={() => setSource('')} />}
     </div>
   );
 }
