@@ -55,6 +55,10 @@ and grounded Q&A; C06 alone does not complete it.
 
 ## Current handover
 
+Phase 8 is ready for one [consolidated approval](PHASE-8-APPROVAL.md) of labels,
+finite-suite criteria and a ten-call synthetic-only Jev evaluation. Preparation is
+complete; approval and reviewed/live execution are pending.
+
 See [Phase 8 handover](PHASE-8-HANDOVER.md) for review tooling, provisional capability validation, the extraction span fix, final synthetic live results and defer decisions. Review the [28 proposed cases](PHASE-8-CASE-REVIEW.md) before acceptance.
 
 See [Phase 7 handover](PHASE-7-HANDOVER.md) for the latest integration, acceptance

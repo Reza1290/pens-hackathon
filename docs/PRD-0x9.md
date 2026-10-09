@@ -176,3 +176,12 @@ bilingual set was frozen before execution; provisional deterministic results are
 reported separately by dimension in the handover. A 100% finite checklist is not
 general accuracy. No unseen labels or thresholds are approved by this correction;
 independent review and reviewed/live acceptance boxes remain open.
+
+
+## Acceptance ready for one concrete approval
+
+[The consolidated packet](PHASE-8-APPROVAL.md) contains the 36 case proposals,
+fulfillment rubric, finite checklist, conditional planner equivalence and ten-call
+synthetic Jev budget. The offline preparation command pins the final commit and
+hashes; execution requires actual user approval matching that plan. Existing
+review/acceptance DoD gates remain open until approval and measured execution.

@@ -1,3 +1,56 @@
+# Phase 8 approval and acceptance preparation (current)
+
+Prepared from `9aac6cb`; no new phase or application feature was added.
+The single [approval packet](PHASE-8-APPROVAL.md) consolidates all 36 cases with
+source passages, separate outcomes, concrete fulfillment rubrics, conditional
+planner equivalence, finite-suite criteria and a proposed ten-call live budget.
+This supersedes scattered approval requests, not prior reports or fixture history.
+**No labels, thresholds or live budget have been approved yet.**
+
+Non-blocked preparation completed:
+
+- `scripts/phase8-acceptance.ts --prepare` is offline and binds a clean final commit,
+  packet/fixture hashes, exact coverage question hash and prompt/model versions.
+  Its generated plan and pending receipt live under `artifacts/evaluations/`; the
+  completion message links the concrete plan after the preparation commit is made.
+- `--run --plan <plan> --approval <receipt>` refuses a missing/pending/mismatched
+  user decision or changed packet/configuration/commit. Only after the actual user
+  reply may a receipt capture the user's words and time. Original proposal fields
+  remain historical; the receipt is the subsequent decision record, not invented
+  agent review. A claimed plan cannot accidentally spend its budget twice.
+- Execution is prepared for 36 deterministic cases and the existing normal API/
+  database safety regressions, followed by ten direct synthetic Jev prompt cases.
+  Expected/observed results, splits/languages, raw synthetic responses, errors,
+  usage/cost/latency, source hashes and final commit are saved to unique reports.
+  Partial failures survive; there are no automatic retries or silent label changes.
+- Live model pinned to `jev-1.13.0`, prompt `bounded-interpretation-v4`, schema
+  `interpretation-v2-four-choice`. Five bilingual pairs cover addressed, partial,
+  unrelated, wrong-decision and unavailable-evidence responses. Physical cap ten;
+  30 seconds per call, request body cap 12,000 bytes. Estimated 20,000 input tokens
+  cost $0.00084 at the published input rate; actual charges/failed-call usage may
+  be unknown. No generative calls or supplied customer passages are included.
+
+Preparation validation: `npm run typecheck` passed including the new scripts;
+`npm test` passed **81/81 in eight files, 15.62 seconds**, all live flags false
+in the test process. New tests verify approval binding, synthetic request isolation,
+all four simulated adapter choices, failed-call reservation and the physical cap.
+An initial simulator-counter indexing bug caused 80/81 to pass; corrected the mock
+lookup, not labels or application behavior, then reran successfully. These are
+preparation regressions, not approved acceptance or live-model quality results.
+Existing browser/build results remain historical; no UI/runtime behavior changed
+in this preparation. No provider calls were made and `.env` is unchanged.
+
+After the one requested user approval: record the exact approved plan, execute the
+reviewed deterministic and bounded live runs, report all failures, and assess each
+capability separately. No flags are enabled automatically. Further live calls beyond
+ten or changes to approved labels/criteria require an explicit amendment. Fixes and
+new code/prompt commits are recorded; previous reports and reviewed labels survive.
+Rollback remains disable affected capability, restart/rebuild diagnoses, retain raw
+sources and model/review history. Classifier optimization, semantic retrieval and
+deployment remain outside scope.
+
+---
+
 # Phase 8 review-packet correction (current)
 
 This addendum supersedes the earlier review-label proposals, not their recorded
