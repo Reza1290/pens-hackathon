@@ -1,3 +1,22 @@
+# Phase 8 approved finite-suite execution (current)
+
+User approved the concrete packet and ten-call budget with **"yes i approve"**.
+Executed at `c7bb8a0`: **20/20 coverage, 20/20 fulfillment, 36/36 actions,
+81/81 unit/database tests, 10/10 live Jev cases**. No relabeling, retries or fixes.
+Ten calls used 14,108 input / 630 output tokens; estimated USD 0.000592536.
+[Full results and capability decisions](PHASE-8-ACCEPTANCE-RESULTS.md) and
+[approval/hash record](PHASE-8-ACCEPTANCE-RECORD.json) supersede historical pending
+statements below. Original packets, failures, reports and review fields are preserved.
+
+User-review, rubric, finite checklist, planner adjudication and direct Jev prompt
+validation gates are closed for this approved scope. The current normal-path live
+capability gate remains open; these ten calls tested the coverage prompt directly,
+while the API workflow used simulators. All four recommendations remain defer for
+additional activation, with specific reasons in the results. Existing user flags
+are unchanged. No additional live budget is available from this approval.
+
+---
+
 # Phase 8 approval and acceptance preparation (current)
 
 Prepared from `9aac6cb`; no new phase or application feature was added.

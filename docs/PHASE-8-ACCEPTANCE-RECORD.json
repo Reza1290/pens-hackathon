@@ -1,0 +1,204 @@
+{
+  "version": "phase8-user-acceptance-record-v1",
+  "approval": {
+    "decision": "approved",
+    "actor": "user",
+    "approval_quote": "yes i approve",
+    "recorded_at": "2026-10-09T20:10:50.825157+00:00",
+    "plan_sha256": "f44e3da93ca18a13e5517daa70e7846ecb984c7ba03adcb22532cd33628aa184",
+    "packet_sha256": "ab26701c0e1088743419746b556f41c5ca5e65a345f3c1fa3f8043545a0977d8",
+    "code_commit": "c7bb8a0892e5118ea3ddf39aacd3fcde82addac0",
+    "labels_and_criteria": true,
+    "synthetic_live_budget": true,
+    "physical_call_cap": 10
+  },
+  "approval_interpretation": "User approved the concrete packet, labels, criteria, conditional planner equivalence and ten-call synthetic budget after the explicit approval request. Not a claim of independent blind annotation.",
+  "executed_code_commit": "c7bb8a0892e5118ea3ddf39aacd3fcde82addac0",
+  "report_path": "artifacts/evaluations/phase8-acceptance-51474c15-0061-49a7-9e3c-d107cb137ccd.json",
+  "report_sha256": "89f4b4e10972ce2b5b503794328876da9d1ed143578cf2e201324569bd975b58",
+  "started_at": "2026-10-09T20:10:52.687Z",
+  "finished_at": "2026-10-09T20:11:13.922Z",
+  "fixture_hashes": [
+    {
+      "path": "tests/fixtures/phase8-review-v2.json",
+      "sha256": "f9420836a7f575869de1aa29342a0362a85f1695358ed920f6ec0288da07133e"
+    },
+    {
+      "path": "tests/fixtures/phase8-heldout-v1.json",
+      "sha256": "1c9fe7de0eae7f30996fe609a743692d699bcba72494799e86ac15138f489a6f"
+    },
+    {
+      "path": "tests/fixtures/phase8-heldout-freeze.json",
+      "sha256": "2f0b054f0c8b8dc71d0debabc807bd55cea38949bca78f1c815e3c9d46a480b1"
+    }
+  ],
+  "prompts": {
+    "coverage": {
+      "version": "bounded-interpretation-v4",
+      "schema": "interpretation-v2-four-choice",
+      "question_sha256": "63dea4ac072482ad4f15bb54f2c4735771e74bac4caaba53f7108023d520d48c"
+    },
+    "planner": {
+      "version": "operation-planner-v1",
+      "schema": "operation-plan-v1"
+    },
+    "answer": {
+      "version": "grounded-generation-v2",
+      "schema": "fact-plan-v1"
+    }
+  },
+  "passed": true,
+  "physical_calls": 10,
+  "deterministic": {
+    "response_coverage": {
+      "passed": 20,
+      "failed": 0,
+      "not_applicable": 16
+    },
+    "fulfillment": {
+      "passed": 20,
+      "failed": 0,
+      "not_applicable": 16
+    },
+    "next_action": {
+      "passed": 36,
+      "failed": 0,
+      "not_applicable": 0
+    }
+  },
+  "live_by_label": {
+    "addressed": {
+      "samples": 2,
+      "matched": 2
+    },
+    "partially_addressed": {
+      "samples": 2,
+      "matched": 2
+    },
+    "not_addressed": {
+      "samples": 4,
+      "matched": 4
+    },
+    "insufficient_evidence": {
+      "samples": 2,
+      "matched": 2
+    }
+  },
+  "live_by_language": {
+    "en": {
+      "samples": 5,
+      "matched": 5
+    },
+    "id": {
+      "samples": 5,
+      "matched": 5
+    }
+  },
+  "input_tokens": 14108,
+  "output_tokens": 630,
+  "estimated_cost_usd": "0.000592536",
+  "live_results": [
+    {
+      "case_id": "reference-en",
+      "expected": "addressed",
+      "status": "succeeded",
+      "matched": true,
+      "input_tokens": 1404,
+      "output_tokens": 61,
+      "latency_ms": 485,
+      "observed": "addressed"
+    },
+    {
+      "case_id": "reference-id",
+      "expected": "addressed",
+      "status": "succeeded",
+      "matched": true,
+      "input_tokens": 1404,
+      "output_tokens": 61,
+      "latency_ms": 318,
+      "observed": "addressed"
+    },
+    {
+      "case_id": "roi-en",
+      "expected": "partially_addressed",
+      "status": "succeeded",
+      "matched": true,
+      "input_tokens": 1405,
+      "output_tokens": 64,
+      "latency_ms": 295,
+      "observed": "partially_addressed"
+    },
+    {
+      "case_id": "roi-id",
+      "expected": "partially_addressed",
+      "status": "succeeded",
+      "matched": true,
+      "input_tokens": 1416,
+      "output_tokens": 64,
+      "latency_ms": 288,
+      "observed": "partially_addressed"
+    },
+    {
+      "case_id": "pricing-en",
+      "expected": "not_addressed",
+      "status": "succeeded",
+      "matched": true,
+      "input_tokens": 1405,
+      "output_tokens": 62,
+      "latency_ms": 294,
+      "observed": "not_addressed"
+    },
+    {
+      "case_id": "pricing-id",
+      "expected": "not_addressed",
+      "status": "succeeded",
+      "matched": true,
+      "input_tokens": 1429,
+      "output_tokens": 62,
+      "latency_ms": 283,
+      "observed": "not_addressed"
+    },
+    {
+      "case_id": "wrong_decision-en",
+      "expected": "not_addressed",
+      "status": "succeeded",
+      "matched": true,
+      "input_tokens": 1405,
+      "output_tokens": 62,
+      "latency_ms": 277,
+      "observed": "not_addressed"
+    },
+    {
+      "case_id": "wrong_decision-id",
+      "expected": "not_addressed",
+      "status": "succeeded",
+      "matched": true,
+      "input_tokens": 1409,
+      "output_tokens": 62,
+      "latency_ms": 299,
+      "observed": "not_addressed"
+    },
+    {
+      "case_id": "integration-en",
+      "expected": "insufficient_evidence",
+      "status": "succeeded",
+      "matched": true,
+      "input_tokens": 1413,
+      "output_tokens": 66,
+      "latency_ms": 335,
+      "observed": "insufficient_evidence"
+    },
+    {
+      "case_id": "integration-id",
+      "expected": "insufficient_evidence",
+      "status": "succeeded",
+      "matched": true,
+      "input_tokens": 1418,
+      "output_tokens": 66,
+      "latency_ms": 290,
+      "observed": "insufficient_evidence"
+    }
+  ],
+  "flags_changed": false,
+  "normal_workflow_live_retested": false
+}

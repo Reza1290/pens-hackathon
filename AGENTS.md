@@ -731,3 +731,13 @@ of documented pricing/ROI evidence. Revised v2 and frozen held-out fixtures rema
 implementation-authored, unapproved and provisional. See the updated Phase 8 review
 table/handover for per-dimension results and original-version preservation. Finite
 checklist success is not general accuracy; existing feature flags stay unchanged.
+
+
+### Phase 8 approved acceptance update
+
+The user approved the pinned packet/ten-call budget with "yes i approve". Execution
+at c7bb8a0 passed all finite deterministic expectations, 81 unit/DB tests and 10 live
+Jev coverage cases. See docs/PHASE-8-ACCEPTANCE-RESULTS.md and the separate approval
+record; historical pending proposal fields are preserved, not the current decision.
+Current normal-path live capability verification remains open; no flags were changed
+and no additional live budget is authorized. Finite success is not general accuracy.

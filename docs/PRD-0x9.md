@@ -1,6 +1,6 @@
 # PRD-0x9 — Phase 8: Validate and selectively enable the AI workflow
 
-Status: Remaining technical fixes and final provisional verification complete; independent case/gate approval and reviewed acceptance remain open. See [Phase 8 handover](PHASE-8-HANDOVER.md).
+Status: User-approved finite checklist and ten-case live Jev coverage evaluation passed; current normal-path live capability gates remain open. See [Phase 8 handover](PHASE-8-HANDOVER.md).
 
 Dependency: PRD-0x8 / Phase 7 integration and its handover recorded 10 October 2026. PRD-0x7 optimization remains deferred; classifier and semantic-retrieval gates are not prerequisites for this phase.
 
@@ -136,8 +136,8 @@ Keep these visible, but do not block all local validation on solving them:
 ## Definition of done
 
 - [x] Current starting commit, flags and actual capabilities are documented.
-- [ ] Planner discrepancy has a reviewed adjudication and any necessary fix/regression coverage.
-- [ ] Evaluation cases, independent review, splits, sample sizes and predeclared numerical gates are recorded.
+- [x] Planner discrepancy has a reviewed adjudication and any necessary fix/regression coverage.
+- [x] Evaluation cases, independent review, splits, sample sizes and predeclared numerical gates are recorded.
 - [x] Extraction candidate review, acceptance/rejection, invalidation and scoped recomputation work without granting unverified authority.
 - [x] Failure/cache/budget matrix covers each operation, with simulated versus live evidence labeled.
 - [ ] Normal-path reviewed live scenarios pass the agreed gates for each capability proposed for activation.
@@ -185,3 +185,13 @@ fulfillment rubric, finite checklist, conditional planner equivalence and ten-ca
 synthetic Jev budget. The offline preparation command pins the final commit and
 hashes; execution requires actual user approval matching that plan. Existing
 review/acceptance DoD gates remain open until approval and measured execution.
+
+
+## Approved execution
+
+See [reviewed results](PHASE-8-ACCEPTANCE-RESULTS.md) and the separate approval
+receipt. User review is independent of the implementing agent, not blind annotation.
+All approved deterministic and direct Jev coverage checks passed at `c7bb8a0`.
+The current normal-path reviewed-live checkbox stays open because API integration
+was simulated and no new live planner/extraction/answer set was in the ten-call scope.
+No flag activation, new phase or extra budget is implied.
