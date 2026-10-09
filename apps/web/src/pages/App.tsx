@@ -42,7 +42,10 @@ function Pending({ error }: { error?: string }) {
   );
 }
 
-const scoped = (path: string, dataset: string) => path + '?' + new URLSearchParams({ dataset_id: dataset });
+const scoped = (path: string, dataset: string, extra?: Record<string, string>) => {
+  const params = new URLSearchParams({ dataset_id: dataset, ...extra });
+  return path + '?' + params.toString();
+};
 
 interface RecentAccount {
   id: string;
@@ -90,9 +93,9 @@ export function App() {
 
   // Active view state
   const isOpportunitiesRoot = location.pathname === '/' || location.pathname === '/opportunities';
-  const currentAccountId = location.pathname.startsWith('/accounts/')
-    ? location.pathname.split('/')[2]
-    : '';
+  const currentAccountId =
+    query.get('account_id') ??
+    (location.pathname.startsWith('/accounts/') ? location.pathname.split('/')[2] : '');
 
   // Auth User state (default: Wahyu Setiawan E04)
   const [currentUser, setCurrentUser] = useState<User>({
@@ -185,16 +188,14 @@ export function App() {
               <svg className="w-5.5 h-5.5 text-brand-orange shrink-0" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2L2 19.5h20L12 2zm0 4.2l6.5 11.3H5.5L12 6.2z" />
               </svg>
-            </Link>
-
-            {/* TOP LEFT SWITCH ACCOUNT: Directly functional as Customer Account Switcher */}
+            </Link>            {/* TOP LEFT SWITCH ACCOUNT: Single Source of Truth for Customer Account Scope */}
             <div className="relative flex-1 min-w-0">
               <div className="h-9 flex items-center space-x-2 text-xs text-brand-text bg-gray-50/80 border border-brand-border hover:border-gray-400 px-3 py-1.5 rounded-md transition min-w-0 shadow-2xs">
-                <span className="font-semibold text-[12px] tracking-tight text-gray-800">
-                  {activeAccount ? `${activeAccount.externalId} · ${activeAccount.name}` : 'Switch Account…'}
+                <span className="font-semibold text-[12px] tracking-tight text-gray-800 truncate">
+                  {activeAccount ? `${activeAccount.externalId} · ${activeAccount.name}` : 'All Accounts (Global)'}
                 </span>
                 <svg className="w-3.5 h-3.5 text-gray-400 shrink-0 ml-auto pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                 </svg>
 
                 {/* Accessible native select overlay matching Playwright role */}
@@ -202,8 +203,9 @@ export function App() {
                   aria-label="Investigate account"
                   value={currentAccountId}
                   onChange={(e) => {
-                    if (e.target.value) {
-                      const acc = accounts.data?.items.find((a) => a.id === e.target.value);
+                    const targetId = e.target.value;
+                    if (targetId) {
+                      const acc = accounts.data?.items.find((a) => a.id === targetId);
                       if (acc) {
                         storeRecent({
                           id: acc.id,
@@ -213,14 +215,25 @@ export function App() {
                         });
                         window.dispatchEvent(new Event('recents_updated'));
                       }
-                      navigate(scoped('/accounts/' + e.target.value, selected));
+                    }
+
+                    if (location.pathname === '/copilot') {
+                      navigate(
+                        scoped(
+                          '/copilot',
+                          selected,
+                          targetId ? { account_id: targetId } : undefined
+                        )
+                      );
+                    } else if (targetId) {
+                      navigate(scoped('/accounts/' + targetId, selected));
                     } else {
                       navigate(scoped('/', selected));
                     }
                   }}
                   className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
                 >
-                  <option value="">Switch Account…</option>
+                  <option value="">All Accounts (Global)</option>
                   {accounts.data?.items.map((a) => (
                     <option key={a.id} value={a.id}>
                       {a.externalId} · {a.name} · {a.type}
@@ -333,7 +346,7 @@ export function App() {
 
             {/* Account Copilot (Dedicated Full-Page) */}
             <Link
-              to={scoped('/copilot', selected)}
+              to={scoped('/copilot', selected, currentAccountId ? { account_id: currentAccountId } : undefined)}
               className={`w-full h-9 flex items-center px-2.5 rounded-md transition text-left text-xs ${
                 location.pathname === '/copilot'
                   ? 'bg-gray-200/70 text-brand-text font-medium'
@@ -380,7 +393,13 @@ export function App() {
                     recentAccounts.map((rec) => (
                       <div
                         key={rec.id}
-                        onClick={() => navigate(scoped('/accounts/' + rec.id, selected))}
+                        onClick={() => {
+                          if (location.pathname === '/copilot') {
+                            navigate(scoped('/copilot', selected, { account_id: rec.id }));
+                          } else {
+                            navigate(scoped('/accounts/' + rec.id, selected));
+                          }
+                        }}
                         className="cursor-pointer group py-1"
                       >
                         <div className="text-[12px] text-gray-800 font-medium group-hover:text-brand-blue transition truncate">
@@ -446,7 +465,13 @@ export function App() {
         </aside>
 
         {/* ================= MAIN VIEW AREA ================= */}
-        <main id="main" key={selected} className="flex-1 overflow-y-auto bg-white px-4 md:px-8 py-4 md:py-6 max-w-full">
+        <main
+          id="main"
+          key={selected}
+          className={`flex-1 ${
+            location.pathname === '/copilot' ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'
+          } bg-white px-4 md:px-8 py-4 md:py-6 max-w-full`}
+        >
           {!result.data ? (
             <Pending error={result.error} />
           ) : !datasets.length ? (
@@ -460,7 +485,16 @@ export function App() {
               {accounts.error && <Pending error={accounts.error} />}
               <Routes>
                 <Route path="/" element={<Opportunities dataset={selected} onOpenScan={() => setScanModalOpen(true)} />} />
-                <Route path="/copilot" element={<CopilotView dataset={selected} accounts={accounts.data?.items ?? []} />} />
+                <Route
+                  path="/copilot"
+                  element={
+                    <CopilotView
+                      dataset={selected}
+                      currentAccountId={currentAccountId}
+                      accounts={accounts.data?.items ?? []}
+                    />
+                  }
+                />
                 <Route path="/users" element={<UsersView currentUser={currentUser} onSwitchUser={setCurrentUser} />} />
                 <Route path="/settings" element={<SettingsView selected={selected} datasets={datasets} />} />
                 <Route
@@ -583,12 +617,13 @@ interface ChatMessage {
 
 function CopilotView({
   dataset,
+  currentAccountId,
   accounts,
 }: {
   dataset: string;
+  currentAccountId?: string;
   accounts: Array<{ id: string; externalId: string; name: string; type: string }>;
 }) {
-  const [selectedAccountId, setSelectedAccountId] = useState<string>(accounts[0]?.id ?? '');
   const [language, setLanguage] = useState<'en' | 'id'>('en');
   const [inputQuestion, setInputQuestion] = useState('');
   const [loading, setLoading] = useState(false);
@@ -596,7 +631,7 @@ function CopilotView({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const activeAccount = accounts.find((a) => a.id === selectedAccountId);
+  const activeAccount = accounts.find((a) => a.id === currentAccountId);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -627,7 +662,7 @@ function CopilotView({
 
       const res = await api.qa({
         dataset_id: dataset,
-        account_id: selectedAccountId || undefined,
+        account_id: currentAccountId || undefined,
         question: textToSend,
         language,
         history: recentHistory,
@@ -650,53 +685,35 @@ function CopilotView({
     }
   };
 
-  const sampleQuestions = [
-    'Pelanggan mana yang punya peluang ekspansi?',
-    'Apa yang belum ditindaklanjuti untuk C06?',
-    'Siapa yang perlu dilibatkan untuk C01, dan apa buktinya?',
-    'Kalau C06 tambah 10 outlet, berapa nilai tahunannya?',
-    'Apakah follow-up terakhir sudah menjawab kekhawatiran CFO?',
-  ];
+  const sampleQuestions = activeAccount
+    ? [
+        `Apa yang belum ditindaklanjuti untuk ${activeAccount.externalId}?`,
+        `Siapa yang perlu dilibatkan untuk ${activeAccount.externalId}, dan apa buktinya?`,
+        `Kalau ${activeAccount.externalId} tambah 10 outlet, berapa nilai tahunannya?`,
+        `Apakah follow-up terakhir sudah menjawab kekhawatiran decision maker?`,
+      ]
+    : [
+        'Pelanggan mana yang punya peluang ekspansi?',
+        'Apa yang belum ditindaklanjuti untuk C06?',
+        'Siapa yang perlu dilibatkan untuk C01, dan apa buktinya?',
+        'Kalau C06 tambah 10 outlet, berapa nilai tahunannya?',
+      ];
 
   return (
-    <div className="h-full flex flex-col max-w-4xl mx-auto">
-      {/* Top Copilot Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-3 border-b border-brand-border gap-2 shrink-0">
+    <div className="flex-1 flex flex-col min-h-0 max-w-5xl mx-auto w-full">
+      {/* Header - Styled consistently with other views */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 mb-3 border-b border-brand-border shrink-0">
         <div>
-          <div className="flex items-center space-x-2">
-            <span className="p-1.5 rounded-md bg-blue-50 text-brand-blue border border-blue-200">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </span>
-            <h1 className="text-lg font-semibold tracking-tight text-brand-text">Account Copilot</h1>
-            <span className="text-[10px] font-mono bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded font-medium">
-              Grounded AI
-            </span>
-          </div>
+          <h1 className="text-xl font-semibold tracking-tight text-brand-text">Account Copilot</h1>
           <p className="text-xs text-brand-subtle mt-0.5">
-            Interactive inquiry assistant with cited evidence graph & deterministic revenue calculations.
+            {activeAccount
+              ? `Scoped to ${activeAccount.externalId} · ${activeAccount.name}. Ask questions about expansion signals, unaddressed requirements, or revenue scenarios.`
+              : 'Ask questions about expansion signals, unaddressed requirements, stakeholder authority, or revenue scenarios.'}
           </p>
         </div>
 
-        {/* Account Scope & Language Toggle */}
+        {/* Header Right: Language Switch */}
         <div className="flex items-center space-x-2 shrink-0">
-          <div className="flex items-center space-x-1.5">
-            <span className="text-[11px] text-brand-subtle hidden sm:inline">Scope:</span>
-            <select
-              value={selectedAccountId}
-              onChange={(e) => setSelectedAccountId(e.target.value)}
-              className="h-8 text-xs border border-brand-border rounded-md px-2 bg-white text-brand-text hover:border-gray-400 outline-none max-w-[200px] truncate"
-            >
-              <option value="">All Accounts (Global)</option>
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.externalId} · {a.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
           <div className="flex border border-brand-border rounded-md overflow-hidden text-xs">
             <button
               onClick={() => setLanguage('en')}
@@ -732,7 +749,7 @@ function CopilotView({
             </div>
 
             {/* Quick Prompt Chips */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-xl w-full text-left">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-2xl w-full text-left">
               {sampleQuestions.map((q) => (
                 <button
                   key={q}
