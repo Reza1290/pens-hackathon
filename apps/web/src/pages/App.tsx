@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Link, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import type { AccountDiagnosis, AiCandidateOpportunity, Evidence, OpportunityCard, User } from '@kasirnusa/contracts';
+import type { AccountDiagnosis, AiCandidateOpportunity, Evidence, OpportunityCard, QaResponse, User } from '@kasirnusa/contracts';
 import { api } from '../lib/api';
 import { AccountQA } from '../components/AccountQA';
 
@@ -44,6 +44,36 @@ function Pending({ error }: { error?: string }) {
 
 const scoped = (path: string, dataset: string) => path + '?' + new URLSearchParams({ dataset_id: dataset });
 
+interface RecentAccount {
+  id: string;
+  externalId: string;
+  name: string;
+  type?: string;
+}
+
+const RECENTS_KEY = 'kasirnusa_recents_v1';
+
+function getStoredRecents(): RecentAccount[] {
+  try {
+    const raw = localStorage.getItem(RECENTS_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+function storeRecent(account: RecentAccount) {
+  try {
+    const current = getStoredRecents().filter((a) => a.id !== account.id);
+    const updated = [account, ...current].slice(0, 8);
+    localStorage.setItem(RECENTS_KEY, JSON.stringify(updated));
+    return updated;
+  } catch {
+    return [];
+  }
+}
+
 export function App() {
   const navigate = useNavigate();
   const [query] = useSearchParams();
@@ -77,8 +107,30 @@ export function App() {
   });
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
-  // Recents accordion state
+  // Recents accordion state & localStorage sync
   const [recentsOpen, setRecentsOpen] = useState(true);
+  const [recentAccounts, setRecentAccounts] = useState<RecentAccount[]>(() => getStoredRecents());
+
+  useEffect(() => {
+    const handleUpdate = () => setRecentAccounts(getStoredRecents());
+    window.addEventListener('recents_updated', handleUpdate);
+    return () => window.removeEventListener('recents_updated', handleUpdate);
+  }, []);
+
+  useEffect(() => {
+    if (accounts.data?.items?.length && getStoredRecents().length === 0) {
+      const initial = accounts.data.items.slice(0, 3).map((a) => ({
+        id: a.id,
+        externalId: a.externalId,
+        name: a.name,
+        type: a.type,
+      }));
+      try {
+        localStorage.setItem(RECENTS_KEY, JSON.stringify(initial));
+        setRecentAccounts(initial);
+      } catch {}
+    }
+  }, [accounts.data?.items]);
 
   // Copilot drawer state
   const [copilotOpen, setCopilotOpen] = useState(false);
@@ -151,6 +203,16 @@ export function App() {
                   value={currentAccountId}
                   onChange={(e) => {
                     if (e.target.value) {
+                      const acc = accounts.data?.items.find((a) => a.id === e.target.value);
+                      if (acc) {
+                        storeRecent({
+                          id: acc.id,
+                          externalId: acc.externalId,
+                          name: acc.name,
+                          type: acc.type,
+                        });
+                        window.dispatchEvent(new Event('recents_updated'));
+                      }
                       navigate(scoped('/accounts/' + e.target.value, selected));
                     } else {
                       navigate(scoped('/', selected));
@@ -252,7 +314,7 @@ export function App() {
 
           {/* Navigation Tree */}
           <nav className="flex-1 px-2 space-y-1">
-            {/* Account Home / Opportunities */}
+            {/* Dashboard / Opportunities */}
             <Link
               to={scoped('/', selected)}
               className={`w-full h-9 flex items-center px-2.5 rounded-md transition text-left text-xs ${
@@ -262,11 +324,28 @@ export function App() {
               }`}
             >
               <span className="w-4 h-4 flex items-center justify-center shrink-0 mr-2.5">
-                <svg className="w-4 h-4 text-brand-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-brand-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
               </span>
-              <span>Opportunities</span>
+              <span>Dashboard</span>
+            </Link>
+
+            {/* Account Copilot (Dedicated Full-Page) */}
+            <Link
+              to={scoped('/copilot', selected)}
+              className={`w-full h-9 flex items-center px-2.5 rounded-md transition text-left text-xs ${
+                location.pathname === '/copilot'
+                  ? 'bg-gray-200/70 text-brand-text font-medium'
+                  : 'text-brand-muted hover:text-brand-text hover:bg-gray-100'
+              }`}
+            >
+              <span className="w-4 h-4 flex items-center justify-center shrink-0 mr-2.5">
+                <svg className="w-4 h-4 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                </svg>
+              </span>
+              <span>Account Copilot</span>
             </Link>
 
             {/* FOLDABLE RECENTS ACCORDION */}
@@ -294,119 +373,60 @@ export function App() {
               </button>
 
               <div className={`accordion-content ${recentsOpen ? 'open' : ''}`}>
-                <div className="accordion-inner ml-4 pl-2.5 border-l border-brand-border space-y-1.5 py-1">
-                  {/* Recent 1: C06 */}
-                  {accounts.data?.items.find((a) => a.externalId === 'C06') && (
-                    <div
-                      onClick={() =>
-                        navigate(
-                          scoped('/accounts/' + accounts.data?.items.find((a) => a.externalId === 'C06')?.id, selected)
-                        )
-                      }
-                      className="cursor-pointer group py-0.5"
-                    >
-                      <div className="text-[12px] text-gray-800 font-medium group-hover:text-brand-blue transition truncate">
-                        C06 · PT Bakmi GM Indonesia
+                <div className="accordion-inner ml-4 pl-2.5 border-l border-brand-border space-y-1 py-1">
+                  {recentAccounts.length === 0 ? (
+                    <div className="text-[11px] text-brand-subtle py-1">No recent accounts</div>
+                  ) : (
+                    recentAccounts.map((rec) => (
+                      <div
+                        key={rec.id}
+                        onClick={() => navigate(scoped('/accounts/' + rec.id, selected))}
+                        className="cursor-pointer group py-1"
+                      >
+                        <div className="text-[12px] text-gray-800 font-medium group-hover:text-brand-blue transition truncate">
+                          {rec.externalId} · {rec.name}
+                        </div>
+                        {rec.type && (
+                          <div className="text-[10px] text-gray-400 leading-tight truncate">
+                            {rec.type}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-[10px] text-gray-400 leading-tight">10 Outlets Q2 2027 · Jakarta</div>
-                    </div>
-                  )}
-
-                  {/* Recent 2: C01 */}
-                  {accounts.data?.items.find((a) => a.externalId === 'C01') && (
-                    <div
-                      onClick={() =>
-                        navigate(
-                          scoped('/accounts/' + accounts.data?.items.find((a) => a.externalId === 'C01')?.id, selected)
-                        )
-                      }
-                      className="cursor-pointer group py-0.5"
-                    >
-                      <div className="text-[12px] text-gray-800 font-medium group-hover:text-brand-blue transition truncate">
-                        C01 · PT Kenangan Abadi
-                      </div>
-                      <div className="text-[10px] text-gray-400 leading-tight">Renewal Risk · POS Integration</div>
-                    </div>
-                  )}
-
-                  {/* Recent 3: P01 */}
-                  {accounts.data?.items.find((a) => a.externalId === 'P01') && (
-                    <div
-                      onClick={() =>
-                        navigate(
-                          scoped('/accounts/' + accounts.data?.items.find((a) => a.externalId === 'P01')?.id, selected)
-                        )
-                      }
-                      className="cursor-pointer group py-0.5"
-                    >
-                      <div className="text-[12px] text-gray-800 font-medium group-hover:text-brand-blue transition truncate">
-                        P01 · PT Retail Maju
-                      </div>
-                      <div className="text-[10px] text-gray-400 leading-tight">Prospect · Intermediary Route</div>
-                    </div>
+                    ))
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Observability & AI Engine Category */}
-            <div className="pt-2 px-2.5 text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
-              AI & Telemetry
-            </div>
-
-            <button
-              onClick={handleRunDeepScan}
-              className="w-full h-9 flex items-center justify-between px-2.5 rounded-md text-brand-muted hover:text-brand-text hover:bg-gray-100 transition text-left text-xs"
-            >
-              <span className="flex items-center">
-                <span className="w-4 h-4 flex items-center justify-center shrink-0 mr-2.5">
-                  <svg className="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </span>
-                <span>AI Deep Scan</span>
-              </span>
-              <span className="text-[9px] bg-orange-100 text-brand-orange px-1 rounded font-medium">Auto</span>
-            </button>
-
-            <button
-              onClick={() => setCopilotOpen(!copilotOpen)}
-              className="w-full h-9 flex items-center justify-between px-2.5 rounded-md text-brand-muted hover:text-brand-text hover:bg-gray-100 transition text-left text-xs"
-            >
-              <span className="flex items-center">
-                <span className="w-4 h-4 flex items-center justify-center shrink-0 mr-2.5">
-                  <svg className="w-4 h-4 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                  </svg>
-                </span>
-                <span>Account Copilot QA</span>
-              </span>
-            </button>
-
             {/* Management Category */}
             <div className="pt-2 px-2.5 text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
-              Organization
+              Management
             </div>
 
-            <button
-              onClick={() => setUserDropdownOpen(true)}
-              className="w-full h-9 flex items-center justify-between px-2.5 rounded-md text-brand-muted hover:text-brand-text hover:bg-gray-100 transition text-left text-xs"
+            {/* Users */}
+            <Link
+              to={scoped('/users', selected)}
+              className={`w-full h-9 flex items-center justify-between px-2.5 rounded-md transition text-left text-xs ${
+                location.pathname === '/users'
+                  ? 'bg-gray-200/70 text-brand-text font-medium'
+                  : 'text-brand-muted hover:text-brand-text hover:bg-gray-100'
+              }`}
             >
               <span className="flex items-center">
                 <span className="w-4 h-4 flex items-center justify-center shrink-0 mr-2.5">
                   <svg className="w-4 h-4 text-brand-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
                 </span>
-                <span>Team & RBAC</span>
+                <span>Users</span>
               </span>
               <span className="text-[10px] font-mono text-gray-400">4 seats</span>
-            </button>
+            </Link>
 
-            {/* Settings Menu Item */}
+            {/* Settings Menu Item */}  
             <Link
               to={scoped('/settings', selected)}
-              className={`w-full h-8.5 flex items-center justify-between px-2.5 rounded-md transition text-left text-xs ${
+              className={`w-full h-9 flex items-center justify-between px-2.5 rounded-md transition text-left text-xs ${
                 location.pathname === '/settings'
                   ? 'bg-gray-200/70 text-brand-text font-medium'
                   : 'text-brand-muted hover:text-brand-text hover:bg-gray-100'
@@ -440,6 +460,8 @@ export function App() {
               {accounts.error && <Pending error={accounts.error} />}
               <Routes>
                 <Route path="/" element={<Opportunities dataset={selected} onOpenScan={() => setScanModalOpen(true)} />} />
+                <Route path="/copilot" element={<CopilotView dataset={selected} accounts={accounts.data?.items ?? []} />} />
+                <Route path="/users" element={<UsersView currentUser={currentUser} onSwitchUser={setCurrentUser} />} />
                 <Route path="/settings" element={<SettingsView selected={selected} datasets={datasets} />} />
                 <Route
                   path="/:kind/:id"
@@ -456,34 +478,7 @@ export function App() {
         </main>
       </div>
 
-      {/* ================= SLIDING COPILOT DRAWER ================= */}
-      {copilotOpen && (
-        <div className="fixed inset-y-0 right-0 w-full sm:w-[460px] bg-white border-l border-brand-border shadow-2xl z-50 flex flex-col">
-          <div className="h-11 border-b border-brand-border px-4 flex items-center justify-between bg-gray-50">
-            <div className="flex items-center space-x-2">
-              <svg className="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              <span className="text-xs font-semibold text-brand-text">KasirNusa Copilot</span>
-            </div>
-            <button
-              onClick={() => setCopilotOpen(false)}
-              className="text-xs text-brand-subtle hover:text-brand-text p-1"
-            >
-              ✕
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4">
-            <AccountQA
-              key={'copilot-' + selected + currentAccountId}
-              dataset={selected}
-              account={currentAccountId || (accounts.data?.items[0]?.id ?? '')}
-              route="joint"
-              open={() => {}}
-            />
-          </div>
-        </div>
-      )}
+
 
       {/* ================= AI DEEP SCAN RESULTS MODAL ================= */}
       {scanModalOpen && (
@@ -573,6 +568,486 @@ export function App() {
         <span>Proposed actions for human review · CRM writes disabled</span>
       </footer>
     </div>
+  );
+}
+
+// ================= VIEW: ACCOUNT COPILOT (STANDALONE FULL-PAGE CHAT) =================
+interface ChatMessage {
+  id: string;
+  sender: 'user' | 'assistant';
+  text: string;
+  timestamp: string;
+  response?: QaResponse;
+  accountContext?: string;
+}
+
+function CopilotView({
+  dataset,
+  accounts,
+}: {
+  dataset: string;
+  accounts: Array<{ id: string; externalId: string; name: string; type: string }>;
+}) {
+  const [selectedAccountId, setSelectedAccountId] = useState<string>(accounts[0]?.id ?? '');
+  const [language, setLanguage] = useState<'en' | 'id'>('en');
+  const [inputQuestion, setInputQuestion] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const activeAccount = accounts.find((a) => a.id === selectedAccountId);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, loading]);
+
+  const handleSend = async (qText?: string) => {
+    const textToSend = qText ?? inputQuestion;
+    if (!textToSend.trim() || loading) return;
+
+    const userMsg: ChatMessage = {
+      id: 'msg_' + Date.now(),
+      sender: 'user',
+      text: textToSend,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      accountContext: activeAccount ? `${activeAccount.externalId} · ${activeAccount.name}` : undefined,
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
+    setInputQuestion('');
+    setLoading(true);
+    setError('');
+
+    try {
+      const recentHistory = messages
+        .filter((m) => m.sender === 'user')
+        .slice(-3)
+        .map((m) => ({ question: m.text }));
+
+      const res = await api.qa({
+        dataset_id: dataset,
+        account_id: selectedAccountId || undefined,
+        question: textToSend,
+        language,
+        history: recentHistory,
+        route: 'joint',
+      });
+
+      const assistantMsg: ChatMessage = {
+        id: 'msg_res_' + Date.now(),
+        sender: 'assistant',
+        text: res.answer,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        response: res,
+      };
+
+      setMessages((prev) => [...prev, assistantMsg]);
+    } catch (err: any) {
+      setError(err.message || 'Copilot query failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sampleQuestions = [
+    'Pelanggan mana yang punya peluang ekspansi?',
+    'Apa yang belum ditindaklanjuti untuk C06?',
+    'Siapa yang perlu dilibatkan untuk C01, dan apa buktinya?',
+    'Kalau C06 tambah 10 outlet, berapa nilai tahunannya?',
+    'Apakah follow-up terakhir sudah menjawab kekhawatiran CFO?',
+  ];
+
+  return (
+    <div className="h-full flex flex-col max-w-4xl mx-auto">
+      {/* Top Copilot Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-3 border-b border-brand-border gap-2 shrink-0">
+        <div>
+          <div className="flex items-center space-x-2">
+            <span className="p-1.5 rounded-md bg-blue-50 text-brand-blue border border-blue-200">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </span>
+            <h1 className="text-lg font-semibold tracking-tight text-brand-text">Account Copilot</h1>
+            <span className="text-[10px] font-mono bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded font-medium">
+              Grounded AI
+            </span>
+          </div>
+          <p className="text-xs text-brand-subtle mt-0.5">
+            Interactive inquiry assistant with cited evidence graph & deterministic revenue calculations.
+          </p>
+        </div>
+
+        {/* Account Scope & Language Toggle */}
+        <div className="flex items-center space-x-2 shrink-0">
+          <div className="flex items-center space-x-1.5">
+            <span className="text-[11px] text-brand-subtle hidden sm:inline">Scope:</span>
+            <select
+              value={selectedAccountId}
+              onChange={(e) => setSelectedAccountId(e.target.value)}
+              className="h-8 text-xs border border-brand-border rounded-md px-2 bg-white text-brand-text hover:border-gray-400 outline-none max-w-[200px] truncate"
+            >
+              <option value="">All Accounts (Global)</option>
+              {accounts.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.externalId} · {a.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex border border-brand-border rounded-md overflow-hidden text-xs">
+            <button
+              onClick={() => setLanguage('en')}
+              className={`h-8 px-2.5 transition ${language === 'en' ? 'bg-brand-blue text-white font-medium' : 'bg-white text-brand-muted hover:text-brand-text'}`}
+            >
+              EN
+            </button>
+            <button
+              onClick={() => setLanguage('id')}
+              className={`h-8 px-2.5 transition ${language === 'id' ? 'bg-brand-blue text-white font-medium' : 'bg-white text-brand-muted hover:text-brand-text'}`}
+            >
+              ID
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Messages Scroll Area */}
+      <div className="flex-1 overflow-y-auto space-y-4 pr-1 min-h-0">
+        {messages.length === 0 ? (
+          <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-5">
+            <div className="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center text-brand-orange shadow-2xs">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+              </svg>
+            </div>
+
+            <div className="space-y-1 max-w-md">
+              <h3 className="text-sm font-semibold text-brand-text">What would you like to investigate?</h3>
+              <p className="text-xs text-brand-subtle">
+                Ask questions about expansion signals, unaddressed requirements, stakeholder authority, or revenue scenarios.
+              </p>
+            </div>
+
+            {/* Quick Prompt Chips */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-xl w-full text-left">
+              {sampleQuestions.map((q) => (
+                <button
+                  key={q}
+                  onClick={() => handleSend(q)}
+                  className="p-2.5 rounded-lg border border-brand-border hover:border-brand-blue/60 bg-white hover:bg-blue-50/50 text-xs text-brand-text transition flex items-start space-x-2 text-left shadow-2xs group"
+                >
+                  <span className="text-brand-blue shrink-0 group-hover:translate-x-0.5 transition-transform">→</span>
+                  <span>{q}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          messages.map((m) => (
+            <div key={m.id} className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'} space-y-1`}>
+              {/* Message Header */}
+              <div className="flex items-center space-x-1.5 text-[10px] text-brand-subtle px-1">
+                <span className="font-medium text-brand-text">{m.sender === 'user' ? 'You' : 'KasirNusa Copilot'}</span>
+                {m.accountContext && (
+                  <span className="font-mono bg-gray-100 text-gray-600 px-1.5 rounded">
+                    Scope: {m.accountContext}
+                  </span>
+                )}
+                <span>· {m.timestamp}</span>
+              </div>
+
+              {/* Message Bubble */}
+              {m.sender === 'user' ? (
+                <div className="max-w-[85%] bg-blue-50 text-brand-text border border-blue-200/80 rounded-xl px-4 py-2.5 text-xs shadow-2xs">
+                  {m.text}
+                </div>
+              ) : (
+                <div className="max-w-[95%] bg-white border border-brand-border rounded-xl p-4 space-y-3.5 text-xs shadow-2xs w-full">
+                  {/* Operation Plan Pill */}
+                  {m.response?.plan && (
+                    <div className="flex items-center space-x-2 pb-2 border-b border-brand-border">
+                      <span className="text-[10px] uppercase font-mono text-brand-subtle">Allowlisted Plan:</span>
+                      <span className="text-[10px] font-mono bg-blue-50 text-brand-blue px-2 py-0.5 rounded-full border border-blue-200 font-medium">
+                        {m.response.plan.operation}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Main Answer Prose */}
+                  <div className="text-brand-text leading-relaxed whitespace-pre-line text-xs font-normal">
+                    {m.text}
+                  </div>
+
+                  {/* Follow-up Draft if present */}
+                  {m.response?.draft && (
+                    <div className="p-3 bg-gray-50 border border-brand-border rounded-lg space-y-1.5">
+                      <div className="flex items-center justify-between text-[11px] font-semibold text-brand-text">
+                        <span>Drafted Follow-Up ({m.response.draft.route} route)</span>
+                        <span className="text-[10px] font-mono text-brand-subtle">Review before sending</span>
+                      </div>
+                      <div className="text-[11px] text-brand-muted font-medium">
+                        Subject: {m.response.draft.subject}
+                      </div>
+                      <div className="text-xs text-brand-muted bg-white p-2.5 rounded border border-gray-200 font-mono text-[11px] whitespace-pre-wrap">
+                        {m.response.draft.body}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Sourced Evidence Citations */}
+                  {m.response?.evidence && m.response.evidence.length > 0 && (
+                    <div className="pt-2 border-t border-brand-border flex items-center flex-wrap gap-1.5">
+                      <span className="text-[10px] text-brand-subtle font-mono mr-1">Cited Evidence:</span>
+                      {m.response.evidence.slice(0, 5).map((ev: Evidence) => (
+                        <span
+                          key={ev.source_id}
+                          className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono bg-gray-100 text-gray-700 border border-gray-200"
+                          title={ev.passage}
+                        >
+                          {ev.source_external_id || ev.filename}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))
+        )}
+
+        {/* Loading Indicator */}
+        {loading && (
+          <div className="flex items-center space-x-2 p-3 text-xs text-brand-subtle bg-gray-50 rounded-lg animate-pulse border border-brand-border">
+            <svg className="w-4 h-4 text-brand-orange animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Retrieving context graph & synthesizing cited response…</span>
+          </div>
+        )}
+
+        {/* Error message */}
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">
+            <span className="font-semibold">Error:</span> {error}
+          </div>
+        )}
+
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Bottom Sticky Input Bar */}
+      <div className="pt-3 border-t border-brand-border shrink-0">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSend();
+          }}
+          className="flex items-center space-x-2 bg-white border border-brand-border rounded-lg p-1.5 shadow-2xs focus-within:border-brand-blue focus-within:ring-1 focus-within:ring-brand-blue/20"
+        >
+          <input
+            type="text"
+            placeholder={
+              activeAccount
+                ? `Ask about ${activeAccount.externalId} (${activeAccount.name})…`
+                : 'Ask about any expansion opportunity, blocker, or stakeholder…'
+            }
+            value={inputQuestion}
+            onChange={(e) => setInputQuestion(e.target.value)}
+            disabled={loading}
+            className="flex-1 bg-transparent px-2 text-xs text-brand-text placeholder-gray-400 outline-none min-w-0"
+          />
+          <button
+            type="submit"
+            disabled={!inputQuestion.trim() || loading}
+            className="h-8 px-4 bg-brand-blue hover:bg-brand-blue-hover disabled:bg-gray-200 disabled:text-gray-400 text-white text-xs font-medium rounded-md transition shrink-0 flex items-center space-x-1"
+          >
+            <span>Send</span>
+            <span>↵</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ================= VIEW: USERS & RBAC =================
+function UsersView({
+  currentUser,
+  onSwitchUser,
+}: {
+  currentUser: User;
+  onSwitchUser: (u: User) => void;
+}) {
+  const usersList: Array<{
+    id: string;
+    name: string;
+    email: string;
+    role: 'account_manager' | 'sales_rep' | 'admin';
+    externalId: string | null;
+    accounts: string;
+  }> = [
+    {
+      id: 'e0400000-0000-4000-8000-000000000001',
+      name: 'Wahyu Setiawan',
+      email: 'wahyu@kasirnusa.id',
+      role: 'account_manager',
+      externalId: 'E04',
+      accounts: 'C06 (Bakmi GM), C02 (Kopi Janji Jiwa)',
+    },
+    {
+      id: 'e0100000-0000-4000-8000-000000000001',
+      name: 'Andi Prasetyo',
+      email: 'andi@kasirnusa.id',
+      role: 'account_manager',
+      externalId: 'E01',
+      accounts: 'C01 (Kopi Kenangan)',
+    },
+    {
+      id: 'e0200000-0000-4000-8000-000000000001',
+      name: 'Sari Wulandari',
+      email: 'sari@kasirnusa.id',
+      role: 'sales_rep',
+      externalId: 'E02',
+      accounts: 'P01 (Warung Pintar), P04 (Kulo Group)',
+    },
+    {
+      id: '00000000-0000-4000-8000-admin0000001',
+      name: 'Administrator',
+      email: 'admin@kasirnusa.id',
+      role: 'admin',
+      externalId: null,
+      accounts: 'All Accounts (Tenant Supervisor)',
+    },
+  ];
+
+  return (
+    <section className="space-y-6 max-w-4xl mx-auto">
+      {/* Header */}
+      <div>
+        <div className="flex items-center space-x-2 text-xs text-brand-subtle mb-1">
+          <span>Workbench</span>
+          <span>/</span>
+          <span>Management</span>
+          <span>/</span>
+          <span className="text-brand-text font-medium">Users</span>
+        </div>
+        <h1 className="text-2xl font-semibold tracking-tight text-brand-text">Users & Team Access</h1>
+        <p className="text-xs text-brand-subtle mt-1 leading-relaxed">
+          Manage team members, assigned accounts, and role-based permissions (RBAC).
+        </p>
+      </div>
+
+      {/* Users Table */}
+      <div className="bg-white border border-brand-border rounded-xl shadow-2xs overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-brand-border flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <svg className="w-4 h-4 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            <span className="text-xs font-semibold text-brand-text">Active Team Members</span>
+          </div>
+          <span className="text-[10px] font-mono text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+            4 of 10 Seats Provisioned
+          </span>
+        </div>
+
+        <table className="w-full text-left text-xs">
+          <thead className="bg-gray-50 border-b border-brand-border text-brand-subtle text-[11px] font-medium uppercase">
+            <tr>
+              <th className="py-2.5 px-4">User</th>
+              <th className="py-2.5 px-3">Role</th>
+              <th className="py-2.5 px-3">Assigned Accounts</th>
+              <th className="py-2.5 px-3">Status</th>
+              <th className="py-2.5 px-4 text-right">Active Session</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {usersList.map((u) => {
+              const isActive = currentUser.email === u.email;
+              return (
+                <tr key={u.email} className={`hover:bg-gray-50 transition ${isActive ? 'bg-blue-50/40' : ''}`}>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center space-x-2.5">
+                      <div className="w-6 h-6 rounded-full bg-brand-blue text-white text-[10px] flex items-center justify-center font-bold shrink-0">
+                        {u.name[0]}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-brand-text">{u.name}</div>
+                        <div className="text-[11px] text-brand-subtle font-mono">{u.email}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="py-3 px-3">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-medium capitalize bg-gray-100 text-gray-700 border border-gray-200">
+                      {u.role.replace('_', ' ')}
+                    </span>
+                  </td>
+                  <td className="py-3 px-3 text-brand-muted text-[11px] font-mono">
+                    {u.accounts}
+                  </td>
+                  <td className="py-3 px-3">
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      Active
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    {isActive ? (
+                      <span className="text-[11px] font-semibold text-brand-blue flex items-center justify-end space-x-1">
+                        <span>● Current User</span>
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          onSwitchUser({
+                            id: u.id,
+                            email: u.email,
+                            name: u.name,
+                            employee_external_id: u.externalId,
+                            role: u.role,
+                            is_active: true,
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString(),
+                          });
+                        }}
+                        className="h-7 px-2.5 bg-white border border-brand-border hover:bg-gray-50 text-brand-text rounded text-[11px] transition"
+                      >
+                        Switch Persona
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* RBAC Policy Summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="p-4 bg-white border border-brand-border rounded-xl space-y-1.5">
+          <div className="text-xs font-semibold text-brand-text">Account Manager</div>
+          <p className="text-[11px] text-brand-subtle leading-relaxed">
+            Full view of assigned customer accounts, expansion discovery, action plan drafting, and stakeholder requirement matrix.
+          </p>
+        </div>
+        <div className="p-4 bg-white border border-brand-border rounded-xl space-y-1.5">
+          <div className="text-xs font-semibold text-brand-text">Sales Representative</div>
+          <p className="text-[11px] text-brand-subtle leading-relaxed">
+            Prospect account routing, customer referral pathways (e.g. C06 to P04), and pipeline gap diagnosis.
+          </p>
+        </div>
+        <div className="p-4 bg-white border border-brand-border rounded-xl space-y-1.5">
+          <div className="text-xs font-semibold text-brand-text">Administrator</div>
+          <p className="text-[11px] text-brand-subtle leading-relaxed">
+            Snapshot partition switching, database verification, LLM execution budgets, and full context graph telemetry.
+          </p>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -810,45 +1285,24 @@ function Opportunities({ dataset, onOpenScan }: { dataset: string; onOpenScan: (
 
   return (
     <section className="space-y-6 max-w-5xl mx-auto">
-      {/* Onboarding / Status Banner */}
-      <div className="flex justify-center">
-        <div
-          onClick={onOpenScan}
-          className="inline-flex items-center space-x-2 bg-brand-canvas border border-brand-border px-3.5 py-1 rounded-full text-xs text-brand-muted hover:border-gray-400 transition cursor-pointer"
-        >
-          <span>Run Autonomous Deep Scan to surface unrecorded signals</span>
-          <span className="text-xs">⚡ 🔍 🚀</span>
-        </div>
-      </div>
-
-      {/* Page Title & Scannability Subtitle */}
-      <div className="text-center pt-1 pb-1">
-        <h1 className="text-2xl font-semibold tracking-tight text-brand-text">Expansion opportunities</h1>
-        <p className="text-xs text-brand-subtle mt-1 max-w-xl mx-auto leading-relaxed">
-          Explicit expansion requests, recorded CRM gaps, and audience-tailored next actions.
-        </p>
-      </div>
-
-      {/* Marketing Glow Card (Halftone & Sunset Orange Gradient) */}
-      <div className="rounded-xl border border-brand-border hero-glow-card p-5 text-white shadow-xs flex flex-col md:flex-row items-center justify-between gap-5 hero-dot-grid">
-        <div className="space-y-1.5 z-10 max-w-xl">
-          <div className="flex items-center space-x-2">
-            <h2 className="text-base font-bold tracking-tight">Expansion Intelligence & Stakeholder Guidance</h2>
-            <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-medium">Core Feature</span>
-          </div>
-          <p className="text-xs text-white/90 leading-relaxed">
-            Identifies buying signals, maps stakeholder authority vs documented decision requirements, and produces cited action plans.
+      {/* Dashboard & Opportunities Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-brand-border">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight text-brand-text">Dashboard</h1>
+          <p className="text-xs text-brand-subtle mt-0.5">
+            Expansion opportunities, CRM reconciliation, and stakeholder-tailored action items.
           </p>
         </div>
-        <div className="z-10 shrink-0">
+        <div className="flex items-center space-x-2 shrink-0">
           <button
             onClick={onOpenScan}
-            className="h-8 px-3.5 bg-white text-brand-text hover:bg-gray-100 font-medium text-xs rounded-md transition shadow-xs flex items-center space-x-1.5"
+            className="inline-flex items-center space-x-1.5 h-8 px-3 rounded-md bg-white hover:bg-orange-50 border border-brand-border hover:border-brand-orange text-brand-text hover:text-brand-orange text-xs font-medium transition shadow-2xs"
+            title="Scan customer communications for unrecorded expansion intent"
           >
             <svg className="w-3.5 h-3.5 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
-            <span>Scan Opportunities</span>
+            <span>AI Deep Scan</span>
           </button>
         </div>
       </div>
@@ -1265,6 +1719,20 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
     'graph:' + dataset + kind + id,
     (s) => api.graph(dataset, kind as 'accounts' | 'opportunities', id!, s)
   );
+
+  useEffect(() => {
+    if (result.data) {
+      const res = result.data;
+      const isCard = 'signal' in res;
+      const accId = res.account.id;
+      const accName = res.account.name;
+      const accCode = isCard ? res.account.external_id : res.account.externalId;
+      if (accId) {
+        storeRecent({ id: accId, name: accName, externalId: accCode || accId });
+        window.dispatchEvent(new Event('recents_updated'));
+      }
+    }
+  }, [result.data]);
 
   if (!valid) return <p role="alert" className="p-4 text-xs text-red-600">Resource unavailable.</p>;
   if (!result.data) return <Pending error={result.error} />;
