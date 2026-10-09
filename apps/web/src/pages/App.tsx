@@ -1588,203 +1588,156 @@ function SettingsView({
   datasets: Array<{ id: string; version: string; asOf: string; analyzedAt?: string }>;
 }) {
   const navigate = useNavigate();
-  const currentDataset = datasets.find((d) => d.id === selected) ?? datasets[0];
-  const [copiedKey, setCopiedKey] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [snapshotList, setSnapshotList] = useState(datasets);
 
-  const handleCopy = () => {
-    navigator.clipboard?.writeText('kn_live_usr_9981f4a9b2fc7701e82844a');
-    setCopiedKey(true);
-    setTimeout(() => setCopiedKey(false), 2000);
+  useEffect(() => {
+    setSnapshotList(datasets);
+  }, [datasets]);
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const version = file.name.replace(/\.[^/.]+$/, '').trim() || 'custom-snapshot';
+    const newSnapshot = {
+      id: crypto.randomUUID(),
+      version,
+      asOf: new Date().toISOString().slice(0, 10),
+    };
+    setSnapshotList((prev) => [newSnapshot, ...prev]);
+    navigate(scoped('/settings', newSnapshot.id));
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleDelete = (id: string) => {
+    if (snapshotList.length <= 1) {
+      alert('Cannot delete the only snapshot.');
+      return;
+    }
+    if (!window.confirm('Delete this snapshot?')) return;
+    const updated = snapshotList.filter((d) => d.id !== id);
+    setSnapshotList(updated);
+    if (id === selected && updated.length > 0) {
+      navigate(scoped('/settings', updated[0].id));
+    }
   };
 
   return (
-    <section className="space-y-6 max-w-4xl mx-auto">
-      {/* Page Title & Breadcrumbs */}
-      <div>
-        <div className="flex items-center space-x-2 text-xs text-brand-subtle mb-1">
-          <Link to={scoped('/', selected)} className="hover:text-brand-text">
-            Workbench
-          </Link>
-          <span>/</span>
-          <span className="text-brand-text font-medium">Settings</span>
-        </div>
-        <h1 className="text-2xl font-semibold tracking-tight text-brand-text">Settings & Configuration</h1>
-        <p className="text-xs text-brand-subtle mt-1 leading-relaxed">
-          Configure dataset snapshots, manage developer API credentials, and review LLM inference providers.
-        </p>
-      </div>
-
-      {/* SECTION 1: DATASET SNAPSHOT SETTINGS */}
-      <div className="bg-white border border-brand-border rounded-xl p-5 shadow-2xs space-y-4">
-        <div className="flex items-center justify-between border-b border-brand-border pb-3">
-          <div>
-            <h2 className="text-sm font-semibold text-brand-text flex items-center space-x-2">
-              <svg className="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2 1.5 3 3.5 3h9c2 0 3.5-1 3.5-3V7M4 7c0-2 1.5-3 3.5-3h9c2 0 3.5 1 3.5 3M4 7h16m-8 4v6m-3-3h6" />
-              </svg>
-              <span>Dataset Snapshot Management</span>
-            </h2>
-            <p className="text-xs text-brand-muted mt-0.5">
-              Select and inspect the verified evidentiary partition used for graph traversal, deterministic rules, and AI discovery.
-            </p>
-          </div>
-          <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded font-mono font-medium">
-            Active: {currentDataset?.version ?? 'None'}
-          </span>
-        </div>
-
-        <div className="space-y-3 pt-1">
-          <div>
-            <label htmlFor="snapshot-select" className="block text-xs font-medium text-brand-text mb-1">
-              Active Snapshot Partition
-            </label>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-2xl">
-              <select
-                id="snapshot-select"
-                aria-label="Snapshot"
-                value={selected}
-                onChange={(e) => navigate(scoped('/settings', e.target.value))}
-                className="h-9 flex-1 text-xs border border-brand-border rounded-md px-3 bg-white text-brand-text hover:border-gray-400 outline-none focus:ring-1 focus:ring-brand-blue"
-              >
-                {datasets.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.version} · Cutoff: {d.asOf} (ID: {d.id})
-                  </option>
-                ))}
-              </select>
-
-              <Link
-                to={scoped('/', selected)}
-                className="h-9 px-4 bg-brand-blue hover:bg-brand-blue-hover text-white text-xs font-medium rounded-md flex items-center justify-center shrink-0 transition shadow-2xs"
-              >
-                Go to Opportunities
-              </Link>
-            </div>
-            <p className="text-[11px] text-brand-subtle mt-1.5">
-              Switching snapshots immediately recalibrates all accounts, deterministic checks, and premise calculations to that snapshot's as-of date.
-            </p>
-          </div>
-
-          {currentDataset && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-              <div className="p-3 bg-gray-50 border border-brand-border rounded-lg">
-                <div className="text-[10px] uppercase font-mono text-brand-subtle">Version Tag</div>
-                <div className="text-xs font-semibold text-brand-text font-mono mt-0.5">{currentDataset.version}</div>
-              </div>
-              <div className="p-3 bg-gray-50 border border-brand-border rounded-lg">
-                <div className="text-[10px] uppercase font-mono text-brand-subtle">Analysis Cutoff Date</div>
-                <div className="text-xs font-semibold text-brand-text font-mono mt-0.5">{currentDataset.asOf}</div>
-              </div>
-              <div className="p-3 bg-gray-50 border border-brand-border rounded-lg">
-                <div className="text-[10px] uppercase font-mono text-brand-subtle">Dataset Partition ID</div>
-                <div className="text-xs font-mono text-brand-muted mt-0.5 truncate" title={currentDataset.id}>
-                  {currentDataset.id}
-                </div>
-              </div>
-            </div>
-          )}
+    <section className="space-y-6 max-w-5xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-brand-border">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight text-brand-text">Settings</h1>
+          <p className="text-xs text-brand-subtle mt-0.5">
+            Dataset snapshots and system configuration.
+          </p>
         </div>
       </div>
 
-      {/* SECTION 2: USER API TOKENS & INTEGRATIONS (TODO) */}
-      <div className="bg-white border border-brand-border rounded-xl p-5 shadow-2xs space-y-4">
-        <div className="flex items-center justify-between border-b border-brand-border pb-3">
-          <div>
-            <h2 className="text-sm font-semibold text-brand-text flex items-center space-x-2">
-              <svg className="w-4 h-4 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-              </svg>
-              <span>User API Tokens & Live Integrations</span>
-            </h2>
-            <p className="text-xs text-brand-muted mt-0.5">
-              Personal API credentials and third-party connector webhooks.
-            </p>
+      {/* Snapshots Management */}
+      <div className="bg-white border border-brand-border rounded-lg p-4 space-y-4 shadow-2xs">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-brand-border">
+          <div className="flex items-center space-x-2 text-xs">
+            <span className="text-brand-subtle font-medium">Active snapshot:</span>
+            <select
+              id="snapshot-select"
+              aria-label="Snapshot"
+              value={selected}
+              onChange={(e) => navigate(scoped('/settings', e.target.value))}
+              className="h-8 border border-brand-border rounded-md px-2.5 bg-white text-brand-text text-xs font-medium outline-none focus:ring-1 focus:ring-brand-blue"
+            >
+              {snapshotList.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.version} ({d.asOf})
+                </option>
+              ))}
+            </select>
           </div>
-          <span className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded font-mono font-medium">
-            TODO / Coming Soon
-          </span>
+
+          <div className="flex items-center space-x-2">
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept=".zip,.tar.gz,.json,.csv"
+              onChange={handleUpload}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="h-8 px-3 rounded-md bg-white border border-brand-border hover:bg-gray-50 text-brand-text text-xs font-medium transition"
+            >
+              Upload snapshot
+            </button>
+            <Link
+              to={scoped('/', selected)}
+              className="h-8 px-3 bg-brand-blue hover:bg-brand-blue-hover text-white text-xs font-medium rounded-md flex items-center transition"
+            >
+              Go to Opportunities
+            </Link>
+          </div>
         </div>
 
-        <div className="space-y-4 pt-1">
-          {/* User API Token */}
-          <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-brand-text">
-              Personal API Key (Scoped per user)
-            </label>
-            <div className="flex items-center space-x-2 max-w-xl">
-              <input
-                type="text"
-                readOnly
-                value="kn_live_usr_9981f4a9b2fc7701e82844a"
-                className="h-9 flex-1 text-xs font-mono bg-gray-50 border border-brand-border rounded-md px-3 text-brand-muted select-all outline-none"
-              />
-              <button
-                onClick={handleCopy}
-                className="h-9 px-3 bg-white border border-brand-border hover:bg-gray-50 text-brand-text text-xs rounded-md transition shrink-0"
-              >
-                {copiedKey ? 'Copied!' : 'Copy Key'}
-              </button>
-              <button
-                disabled
-                className="h-9 px-3 bg-gray-100 border border-brand-border text-gray-400 text-xs rounded-md cursor-not-allowed shrink-0"
-                title="TODO: Regenerate key feature coming soon"
-              >
-                Rotate Key
-              </button>
-            </div>
-            <p className="text-[11px] text-brand-subtle">
-              Authenticate programmatic inquiries, export context graph assertions, and invoke Copilot endpoints via REST API.
-            </p>
-          </div>
-
-          {/* Model Provider & Webhooks */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl pt-2">
-            <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-brand-text">
-                Active AI Model Provider
-              </label>
-              <select
-                disabled
-                className="h-9 w-full text-xs border border-brand-border rounded-md px-3 bg-gray-50 text-brand-text cursor-not-allowed outline-none"
-              >
-                <option>Jev AI System-1 (Zero Hallucination Classification)</option>
-                <option>Google Gemini 1.5 Pro (Fallback & Q&A Synthesis)</option>
-                <option>Anthropic Claude 3.5 Sonnet</option>
-              </select>
-              <p className="text-[10px] text-brand-subtle">
-                Currently locked to system environment defaults (`JEV_API_KEY`).
-              </p>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-brand-text">
-                Live CRM Webhook Target
-              </label>
-              <input
-                type="text"
-                disabled
-                placeholder="https://api.kasirnusa.id/webhooks/deals"
-                value="https://api.kasirnusa.id/webhooks/deals"
-                className="h-9 w-full text-xs font-mono border border-brand-border rounded-md px-3 bg-gray-50 text-brand-muted cursor-not-allowed outline-none"
-              />
-              <p className="text-[10px] text-brand-subtle">
-                Planned outbound sync for verified expansion opportunities.
-              </p>
-            </div>
-          </div>
-
-          {/* Architectural Callout Banner */}
-          <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-lg text-xs text-blue-900 flex items-start space-x-2.5">
-            <svg className="w-4 h-4 text-brand-blue shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div className="space-y-1 leading-relaxed">
-              <span className="font-semibold">TODO Note for Per-User Credentials:</span>
-              <p className="text-[11px] text-blue-800">
-                Individual user API keys, custom webhook endpoints, and per-account notification preferences will be stored in the newly provisioned PostgreSQL user table in the next sprint. For now, all interactions run with tenant-level system security.
-              </p>
-            </div>
-          </div>
+        {/* Minimal Table */}
+        <div className="border border-brand-border rounded-md overflow-hidden">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead className="bg-brand-canvas border-b border-brand-border text-brand-subtle font-medium">
+              <tr>
+                <th className="py-2.5 px-3">Version</th>
+                <th className="py-2.5 px-3">Cutoff Date</th>
+                <th className="py-2.5 px-3">Partition ID</th>
+                <th className="py-2.5 px-3">Status</th>
+                <th className="py-2.5 px-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-brand-border text-brand-text">
+              {snapshotList.map((d) => {
+                const isActive = d.id === selected;
+                return (
+                  <tr key={d.id} className="hover:bg-brand-canvas/50">
+                    <td className="py-2.5 px-3 font-mono font-medium">
+                      {d.version}
+                    </td>
+                    <td className="py-2.5 px-3 font-mono text-brand-subtle">
+                      {d.asOf}
+                    </td>
+                    <td className="py-2.5 px-3 font-mono text-brand-subtle text-[11px] truncate max-w-xs" title={d.id}>
+                      {d.id}
+                    </td>
+                    <td className="py-2.5 px-3">
+                      {isActive ? (
+                        <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                          Active
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-brand-subtle">
+                          Ready
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-2.5 px-3 text-right space-x-2">
+                      {!isActive && (
+                        <button
+                          type="button"
+                          onClick={() => navigate(scoped('/settings', d.id))}
+                          className="h-7 px-2.5 border border-brand-border rounded text-xs hover:bg-gray-50 text-brand-text font-medium"
+                        >
+                          Switch
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(d.id)}
+                        className="h-7 px-2.5 border border-red-200 text-red-600 hover:bg-red-50 rounded text-xs font-medium"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -1797,7 +1750,6 @@ function Opportunities({ dataset, onOpenScan }: { dataset: string; onOpenScan: (
   const [kind, setKind] = useState('');
   const [account, setAccount] = useState('');
   const [page, setPage] = useState(1);
-  const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   const accounts = useLoad('filter-accounts:' + dataset, (s) => api.accounts(dataset, s));
   const options = {
@@ -1969,204 +1921,61 @@ function Opportunities({ dataset, onOpenScan }: { dataset: string; onOpenScan: (
           <table className="w-full text-left text-xs border-collapse">
             <thead className="bg-brand-canvas border-b border-brand-border text-brand-subtle font-medium">
               <tr>
-                <th className="py-2.5 px-4 w-[36%]">Peluang Ekspansi</th>
-                <th className="py-2.5 px-4 w-[22%]">Estimasi Nilai</th>
-                <th className="py-2.5 px-4 w-[34%]">Langkah Tindak Lanjut</th>
-                <th className="py-2.5 px-4 text-right w-[8%]">Aksi</th>
+                <th className="py-2.5 px-4">Account</th>
+                <th className="py-2.5 px-4">Estimate Revenue</th>
+                <th className="py-2.5 px-4">Langkah Tindak Lanjut</th>
+                <th className="py-2.5 px-4 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-brand-border text-brand-text">
               {result.data.items.map((card) => {
-                const isOpen = expandedRow === card.id;
+                const stepsCount = card.next_action.discussion_points?.length || 1;
                 return (
-                  <>
-                    <tr
-                      key={card.id}
-                      className="hover:bg-brand-canvas/80 transition cursor-pointer"
-                      onClick={() => setExpandedRow(isOpen ? null : card.id)}
-                    >
-                      {/* 1. Peluang Ekspansi */}
-                      <td className="py-3 px-4">
-                        <div className="flex items-center space-x-2">
-                          <Link
-                            to={scoped('/opportunities/' + card.id, dataset)}
-                            className="font-mono font-medium text-brand-blue hover:underline text-xs"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {card.account.external_id} · {card.account.name}
-                          </Link>
-                          <span
-                            className={`inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full border ${
-                              card.signal.status === 'active'
-                                ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
-                                : card.signal.status === 'cancelled'
-                                ? 'text-red-700 bg-red-50 border-red-200'
-                                : 'text-amber-700 bg-amber-50 border-amber-200'
-                            }`}
-                          >
-                            {card.signal.status}
-                          </span>
-                        </div>
-                        <div className="text-xs font-medium text-gray-800 mt-1 flex items-center space-x-2">
-                          <span>
-                            {card.signal.additional_outlets ? `${card.signal.additional_outlets} outlet` : 'Ekspansi cabang'}
-                            {card.signal.location ? ` · ${card.signal.location}` : ''}
-                          </span>
-                          {card.signal.target_period && (
-                            <span className="text-[11px] text-gray-500 font-mono">
-                              (Target: {card.signal.target_period})
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-[10px] text-brand-subtle font-mono mt-0.5">
-                          {words(card.signal.kind)} · Req: {card.signal.date}
-                        </div>
-                      </td>
+                  <tr
+                    key={card.id}
+                    className="hover:bg-brand-canvas/80 transition"
+                  >
+                    {/* Account */}
+                    <td className="py-3 px-4 font-mono font-medium text-brand-blue">
+                      <Link
+                        to={scoped('/opportunities/' + card.id, dataset)}
+                        className="hover:underline"
+                      >
+                        {card.account.external_id} · {card.account.name}
+                      </Link>
+                    </td>
 
-                      {/* 2. Estimasi Nilai (Possible Revenue) */}
-                      <td className="py-3 px-4 font-mono">
-                        {card.value_scenario ? (
-                          <div>
-                            <div className="font-semibold text-brand-text text-xs">
-                              Rp {amount(card.value_scenario.amount)}
-                            </div>
-                            <div className="text-[10px] text-brand-subtle">tahunan (kondisional)</div>
-                            <div className="text-[10px] text-gray-400 mt-0.5">
-                              {card.value_scenario.inputs.additional_outlets} outlet × Rp {amount(card.value_scenario.inputs.monthly_rate)}/bln
-                            </div>
-                          </div>
-                        ) : (
-                          <div>
-                            <span className="text-amber-700 text-xs font-medium">Perlu penyesuaian paket</span>
-                            <div className="text-[10px] text-gray-400 mt-0.5">Batas Growth 25 outlet tercapai</div>
-                          </div>
-                        )}
-                      </td>
+                    {/* Estimate Revenue */}
+                    <td className="py-3 px-4 font-mono">
+                      {card.value_scenario ? (
+                        <span className="font-semibold text-brand-text">
+                          Rp {amount(card.value_scenario.amount)}
+                        </span>
+                      ) : (
+                        <span className="text-amber-700 font-medium">
+                          Perlu penyesuaian paket
+                        </span>
+                      )}
+                    </td>
 
-                      {/* 3. Langkah Tindak Lanjut & Owner */}
-                      <td className="py-3 px-4 max-w-sm">
-                        <div className="flex items-center space-x-1.5 text-xs">
-                          <span className="font-semibold text-brand-text">{card.people.owner.name}</span>
-                          {card.people.contact && (
-                            <>
-                              <span className="text-gray-400">→</span>
-                              <span className="text-gray-600 font-medium">{card.people.contact.name}</span>
-                            </>
-                          )}
-                        </div>
-                        <div className="text-[11px] text-brand-muted mt-1 truncate">
-                          {card.next_action.task}
-                        </div>
-                        <div className="text-[10px] text-brand-subtle font-mono mt-1 flex items-center space-x-2">
-                          <span>{card.elapsed_days}d pending</span>
-                          {card.reconciliation.status === 'unmatched' && (
-                            <span className="text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                              Belum tercatat di CRM
-                            </span>
-                          )}
-                        </div>
-                      </td>
+                    {/* Langkah Tindak Lanjut (in number) */}
+                    <td className="py-3 px-4 font-mono">
+                      <span className="font-semibold text-brand-text text-sm">
+                        {stepsCount}
+                      </span>
+                    </td>
 
-                      {/* 4. Aksi / Rincian Toggle */}
-                      <td className="py-3 px-4 text-right">
-                        <button
-                          type="button"
-                          className="inline-flex items-center space-x-1 text-xs text-brand-subtle hover:text-brand-text px-2 py-1 rounded hover:bg-gray-100 transition"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setExpandedRow(isOpen ? null : card.id);
-                          }}
-                        >
-                          <span className="text-[11px]">{isOpen ? 'Tutup' : 'Rincian'}</span>
-                          <svg
-                            className={`w-3.5 h-3.5 chevron-icon ${isOpen ? 'chevron-down-rotated' : ''}`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </button>
-                      </td>
-                    </tr>
-
-                    {/* FOLDABLE ACCORDION DETAIL ROW */}
-                    {isOpen && (
-                      <tr key={card.id + '-foldable'} className="bg-brand-canvas/60 border-t border-brand-border">
-                        <td colSpan={4} className="p-4 space-y-3">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                            <div className="p-3 bg-white border border-brand-border rounded shadow-2xs">
-                              <div className="text-[10px] text-gray-400 font-medium uppercase font-mono">1. Rincian Peluang Ekspansi</div>
-                              <div className="font-semibold text-gray-800 mt-1">
-                                {card.signal.additional_outlets ?? 'Unstated'} outlets · {card.signal.location ?? 'Lokasi unstated'}
-                              </div>
-                              <div className="text-[11px] text-gray-500 mt-0.5">
-                                Target: {card.signal.target_period ?? 'Waktu unstated'}
-                              </div>
-                              <div className="mt-2 pt-2 border-t border-gray-100 text-[10px] text-brand-subtle font-mono">
-                                Status CRM: {card.reconciliation.status === 'unmatched' ? 'Belum dimasukkan ke CRM (Unrecorded Deal)' : 'Tercatat di CRM'}
-                              </div>
-                            </div>
-
-                            <div className="p-3 bg-white border border-brand-border rounded shadow-2xs">
-                              <div className="text-[10px] text-gray-400 font-medium uppercase font-mono">2. Dasar Estimasi Nilai</div>
-                              {card.value_scenario ? (
-                                <>
-                                  <div className="font-semibold text-gray-800 mt-1 font-mono">
-                                    Rp {amount(card.value_scenario.amount)} / thn
-                                  </div>
-                                  <div className="text-[11px] text-gray-600 mt-0.5">
-                                    Formula: {card.value_scenario.formula}
-                                  </div>
-                                  <div className="mt-2 pt-2 border-t border-gray-100 text-[10px] text-brand-subtle">
-                                    Asumsi: rate saat ini berlanjut, belum termasuk pajak
-                                  </div>
-                                </>
-                              ) : (
-                                <>
-                                  <div className="font-semibold text-amber-800 mt-1">
-                                    Perlu Penyesuaian Paket
-                                  </div>
-                                  <div className="text-[11px] text-gray-600 mt-0.5">
-                                    Batas kuota Growth (25 outlet) tercapai. Penambahan outlet memerlukan upgrade paket Enterprise.
-                                  </div>
-                                  <div className="mt-2 pt-2 border-t border-gray-100 text-[10px] text-brand-subtle">
-                                    Harga paket baru perlu dikonfirmasi
-                                  </div>
-                                </>
-                              )}
-                            </div>
-
-                            <div className="p-3 bg-white border border-brand-border rounded shadow-2xs">
-                              <div className="text-[10px] text-gray-400 font-medium uppercase font-mono">3. Panduan Tindak Lanjut</div>
-                              <div className="font-semibold text-gray-800 mt-1 truncate">
-                                {card.findings[0]?.label ?? 'Tidak ada kendala aktif'}
-                              </div>
-                              <div className="text-[11px] text-gray-600 mt-0.5">
-                                PIC Pelanggan: {card.people.contact?.name ?? 'Belum teridentifikasi'}
-                              </div>
-                              <div className="mt-2 pt-2 border-t border-gray-100 text-[10px] text-brand-subtle">
-                                Rute: {words(card.next_action.route)}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-gray-200/60">
-                            <span className="text-[11px] text-brand-subtle font-mono">
-                              Sinyal: {card.signal.date} · Snapshot As of: {card.as_of} · Pending: {card.elapsed_days} hari
-                            </span>
-                            <Link
-                              to={scoped('/opportunities/' + card.id, dataset)}
-                              className="h-8 px-3.5 bg-brand-blue hover:bg-brand-blue-hover text-white text-xs font-medium rounded-md transition shadow-xs inline-flex items-center space-x-1"
-                            >
-                              <span>Buka Context Graph & Bukti Lengkap</span>
-                              <span>→</span>
-                            </Link>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </>
+                    {/* Aksi (only view detail) */}
+                    <td className="py-3 px-4 text-right">
+                      <Link
+                        to={scoped('/opportunities/' + card.id, dataset)}
+                        className="inline-flex items-center space-x-1 text-xs font-medium text-brand-blue hover:text-brand-blue-hover hover:underline"
+                      >
+                        <span>View Detail</span>
+                        <span>→</span>
+                      </Link>
+                    </td>
+                  </tr>
                 );
               })}
 
