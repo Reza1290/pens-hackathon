@@ -669,6 +669,33 @@ function CopilotGraphViewer({
   );
 }
 
+function CopyButton({ text, label = 'Copy' }: { text: string; label?: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="inline-flex items-center space-x-1 text-[10px] font-medium px-2 py-0.5 bg-white hover:bg-gray-50 border border-brand-border rounded text-brand-text transition shrink-0 select-none cursor-pointer"
+    >
+      {copied ? (
+        <span className="text-emerald-600 font-semibold">✓ Copied</span>
+      ) : (
+        <>
+          <svg className="w-3 h-3 text-brand-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          <span>{label}</span>
+        </>
+      )}
+    </button>
+  );
+}
+
 // ================= VIEW: ACCOUNT COPILOT (STANDALONE FULL-PAGE CHAT) =================
 interface ChatMessage {
   id: string;
@@ -853,223 +880,387 @@ function CopilotView({
                 <div className="max-w-[85%] bg-blue-50 text-brand-text border border-blue-200/80 rounded-xl px-4 py-2.5 text-xs shadow-2xs">
                   {m.text}
                 </div>
-              ) : (
-                <div className="max-w-[98%] bg-white border border-brand-border rounded-xl p-4 sm:p-5 space-y-4 text-xs shadow-2xs w-full">
-                  {/* Header Row: Plan, Context, As of */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-brand-border">
-                    <div className="flex items-center space-x-2">
-                      {m.response?.plan && (
-                        <span className="text-[10px] font-mono bg-blue-50 text-brand-blue px-2 py-0.5 rounded-full border border-blue-200 font-medium">
-                          {m.response.plan.operation.replaceAll('_', ' ')}
-                        </span>
-                      )}
-                      {m.response?.commercial_context && (
-                        <span className="text-[10px] font-mono bg-gray-100 text-gray-700 px-2 py-0.5 rounded border border-gray-200 capitalize">
-                          {m.response.commercial_context}
-                        </span>
-                      )}
-                    </div>
-                    {m.response?.as_of && (
-                      <span className="text-[10px] font-mono text-brand-subtle">
-                        As of snapshot: {m.response.as_of}
-                      </span>
-                    )}
-                  </div>
+              ) : (() => {
+                  const claims = m.response?.claims ?? [];
+                  const actionClaims = claims.filter((c) => c.kind === 'proposed_action');
+                  const diagnosticClaims = claims.filter((c) => c.kind === 'check');
+                  const factClaims = claims.filter((c) => c.kind === 'fact' || c.kind === 'source_quote');
 
-                  {/* Main Documented Finding / Synthesis */}
-                  <div className="p-3.5 bg-brand-canvas/70 border border-brand-border rounded-lg space-y-1.5">
-                    <div className="text-[11px] font-semibold uppercase tracking-wider text-brand-subtle">
-                      Documented findings
-                    </div>
-                    <div className="text-brand-text leading-relaxed whitespace-pre-line text-xs font-normal">
-                      {m.text}
-                    </div>
-                  </div>
+                  return (
+                    <div className="max-w-[98%] bg-white border border-brand-border rounded-xl p-4 sm:p-5 space-y-4 text-xs shadow-2xs w-full">
+                      {/* Header Row: Executive Telemetry Ribbon */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-brand-border">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {m.response?.commercial_context && (
+                            <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-semibold uppercase tracking-wider border ${
+                              m.response.commercial_context === 'expansion'
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                : m.response.commercial_context === 'renewal'
+                                ? 'bg-amber-50 text-amber-800 border-amber-300'
+                                : 'bg-blue-50 text-brand-blue border-blue-300'
+                            }`}>
+                              {m.response.commercial_context === 'expansion'
+                                ? '🚀 Expansion'
+                                : m.response.commercial_context === 'renewal'
+                                ? '🔄 Renewal'
+                                : m.response.commercial_context}
+                            </span>
+                          )}
+                          {m.response?.value_scenario && (
+                            <span className="text-[10px] font-mono bg-emerald-100 text-emerald-900 border border-emerald-300 px-2 py-0.5 rounded font-bold">
+                              ARR: {amount(m.response.value_scenario.amount)} IDR
+                            </span>
+                          )}
+                          {diagnosticClaims.some((c) => /no matching|unmatched/i.test(c.text)) && (
+                            <span className="text-[10px] font-mono bg-red-50 text-red-700 border border-red-200 px-1.5 py-0.5 rounded font-medium">
+                              ⚠️ Unmatched CRM
+                            </span>
+                          )}
+                          {diagnosticClaims.some((c) => /no recorded follow-up/i.test(c.text)) && (
+                            <span className="text-[10px] font-mono bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded font-medium">
+                              ⏱️ Follow-up Pending
+                            </span>
+                          )}
+                          {m.response?.plan && (
+                            <span className="text-[10px] font-mono bg-gray-100 text-gray-700 px-2 py-0.5 rounded border border-gray-200">
+                              {m.response.plan.operation.replaceAll('_', ' ')}
+                            </span>
+                          )}
+                        </div>
+                        {m.response?.as_of && (
+                          <span className="text-[10px] font-mono text-brand-subtle">
+                            Snapshot: {m.response.as_of}
+                          </span>
+                        )}
+                      </div>
 
-                  {/* Premise Check Notice (if checking outcome questions) */}
-                  {m.response?.premise_check && (
-                    <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-lg space-y-1.5 text-xs">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-semibold text-amber-900 text-xs">
-                          Question Premise: {words(m.response.premise_check.status)}
-                        </h4>
-                        <span className="text-[10px] font-mono bg-amber-100/80 px-2 py-0.5 rounded text-amber-900 border border-amber-200 font-medium uppercase">
-                          {m.response.premise_check.status}
-                        </span>
-                      </div>
-                      <p className="text-amber-800 leading-relaxed">{m.response.premise_check.coverage}</p>
-                      {m.response.premise_check.clarification && (
-                        <p className="text-amber-800 leading-relaxed">{m.response.premise_check.clarification}</p>
-                      )}
-                      {m.response.premise_check.calculation && (
-                        <pre className="font-mono text-[10px] bg-white/90 p-2.5 rounded border border-amber-200 text-amber-950 overflow-x-auto">
-                          {JSON.stringify(m.response.premise_check.calculation, null, 2)}
-                        </pre>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Requirement Assessments (if present) */}
-                  {m.response?.requirement_assessments && m.response.requirement_assessments.length > 0 && (
-                    <div className="space-y-2 pt-1 border-t border-brand-border">
-                      <div className="text-[11px] font-semibold uppercase tracking-wider text-brand-subtle">
-                        Requirement Assessments
-                      </div>
-                      <div className="space-y-2">
-                        {m.response.requirement_assessments.map((a) => (
-                          <article key={a.id} className="border border-brand-border rounded-lg p-3 bg-white text-xs space-y-1.5 shadow-2xs">
-                            <div className="flex items-center justify-between">
-                              <span className="font-semibold text-brand-text">{a.requirement}</span>
-                              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-200 uppercase font-medium">
-                                {a.status.replaceAll('_', ' ')}
-                              </span>
-                            </div>
-                            <p className="text-brand-subtle text-[11px]">
-                              Fulfillment: {a.fulfillment.status.replaceAll('_', ' ')}. {a.fulfillment.reason}
-                            </p>
-                            {a.missing_details.length > 0 && (
-                              <p className="text-brand-subtle text-[11px]">
-                                Missing: {a.missing_details.join(', ')}
-                              </p>
-                            )}
-                            <div className="pt-0.5">
-                              <Refs ids={a.source_ids} evidence={m.response?.evidence ?? []} open={(id) => setSource(id)} />
-                            </div>
-                          </article>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Grounded Claims & Citations (if present) */}
-                  {m.response?.claims && m.response.claims.length > 0 && (
-                    <div className="space-y-2 pt-1 border-t border-brand-border">
-                      <div className="text-[11px] font-semibold uppercase tracking-wider text-brand-subtle">
-                        Grounded Claims & Verifiable Citations
-                      </div>
-                      <div className="space-y-2">
-                        {m.response.claims.map((claim) => (
-                          <article key={claim.id} className="border border-brand-border rounded-lg p-3 bg-white text-xs space-y-1.5 shadow-2xs">
-                            <div className="flex items-center space-x-2">
-                              <span className="text-[10px] font-mono uppercase bg-blue-50 text-brand-blue border border-blue-200 px-1.5 py-0.5 rounded font-medium">
-                                {claim.kind.replaceAll('_', ' ')}
-                              </span>
-                            </div>
-                            <p className="text-brand-text leading-relaxed font-medium">{claim.text}</p>
-                            {claim.evidence_ids.length > 0 && (
-                              <div className="pt-0.5">
-                                <Refs ids={claim.evidence_ids} evidence={m.response?.evidence ?? []} open={(id) => setSource(id)} />
-                              </div>
-                            )}
-                            {claim.check && (
-                              <details className="text-[11px] text-gray-500 pt-1">
-                                <summary className="cursor-pointer hover:text-brand-text font-medium select-none">
-                                  Scope, calculation or recorded check
-                                </summary>
-                                <pre className="mt-1 font-mono text-[10px] bg-gray-50 p-2 rounded border border-gray-200 overflow-x-auto">
-                                  {JSON.stringify(claim.check, null, 2)}
-                                </pre>
-                              </details>
-                            )}
-                          </article>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Commercial Value Scenario (if present) */}
-                  {m.response?.value_scenario && (
-                    <div className="p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-lg space-y-1.5 text-xs">
-                      <div className="text-[11px] font-semibold uppercase tracking-wider text-emerald-800">
-                        Commercial Scenario
-                      </div>
-                      <div className="text-base font-bold font-mono text-emerald-700">
-                        {amount(m.response.value_scenario.amount)} IDR / year (conditional annual increment)
-                      </div>
-                      <div className="font-mono text-[11px] text-brand-muted">
-                        {m.response.value_scenario.formula}
-                      </div>
-                      <pre className="font-mono text-[10px] bg-white p-2 rounded border border-emerald-100 overflow-x-auto">
-                        {JSON.stringify(m.response.value_scenario.inputs, null, 2)}
-                      </pre>
-                    </div>
-                  )}
-
-                  {/* Follow-up Draft if present */}
-                  {m.response?.draft && (
-                    <div className="p-3.5 bg-gray-50 border border-brand-border rounded-lg space-y-2">
-                      <div className="flex items-center justify-between text-[11px] font-semibold text-brand-text">
-                        <span>Drafted Follow-Up ({m.response.draft.route} route)</span>
-                        <span className="text-[10px] font-mono text-brand-subtle">Review before sending</span>
-                      </div>
-                      <div className="text-[11px] text-brand-muted font-medium">
-                        Subject: {m.response.draft.subject}
-                      </div>
-                      <div className="text-xs text-brand-muted bg-white p-2.5 rounded border border-gray-200 font-mono text-[11px] whitespace-pre-wrap leading-relaxed">
-                        {m.response.draft.body}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Context Relationship Graph (Cytoscape Nodes & Edges) */}
-                  {(m.response?.account_id || currentAccountId) && (
-                    <CopilotGraphViewer
-                      dataset={dataset}
-                      accountId={(m.response?.account_id ?? currentAccountId)!}
-                      openSource={(id) => setSource(id)}
-                    />
-                  )}
-
-                  {/* Cited Evidence Passages */}
-                  {m.response?.evidence && m.response.evidence.length > 0 && (
-                    <details className="border border-brand-border rounded-lg bg-gray-50/50 p-3 space-y-2 text-xs">
-                      <summary className="font-semibold text-brand-text cursor-pointer select-none flex items-center justify-between">
-                        <span className="flex items-center space-x-1.5">
+                      {/* Executive Summary Card */}
+                      <div className="p-3.5 bg-brand-canvas/70 border border-brand-border rounded-lg space-y-1">
+                        <div className="text-[10px] font-semibold uppercase tracking-wider text-brand-subtle flex items-center space-x-1.5">
                           <svg className="w-3.5 h-3.5 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          <span>Cited Evidence Passages ({m.response.evidence.length})</span>
-                        </span>
-                        <span className="text-[10px] font-mono text-brand-subtle font-normal">Click to expand</span>
-                      </summary>
-                      <div className="space-y-2 pt-2">
-                        {m.response.evidence.map((e, idx) => (
-                          <div key={idx} className="p-2.5 bg-white border border-brand-border rounded-md space-y-1">
-                            <div className="flex items-center justify-between text-[11px] font-mono text-brand-blue">
-                              <span>{e.source_external_id ?? e.filename} · {e.field}</span>
-                              <span className="text-gray-400">{e.filename}:{e.locator}</span>
+                          <span>Executive Summary</span>
+                        </div>
+                        <div className="text-brand-text leading-relaxed whitespace-pre-line text-xs font-medium">
+                          {m.text}
+                        </div>
+                      </div>
+
+                      {/* Commercial Value Tile (if present) */}
+                      {m.response?.value_scenario && (
+                        <div className="p-3.5 bg-emerald-50/60 border border-emerald-300 rounded-lg space-y-2 text-xs shadow-2xs">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-900">
+                              <svg className="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <span>Commercial Revenue Scenario</span>
                             </div>
-                            <blockquote className="p-2 bg-gray-50 border-l-2 border-brand-blue text-[11px] font-mono text-gray-700 whitespace-pre-wrap">
-                              {e.passage}
-                            </blockquote>
-                            <div className="pt-1 flex justify-end">
-                              <button
-                                type="button"
-                                onClick={() => setSource(e.source_id)}
-                                className="h-6 px-2.5 text-[10px] font-medium border border-brand-border rounded bg-white hover:bg-gray-100 text-brand-text transition"
-                              >
-                                Open original record
-                              </button>
+                            <span className="text-[10px] font-mono bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded font-semibold">
+                              Conditional Incremental ARR
+                            </span>
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+                            <div className="text-xl font-bold font-mono text-emerald-800">
+                              {amount(m.response.value_scenario.amount)} IDR <span className="text-xs font-normal text-emerald-700">/ year</span>
+                            </div>
+                            <div className="text-[11px] font-mono text-emerald-700 bg-white/90 border border-emerald-200 px-2 py-0.5 rounded">
+                              {m.response.value_scenario.formula}
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    </details>
-                  )}
 
-                  {/* Method Limitations */}
-                  {m.response?.limitations && m.response.limitations.length > 0 && (
-                    <div className="text-[11px] text-brand-subtle border-t border-dashed border-brand-border pt-2 space-y-0.5">
-                      <span className="font-semibold text-gray-500">Method limitations:</span>
-                      <ul className="list-disc list-inside">
-                        {m.response.limitations.map((lim, i) => (
-                          <li key={i}>{lim}</li>
-                        ))}
-                      </ul>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-[11px]">
+                            <div className="p-2 bg-white rounded border border-emerald-200 shadow-2xs">
+                              <span className="text-[10px] text-gray-500 block uppercase font-mono">Additional Outlets</span>
+                              <span className="font-bold font-mono text-brand-text">{m.response.value_scenario.inputs.additional_outlets} Outlets</span>
+                            </div>
+                            <div className="p-2 bg-white rounded border border-emerald-200 shadow-2xs">
+                              <span className="text-[10px] text-gray-500 block uppercase font-mono">Monthly Rate / Outlet</span>
+                              <span className="font-bold font-mono text-brand-text">{amount(m.response.value_scenario.inputs.monthly_rate)} IDR</span>
+                            </div>
+                            <div className="p-2 bg-white rounded border border-emerald-200 shadow-2xs">
+                              <span className="text-[10px] text-gray-500 block uppercase font-mono">Discount Rate</span>
+                              <span className="font-bold font-mono text-brand-text">{m.response.value_scenario.inputs.discount_percent}%</span>
+                            </div>
+                          </div>
+
+                          {m.response.value_scenario.assumptions.length > 0 && (
+                            <div className="text-[10px] text-emerald-900/80 pt-1 space-y-0.5">
+                              <span className="font-semibold uppercase tracking-wider">Assumptions:</span>
+                              <ul className="list-disc list-inside">
+                                {m.response.value_scenario.assumptions.map((a, idx) => (
+                                  <li key={idx}>{a}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Observed Gaps & Diagnostic Checks */}
+                      {diagnosticClaims.length > 0 && (
+                        <div className="border border-brand-border rounded-lg bg-white overflow-hidden shadow-2xs">
+                          <div className="flex items-center justify-between px-3.5 py-2.5 bg-amber-50/50 border-b border-amber-200/80">
+                            <div className="flex items-center space-x-1.5 text-xs font-semibold text-amber-950">
+                              <svg className="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                              </svg>
+                              <span>Observed Gaps & Recorded Constraints</span>
+                            </div>
+                            <span className="text-[10px] font-mono bg-white px-2 py-0.5 rounded border border-amber-200 text-amber-900 font-medium">
+                              {diagnosticClaims.length} items checked
+                            </span>
+                          </div>
+                          <div className="p-3 space-y-2">
+                            {diagnosticClaims.map((claim) => {
+                              const isWarning = /no matching|no recorded|unfulfilled|unmet|mismatch|conflict|cannot/i.test(claim.text);
+                              return (
+                                <div
+                                  key={claim.id}
+                                  className={`p-2.5 rounded-md border text-xs space-y-1.5 ${
+                                    isWarning ? 'bg-amber-50/30 border-amber-200' : 'bg-gray-50/50 border-gray-200'
+                                  }`}
+                                >
+                                  <div className="flex items-start space-x-2">
+                                    <span className={`mt-0.5 shrink-0 ${isWarning ? 'text-amber-600 font-bold' : 'text-blue-500'}`}>
+                                      {isWarning ? '⚠️' : 'ℹ️'}
+                                    </span>
+                                    <div className="flex-1">
+                                      <p className="text-brand-text font-medium leading-relaxed">{claim.text}</p>
+                                    </div>
+                                  </div>
+                                  {claim.evidence_ids.length > 0 && (
+                                    <div className="pl-6 pt-0.5">
+                                      <Refs ids={claim.evidence_ids} evidence={m.response?.evidence ?? []} open={(id) => setSource(id)} />
+                                    </div>
+                                  )}
+                                  {claim.check && (
+                                    <details className="pl-6 text-[10px] text-gray-500">
+                                      <summary className="cursor-pointer hover:text-brand-text font-medium select-none">
+                                        Inspect recorded check criteria
+                                      </summary>
+                                      <pre className="mt-1 font-mono text-[9px] bg-white p-2 rounded border border-gray-200 overflow-x-auto">
+                                        {JSON.stringify(claim.check, null, 2)}
+                                      </pre>
+                                    </details>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Recommended Sales Action Plan */}
+                      {actionClaims.length > 0 && (
+                        <div className="border border-blue-200 rounded-lg bg-white overflow-hidden shadow-2xs">
+                          <div className="flex items-center justify-between px-3.5 py-2.5 bg-blue-50/70 border-b border-blue-200">
+                            <div className="flex items-center space-x-1.5 text-xs font-semibold text-brand-text">
+                              <svg className="w-4 h-4 text-brand-blue shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                              </svg>
+                              <span>Recommended Sales Action Plan</span>
+                            </div>
+                            <CopyButton
+                              text={actionClaims.map((c, i) => `${i + 1}. ${c.text}`).join('\n')}
+                              label="Copy Action Plan"
+                            />
+                          </div>
+                          <div className="p-3 space-y-2">
+                            {actionClaims.map((claim, idx) => (
+                              <div key={claim.id} className="p-3 bg-blue-50/20 border border-blue-100 rounded-md text-xs space-y-1.5">
+                                <div className="flex items-start space-x-2.5">
+                                  <span className="h-5 w-5 rounded-full bg-brand-blue text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                                    {idx + 1}
+                                  </span>
+                                  <div className="flex-1 space-y-1">
+                                    <p className="text-brand-text font-medium leading-relaxed">{claim.text}</p>
+                                    {claim.evidence_ids.length > 0 && (
+                                      <div className="pt-0.5">
+                                        <Refs ids={claim.evidence_ids} evidence={m.response?.evidence ?? []} open={(id) => setSource(id)} />
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Question Premise Notice (if checking outcome questions) */}
+                      {m.response?.premise_check && (
+                        <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-lg space-y-1.5 text-xs">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-semibold text-amber-900 text-xs">
+                              Question Premise: {words(m.response.premise_check.status)}
+                            </h4>
+                            <span className="text-[10px] font-mono bg-amber-100/80 px-2 py-0.5 rounded text-amber-900 border border-amber-200 font-medium uppercase">
+                              {m.response.premise_check.status}
+                            </span>
+                          </div>
+                          <p className="text-amber-800 leading-relaxed">{m.response.premise_check.coverage}</p>
+                          {m.response.premise_check.clarification && (
+                            <p className="text-amber-800 leading-relaxed">{m.response.premise_check.clarification}</p>
+                          )}
+                          {m.response.premise_check.calculation && (
+                            <pre className="font-mono text-[10px] bg-white/90 p-2.5 rounded border border-amber-200 text-amber-950 overflow-x-auto">
+                              {JSON.stringify(m.response.premise_check.calculation, null, 2)}
+                            </pre>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Requirement Assessments (if present) */}
+                      {m.response?.requirement_assessments && m.response.requirement_assessments.length > 0 && (
+                        <div className="space-y-2 pt-1 border-t border-brand-border">
+                          <div className="text-[11px] font-semibold uppercase tracking-wider text-brand-subtle">
+                            Requirement Assessments
+                          </div>
+                          <div className="space-y-2">
+                            {m.response.requirement_assessments.map((a) => (
+                              <article key={a.id} className="border border-brand-border rounded-lg p-3 bg-white text-xs space-y-1.5 shadow-2xs">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-semibold text-brand-text">{a.requirement}</span>
+                                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-200 uppercase font-medium">
+                                    {a.status.replaceAll('_', ' ')}
+                                  </span>
+                                </div>
+                                <p className="text-brand-subtle text-[11px]">
+                                  Fulfillment: {a.fulfillment.status.replaceAll('_', ' ')}. {a.fulfillment.reason}
+                                </p>
+                                {a.missing_details.length > 0 && (
+                                  <p className="text-brand-subtle text-[11px]">
+                                    Missing: {a.missing_details.join(', ')}
+                                  </p>
+                                )}
+                                <div className="pt-0.5">
+                                  <Refs ids={a.source_ids} evidence={m.response?.evidence ?? []} open={(id) => setSource(id)} />
+                                </div>
+                              </article>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Follow-up Draft if present */}
+                      {m.response?.draft && (
+                        <div className="p-3.5 bg-gray-50 border border-brand-border rounded-lg space-y-2.5">
+                          <div className="flex items-center justify-between text-xs">
+                            <div className="flex items-center space-x-1.5 font-semibold text-brand-text">
+                              <svg className="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                              </svg>
+                              <span>Ready-to-Send Follow-Up Draft ({m.response.draft.route} route)</span>
+                            </div>
+                            <CopyButton
+                              text={`Subject: ${m.response.draft.subject}\n\n${m.response.draft.body}`}
+                              label="Copy Draft"
+                            />
+                          </div>
+                          <div className="text-[11px] text-brand-text font-medium bg-white px-3 py-1.5 rounded border border-gray-200">
+                            <span className="text-gray-400 font-mono mr-1.5">Subject:</span> {m.response.draft.subject}
+                          </div>
+                          <div className="text-xs text-brand-muted bg-white p-3 rounded border border-gray-200 font-mono text-[11px] whitespace-pre-wrap leading-relaxed shadow-2xs">
+                            {m.response.draft.body}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Verified Account Context & Stakeholder Facts */}
+                      {factClaims.length > 0 && (
+                        <details className="border border-brand-border rounded-lg bg-gray-50/40 p-3 space-y-2 text-xs">
+                          <summary className="font-semibold text-brand-text cursor-pointer select-none flex items-center justify-between">
+                            <span className="flex items-center space-x-1.5">
+                              <svg className="w-3.5 h-3.5 text-brand-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                              </svg>
+                              <span>Verified Stakeholder & Baseline Context ({factClaims.length})</span>
+                            </span>
+                            <span className="text-[10px] font-mono text-brand-subtle font-normal">Click to toggle</span>
+                          </summary>
+                          <div className="space-y-1.5 pt-2">
+                            {factClaims.map((claim) => (
+                              <div key={claim.id} className="p-2.5 bg-white border border-brand-border rounded text-xs space-y-1">
+                                <div className="flex items-start justify-between gap-2">
+                                  <p className="text-brand-text font-normal leading-relaxed">{claim.text}</p>
+                                  {claim.kind === 'source_quote' && (
+                                    <span className="text-[9px] font-mono px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded shrink-0">
+                                      Direct Quote
+                                    </span>
+                                  )}
+                                </div>
+                                {claim.evidence_ids.length > 0 && (
+                                  <Refs ids={claim.evidence_ids} evidence={m.response?.evidence ?? []} open={(id) => setSource(id)} />
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </details>
+                      )}
+
+                      {/* Context Relationship Graph (Cytoscape Nodes & Edges) */}
+                      {(m.response?.account_id || currentAccountId) && (
+                        <CopilotGraphViewer
+                          dataset={dataset}
+                          accountId={(m.response?.account_id ?? currentAccountId)!}
+                          openSource={(id) => setSource(id)}
+                        />
+                      )}
+
+                      {/* Cited Evidence Passages */}
+                      {m.response?.evidence && m.response.evidence.length > 0 && (
+                        <details className="border border-brand-border rounded-lg bg-gray-50/50 p-3 space-y-2 text-xs">
+                          <summary className="font-semibold text-brand-text cursor-pointer select-none flex items-center justify-between">
+                            <span className="flex items-center space-x-1.5">
+                              <svg className="w-3.5 h-3.5 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              <span>Cited Evidence Passages ({m.response.evidence.length})</span>
+                            </span>
+                            <span className="text-[10px] font-mono text-brand-subtle font-normal">Click to expand</span>
+                          </summary>
+                          <div className="space-y-2 pt-2">
+                            {m.response.evidence.map((e, idx) => (
+                              <div key={idx} className="p-2.5 bg-white border border-brand-border rounded-md space-y-1">
+                                <div className="flex items-center justify-between text-[11px] font-mono text-brand-blue">
+                                  <span>{e.source_external_id ?? e.filename} · {e.field}</span>
+                                  <span className="text-gray-400">{e.filename}:{e.locator}</span>
+                                </div>
+                                <blockquote className="p-2 bg-gray-50 border-l-2 border-brand-blue text-[11px] font-mono text-gray-700 whitespace-pre-wrap">
+                                  {e.passage}
+                                </blockquote>
+                                <div className="pt-1 flex justify-end">
+                                  <button
+                                    type="button"
+                                    onClick={() => setSource(e.source_id)}
+                                    className="h-6 px-2.5 text-[10px] font-medium border border-brand-border rounded bg-white hover:bg-gray-100 text-brand-text transition"
+                                  >
+                                    Open original record
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </details>
+                      )}
+
+                      {/* Method Limitations */}
+                      {m.response?.limitations && m.response.limitations.length > 0 && (
+                        <div className="text-[11px] text-brand-subtle border-t border-dashed border-brand-border pt-2 space-y-0.5">
+                          <span className="font-semibold text-gray-500">Method limitations:</span>
+                          <ul className="list-disc list-inside">
+                            {m.response.limitations.map((lim, i) => (
+                              <li key={i}>{lim}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              )}
+                  );
+                })()}
             </div>
           ))
         )}
