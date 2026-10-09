@@ -1,0 +1,19 @@
+name: kasirnusa-expansion
+services:
+  db:
+    image: postgres:18.1
+    environment:
+      POSTGRES_USER: kasirnusa
+      POSTGRES_PASSWORD: local_dev_only
+      POSTGRES_DB: kasirnusa
+    ports:
+      - "127.0.0.1:54329:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kasirnusa -d kasirnusa"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+volumes:
+  postgres_data:

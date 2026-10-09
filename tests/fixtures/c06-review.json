@@ -1,0 +1,17 @@
+{
+  "review_status": "manually_reviewed_source_expectations",
+  "scope": "C06 only; no generalization evaluation",
+  "dataset_version": "kasirnusa-2026-10-01",
+  "as_of": "2026-10-01",
+  "account_external_id": "C06",
+  "source_external_id": "I0300",
+  "request_date": "2026-08-19",
+  "additional_outlets": 10,
+  "location": "Jakarta",
+  "target_period": "2027-Q2",
+  "annual_increment": "37800000.00",
+  "elapsed_days": 43,
+  "owner_external_id": "E04",
+  "contact_external_id": "K116",
+  "reconciliation_status": "unmatched"
+}

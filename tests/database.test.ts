@@ -1,0 +1,89 @@
+import { randomUUID } from 'node:crypto';
+import { resolve,basename } from 'node:path';
+import { rm,realpath } from 'node:fs/promises';
+import { describe,it,expect,beforeAll,afterAll } from 'vitest';
+import pg from 'pg';
+import request from 'supertest';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { migrate } from 'drizzle-orm/node-postgres/migrator';
+import { eq,count,and } from 'drizzle-orm';
+import { env,projectRoot } from '../apps/api/src/config/env.js';
+import * as s from '../apps/api/src/db/schema/index.js';
+import { importDataset,stableId } from '../apps/api/src/modules/ingestion/service.js';
+import { analyzeDataset } from '../apps/api/src/modules/opportunities/service.js';
+import { inside } from '../apps/api/src/modules/ingestion/manifest.js';
+import { createApp } from '../apps/api/src/app.js';
+import { fixture } from './fixtures/snapshot.js';
+import { cardSchema } from '@kasirnusa/contracts';
+
+// Never migrate/truncate/drop the imported developer database. Only a freshly
+// created random database owned by this test run is eligible for teardown.
+const adminUrl=new URL(env.DATABASE_URL);
+if(!['127.0.0.1','localhost'].includes(adminUrl.hostname))throw new Error('DB tests require a local PostgreSQL server');
+const name=`kasirnusa_test_${randomUUID().replaceAll('-','')}`;
+const admin=new pg.Pool({connectionString:adminUrl.href});
+const testUrl=new URL(adminUrl);testUrl.pathname=`/${name}`;
+const pool=new pg.Pool({connectionString:testUrl.href});
+const db=drizzle(pool,{schema:s});let created=false;
+const paths:string[]=[];
+const make=async(options:Parameters<typeof fixture>[0]={})=>{const f=await fixture(options);paths.push(f.path);return f;};
+const card=async(datasetId:string)=>{const rows=await db.select({card:s.recommendations.card}).from(s.recommendations).innerJoin(s.signals,and(eq(s.recommendations.signalId,s.signals.id),eq(s.recommendations.runId,s.signals.runId))).where(eq(s.recommendations.datasetId,datasetId));return cardSchema.parse(rows[0].card);};
+beforeAll(async()=>{await admin.query(`CREATE DATABASE "${name}"`);created=true;await migrate(db,{migrationsFolder:resolve(projectRoot,'apps/api/src/db/migrations')});});
+afterAll(async()=>{
+  await pool.end();
+  if(created&&/^kasirnusa_test_[a-f0-9]{32}$/.test(name))await admin.query(`DROP DATABASE "${name}"`);
+  await admin.end();
+  const root=await realpath(resolve(projectRoot,env.DATA_ROOT));
+  for(const path of paths){const target=inside(root,await realpath(path));if(!basename(target).startsWith('phase1-test-'))throw new Error('Unsafe fixture cleanup');await rm(target,{recursive:true});}
+});
+describe('disposable migrated PostgreSQL slice',()=>{
+  it('imports idempotently, retains all records and produces one deduplicated card',async()=>{
+    const f=await make({duplicate:true});const result=await importDataset(db,f.manifest);expect(result.status).toBe('ready');
+    expect((await importDataset(db,f.manifest)).reused).toBe(true);
+    const [records]=await db.select({n:count()}).from(s.sourceRecords).where(eq(s.sourceRecords.datasetId,result.dataset_id));expect(records.n).toBe(7);
+    await analyzeDataset(db,result.dataset_id,'2026-09-01');expect((await analyzeDataset(db,result.dataset_id,'2026-09-01')).reused).toBe(true);
+    const c=await card(result.dataset_id);expect(c.value_scenario?.amount).toBe('3150.00');expect(c.reconciliation.status).toBe('unmatched');expect(c.people.contact?.external_id).toBe('K1');expect(c.stakeholder_context[0].authority).toBe('unknown');
+    const [signals]=await db.select({n:count()}).from(s.signals).where(eq(s.signals.datasetId,result.dataset_id));expect(signals.n).toBe(1);
+    const api=createApp(db,new Set([result.dataset_id]));const response=await request(api).get(`/api/opportunities/${c.id}?dataset_id=${result.dataset_id}`);expect(response.status).toBe(200);
+    for(const e of c.evidence){const source=await request(api).get(`/api/sources/${e.source_id}?dataset_id=${result.dataset_id}`);expect(source.status).toBe(200);expect(source.body.locator).toBe(e.locator);}
+    const graph=await request(api).get(`/api/opportunities/${c.id}/evidence?dataset_id=${result.dataset_id}`);expect(graph.status).toBe(200);expect(graph.body.limits.max_hops).toBe(3);expect(graph.body.nodes.length).toBeLessThanOrEqual(50);
+    expect((await request(api).get('/api/accounts?page_size=101')).status).toBe(400);
+    expect((await request(api).get('/api/datasets').set('Origin','https://untrusted.example')).status).toBe(403);
+    expect((await request(api).get('/api/datasets').set('Host','untrusted.example')).status).toBe(403);
+  });
+  it('suppresses missing-deal finding when scoped evidence confirms the same request',async()=>{
+    const f=await make({deal:true});const result=await importDataset(db,f.manifest);await analyzeDataset(db,result.dataset_id,'2026-09-01');
+    const c=await card(result.dataset_id);expect(c.reconciliation.status).toBe('ambiguous');
+    const [deal]=await db.select().from(s.deals).where(eq(s.deals.datasetId,result.dataset_id));const [run]=await db.select().from(s.analysisRuns).where(eq(s.analysisRuns.datasetId,result.dataset_id));
+    const assertionId=randomUUID();await db.insert(s.assertions).values({id:assertionId,datasetId:result.dataset_id,subjectId:c.id,predicate:'MATCHES_DEAL',objectId:deal.id,literal:null,accountId:c.account.id,eventDate:'2026-08-01',speakerId:null,attribution:'reviewed',method:'synthetic-reviewed-fixture',verification:'manually_verified',runId:run.id});
+    const [source]=await db.select().from(s.sourceRecords).where(and(eq(s.sourceRecords.datasetId,result.dataset_id),eq(s.sourceRecords.externalId,'DL1')));
+    await db.insert(s.assertionEvidence).values({datasetId:result.dataset_id,assertionId,sourceId:source.id,field:'request_interaction_id',passage:'I1',relation:'support'});
+    await analyzeDataset(db,result.dataset_id,'2026-09-01');const confirmed=await card(result.dataset_id);
+    expect(confirmed.reconciliation.status).toBe('matched');expect(confirmed.findings.some(f=>f.type==='missing_deal')).toBe(false);
+    expect(confirmed.signal.additional_outlets).toBe(3);
+  });
+  it('quarantines malformed input and blocks missing or unusable full deal scope',async()=>{
+    for(const options of [{malformed:true},{missingDeals:true},{invalidDealHeader:true},{invalidOwner:true}]){
+      const f=await make(options);const result=await importDataset(db,f.manifest);expect(result.status).toBe('incomplete');
+      expect((result.coverage as {deals_complete:boolean}).deals_complete).toBe(false);
+      await expect(analyzeDataset(db,result.dataset_id,'2026-09-01')).rejects.toThrow('ready');
+      const [accounts]=await db.select({n:count()}).from(s.accounts).where(eq(s.accounts.datasetId,result.dataset_id));expect(accounts.n).toBe(0);
+      const [errors]=await db.select({n:count()}).from(s.ingestionErrors).where(eq(s.ingestionErrors.datasetId,result.dataset_id));expect(errors.n).toBeGreaterThan(0);
+      if('malformed' in options&&options.malformed){const [raw]=await db.select().from(s.sourceRecords).where(and(eq(s.sourceRecords.datasetId,result.dataset_id),eq(s.sourceRecords.locator,1),eq(s.sourceRecords.fileId,stableId(result.dataset_id,'file','interactions.jsonl'))));expect(raw.rawText).toContain('{broken');}
+    }
+  });
+  it('returns unknown pricing for conflicting terms and prerequisite route for package changes',async()=>{
+    for(const options of [{conflictingContracts:true},{finiteLimit:true},{inconsistentTerms:true}]){const f=await make(options);const result=await importDataset(db,f.manifest);await analyzeDataset(db,result.dataset_id,'2026-09-01');const c=await card(result.dataset_id);expect(c.value_scenario).toBeNull();if('finiteLimit' in options&&options.finiteLimit)expect(c.next_action.route).toBe('resolve_prerequisite_first');if('inconsistentTerms' in options&&options.inconsistentTerms)expect(c.findings.some(f=>f.type==='commercial_terms_conflict')).toBe(true);}
+  });
+  it('rejects cross-snapshot FKs, wrong entity kinds and unauthorized evidence',async()=>{
+    const a=await importDataset(db,(await make()).manifest);const b=await importDataset(db,(await make({tag:'different snapshot'})).manifest);expect(a.dataset_id).not.toBe(b.dataset_id);await analyzeDataset(db,a.dataset_id,'2026-09-01');const c=await card(a.dataset_id);
+    const foreignAccount=stableId(b.dataset_id,'account','A1');const id=randomUUID();await db.insert(s.entities).values({id,datasetId:a.dataset_id,kind:'contact',externalId:'cross'});
+    await expect(db.insert(s.contacts).values({id,datasetId:a.dataset_id,externalId:'cross',name:'Synthetic',email:'x@example.test',title:'Unknown',accountId:foreignAccount})).rejects.toThrow();
+    const employeeId=stableId(a.dataset_id,'employee','E1');await expect(db.insert(s.accounts).values({id:employeeId,datasetId:a.dataset_id,externalId:'wrong-kind',name:'Synthetic',type:'customer',ownerId:employeeId})).rejects.toThrow();
+    const api=createApp(db,new Set([b.dataset_id]));expect((await request(api).get(`/api/opportunities/${c.id}?dataset_id=${b.dataset_id}`)).status).toBe(404);expect((await request(api).get(`/api/sources/${c.evidence[0].source_id}?dataset_id=${b.dataset_id}`)).status).toBe(404);expect((await request(api).get(`/api/accounts?dataset_id=${a.dataset_id}`)).status).toBe(404);
+  });
+  it('rolls back failed writes in the disposable database',async()=>{
+    const id=randomUUID();await expect(db.transaction(async tx=>{await tx.insert(s.datasets).values({id,version:'rollback',manifestHash:randomUUID(),mappingVersion:'test',asOf:'2026-09-01',status:'staging',coverage:{}});throw new Error('Synthetic failure');})).rejects.toThrow('Synthetic failure');
+    expect(await db.select().from(s.datasets).where(eq(s.datasets.id,id))).toHaveLength(0);
+  });
+});

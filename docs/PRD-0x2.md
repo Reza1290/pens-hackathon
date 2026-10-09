@@ -1,6 +1,6 @@
 # PRD-0x2 — Phase 1: Build the deterministic C06 path
 
-Status: Planned. Dependency: PRD-0x1 source mappings and reviewed evidence.
+Status: Implemented and locally verified, 9 October 2026. Dependency: PRD-0x1 source mappings and reviewed evidence.
 Requirements: FR-01–08; AGENTS.md Sections 15–19.
 
 ## Goal
@@ -34,23 +34,31 @@ repeatable PostgreSQL import, deterministic reconciliation and code calculations
 
 ## Definition of done
 
-- [ ] A fresh setup can migrate and import using documented commands.
-- [ ] Re-importing an identical manifest creates no duplicate entities or signals.
-- [ ] Missing/unusable deal inputs prevent a false unmatched-deal conclusion.
-- [ ] Reviewed C06 evidence produces one card meeting every Section 7 card field;
+- [x] A fresh setup can migrate and import using documented commands.
+- [x] Re-importing an identical manifest creates no duplicate entities or signals.
+- [x] Missing/unusable deal inputs prevent a false unmatched-deal conclusion.
+- [x] Reviewed C06 evidence produces one card meeting every Section 7 card field;
   unknowns remain null/explicit and recommendations remain proposed actions.
-- [ ] A valid matching deal suppresses the absence finding while retaining the request.
-- [ ] Missing-record findings retain scope, criteria, rule version, dataset and as-of.
-- [ ] Every material claim opens its source or deterministic check; synthetic fixtures
+- [x] A valid matching deal suppresses the absence finding while retaining the request.
+- [x] Missing-record findings retain scope, criteria, rule version, dataset and as-of.
+- [x] Every material claim opens its source or deterministic check; synthetic fixtures
   cover matching, ambiguous/missing terms, decimals and snapshot isolation.
-- [ ] Revenue shows quantity × monthly rate × 12 × (1 − discount), assumptions,
+- [x] Revenue shows quantity × monthly rate × 12 × (1 − discount), assumptions,
   currency and annualized basis; elapsed time uses verified snapshot/source dates.
-- [ ] Disposable database tests cover idempotency, cross-snapshot FK rejection,
+- [x] Disposable database tests cover idempotency, cross-snapshot FK rejection,
   rollback/quarantine and evidence resolution without touching imported demo data.
-- [ ] Typecheck, relevant tests and production build pass; shared DoD is recorded.
+- [x] Typecheck, relevant tests and production build pass; shared DoD is recorded.
 
 ## Out of scope
 
 Model interpretation, stakeholder diagnosis release, full workflow UI, Q&A,
 autonomous writes, deployment and optional ML. A shell frontend is sufficient
 here; final workflow acceptance belongs to PRD-0x5.
+
+## Results and handover
+
+See [Phase 1 handover](PHASE-1-HANDOVER.md) for implemented behavior, files,
+actual checks, retained-only domains, limitations and next task. All supplied
+records are retained; a C06 rules candidate resolves evidence and calculates
+conditional value without provider calls. Eleven tests, typecheck, build,
+migration-drift and local HTTP/proxy checks pass. Full MVP delivery remains open.

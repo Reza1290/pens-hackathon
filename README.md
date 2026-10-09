@@ -5,11 +5,85 @@ Product scope and engineering requirements live in [AGENTS.md](AGENTS.md).
 
 ## Current state
 
-The repository has a folder baseplate only. No application, dependencies,
-database schema, importer, model integration, or evaluation is implemented.
-The directories are retained with `.gitkeep` files. Runtime versions, package
-manifests, lockfile, Compose configuration, and environment examples will be
-added and verified during application scaffolding. No runtime commands work yet.
+Phase 0 inspection and Phase 1 deterministic C06 slice are implemented: React/Vite,
+Express/TypeScript, shared Zod DTOs, PostgreSQL/Drizzle migrations, retained-source
+import, analysis, evidence endpoints and a local review UI. Broader interpretation,
+stakeholder diagnosis, the full three-view workflow, drafts and Q&A remain planned.
+This is not a complete MVP. See [Phase 1 handover](docs/PHASE-1-HANDOVER.md).
+
+## Local setup
+
+Use Node **24.20.0** (`.node-version`), npm **11.19.0**, and Docker Desktop with
+Linux containers. Dependencies are exact-pinned with a shared lockfile; Compose
+pins PostgreSQL **18.1**. Run commands from the repository root.
+
+```powershell
+npm ci
+# Optional: customize the ignored server environment before starting services.
+Copy-Item .env.example .env
+docker compose up -d db
+npm run db:migrate
+npm run data:prepare -- --manifest data/manifests/kasirnusa-2026-10-01.json
+npm run data:import -- --manifest data/manifests/kasirnusa-2026-10-01.json
+```
+
+Supplied files must exist under `data/raw/`; they are excluded from Git.
+Preparation creates checksum-verified immutable versioned copies and preserves
+originals. Import prints the internal dataset UUID. For the supplied manifest:
+
+```powershell
+npm run data:analyze -- --dataset 93bb692a-2168-5ef3-a37d-8e929f9b6340 --as-of 2026-10-01
+npm run data:verify -- --dataset 93bb692a-2168-5ef3-a37d-8e929f9b6340 --fixture tests/fixtures/c06-review.json
+npm run dev
+```
+
+Open **http://127.0.0.1:5173**. Vite proxies `/api` to the loopback API at port
+3001 (or configured `API_PORT`). Stop development with Ctrl+C; use
+`docker compose stop db` to stop PostgreSQL while preserving its named volume.
+Use the verified **1 October 2026** snapshot for historical calculations, not today.
+
+## Checks and migrations
+
+```powershell
+npm run typecheck
+npm test
+npm run build
+# After intentional schema edits, review generated SQL before applying it:
+npm run db:generate
+npm run db:migrate
+```
+
+Tests require local PostgreSQL and database-creation privileges. They create a
+random `kasirnusa_test_<uuid>` database, apply committed migrations, use synthetic
+fixtures, and remove only their own database. They never truncate or migrate the
+imported developer database. Production artifacts are in ignored `apps/*/dist`;
+`npm run start -w @kasirnusa/api` starts the built API. Production frontend serving
+and hosting are not configured. The future `eval` command is not implemented.
+
+An esbuild **0.28.2** override resolves observed development-tool advisories;
+clean install, migration generation, tests and builds were checked with it.
+Compatibility references: [Vite](https://vite.dev/guide/),
+[Express 5](https://expressjs.com/en/guide/migrating-5/),
+[Drizzle migrations](https://orm.drizzle.team/docs/drizzle-kit-generate), and
+[PostgreSQL image](https://hub.docker.com/_/postgres).
+
+## API and access boundary
+
+Implemented read endpoints: `/api/health`, `/api/datasets`, `/api/accounts`,
+`/api/accounts/:id`, `/api/opportunities`, `/api/opportunities/:id`,
+`/api/opportunities/:id/evidence`, `/api/sources/:id`. Route IDs are internal UUIDs.
+Data queries accept `dataset_id`; omitted selection resolves a ready authorized
+snapshot. Lists support `page`, `page_size` (maximum 100); accounts accept `q`,
+opportunities accept `account_id`, `kind`, `status`. Evidence paths cap nodes
+and follow fixed paths of at most three hops. Source content comes from SQL,
+never browser-supplied filesystem paths.
+
+The demo trusts the local OS user. API/database bind to loopback; host/origin
+checks reject non-local browser access. `ALLOWED_DATASET_IDS` can restrict ready
+snapshots; empty means all locally imported ready snapshots. Every query enforces
+snapshot isolation. This is not remote authentication or per-user account access.
+Define that boundary before exposing customer data remotely. No upload/admin,
+external-message, CRM-write or provider endpoints exist.
 
 ## Layout
 
@@ -31,15 +105,13 @@ added and verified during application scaffolding. No runtime commands work yet.
 
 ## Source handling
 
-Existing inputs remain under `data/raw/`. The supplied README states a snapshot
-of **1 October 2026**, with operational coverage from 1 October 2025 through
-30 September 2026 and some older deal/decision history. This is documentation
-evidence, not a completed audit of actual dates or completeness.
-
-Phase 0 must inspect actual schemas, verify coverage and source IDs, and plan
-immutable `data/raw/<dataset-version>/` storage before import. The challenge PDF
-was not found in the current file inventory; record that limitation or locate it.
-Keep customer data, generated model artifacts and secrets out of commits.
+Original inputs remain under `data/raw/`; byte-identical copies are under
+`data/raw/kasirnusa-2026-10-01/`. The source README and observed operational ranges
+support the snapshot date; they do not establish external activity completeness.
+Every supplied record is retained before seven core inputs normalize; other
+domains remain staged for later phases. Malformed/unresolved input is reported,
+and unusable required coverage prevents readiness and analysis. The challenge PDF
+is absent. Keep raw records, generated artifacts and secrets out of commits.
 
 ## Development sequence
 
@@ -49,8 +121,8 @@ deliver the three product views, and then add grounded Q&A. Optimization is
 conditional on evaluation. Expansion, renewal and new-sale context stay separate.
 
 See the [development plan](docs/README.md) for phase PRDs, definitions of done,
-acceptance checks and out-of-scope work. Phase 0 source inspection is complete;
-implementation phases remain planned. Run `python scripts/audit_sources.py` to
+acceptance checks and out-of-scope work. Phases 0–1 are locally verified;
+later phases remain planned. Run `python scripts/audit_sources.py` to
 regenerate the checksum manifest and inventory from the original `data/raw/` files
 with Python 3.10 or newer (verified with Python 3.14.7). This standard-library tool
 does not import or change customer records; diagnostics are stored in ignored

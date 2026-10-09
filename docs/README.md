@@ -1,14 +1,14 @@
 # Development plan
 
 Authority: [AGENTS.md](../AGENTS.md), v0.3. Phase 0 source inspection is **completed**;
-Phases 1–6 remain **planned**. The baseplate is folder initialization only. A checkbox is completed
+Phase 1 is **implemented and locally verified**; Phases 2–6 remain **planned**. A checkbox is completed
 only when its supporting validation is recorded. PRD numbering starts at `0x1`
 while implementation phase numbering starts at 0, matching AGENTS.md.
 
 | PRD | Phase | Exit deliverable | Dependency |
 | --- | --- | --- | --- |
 | [PRD-0x1](PRD-0x1.md) | 0: Source verification (completed) | Inventory, mappings, reviewed C06 source path | Baseplate |
-| [PRD-0x2](PRD-0x2.md) | 1: Deterministic evidence path | Runnable workspace, repeatable import, C06 card API | 0x1 |
+| [PRD-0x2](PRD-0x2.md) | 1: Deterministic evidence path (verified) | Runnable workspace, repeatable import, C06 card API | 0x1 |
 | [PRD-0x3](PRD-0x3.md) | 2: Interpretation | Validated rules/provider outputs and evaluation | 0x2 |
 | [PRD-0x4](PRD-0x4.md) | 3: Stakeholder guidance | C01 diagnosis, P01 route, C02 constraints, premise checks | 0x2; automated judgments depend on 0x3 |
 | [PRD-0x5](PRD-0x5.md) | 4: Product workflow | Three views, evidence inspection, editable template drafts | 0x4 |
@@ -51,10 +51,9 @@ and grounded Q&A; C06 alone does not complete it.
 
 ## Current handover
 
-Phase 0 inspection completed on 9 October 2026. See the [PRD-0x1 results](PRD-0x1.md)
-and [source inventory](SOURCE-INVENTORY.md): 15 record sources, 229,627 records,
-confirmed documented 1 October 2026 snapshot, checksums/mappings and manually
-reviewed C06 evidence. A stale C01 champion and six historical-email occurrences
-remain explicit diagnostics. The challenge PDF is absent. Original files remain
-untouched and ignored; SQL import, runtime and model evaluation remain unimplemented.
-Next task: PRD-0x2, using the reviewed sources and limitations.
+See [Phase 1 handover](PHASE-1-HANDOVER.md): runnable workspace, 23-table migration,
+all 229,627 records retained, seven core inputs normalized and one C06 card verified
+against reviewed expectations. A stale C01 champion and six historical-email
+occurrences remain diagnostics. Originals remain untouched and ignored. The missing
+brief, broader interpretation, stakeholder diagnosis and model evaluation are
+explicit gaps. Next task: PRD-0x3; C01/P01 in PRD-0x4 remains mandatory for the MVP.
