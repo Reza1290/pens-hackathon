@@ -49,4 +49,10 @@ deliver the three product views, and then add grounded Q&A. Optimization is
 conditional on evaluation. Expansion, renewal and new-sale context stay separate.
 
 See the [development plan](docs/README.md) for phase PRDs, definitions of done,
-acceptance checks and out-of-scope work. All implementation phases remain planned.
+acceptance checks and out-of-scope work. Phase 0 source inspection is complete;
+implementation phases remain planned. Run `python scripts/audit_sources.py` to
+regenerate the checksum manifest and inventory from the original `data/raw/` files
+with Python 3.10 or newer (verified with Python 3.14.7). This standard-library tool
+does not import or change customer records; diagnostics are stored in ignored
+`data/processed/`. See the [source review](docs/C06-SOURCE-REVIEW.md) and
+[limitations](docs/SOURCE-LIMITATIONS.md) before building the runtime.

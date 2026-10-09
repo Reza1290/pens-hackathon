@@ -1,0 +1,656 @@
+{
+  "schema_version": "source-manifest-v1",
+  "dataset_version": "kasirnusa-2026-10-01",
+  "mapping_version": "phase0-v1",
+  "audit_version": "phase0-audit-v1",
+  "as_of": "2026-10-01",
+  "as_of_source": "README.md: operational period and snapshot bullets",
+  "documented_operational_period": {
+    "start": "2025-10-01",
+    "end": "2026-09-30"
+  },
+  "status": "inspected_not_imported",
+  "raw_layout": "unversioned_originals_preserved",
+  "expected_record_files": [
+    "bugs.csv",
+    "contact_employment_history.csv",
+    "contracts_billing.csv",
+    "crm_accounts.csv",
+    "crm_contacts.csv",
+    "crm_deals.csv",
+    "decision_log.csv",
+    "employees.csv",
+    "feature_usage_monthly.csv",
+    "features.csv",
+    "interactions.jsonl",
+    "outlets.csv",
+    "product_usage_daily.csv",
+    "releases.csv",
+    "support_tickets.csv"
+  ],
+  "missing_record_files": [],
+  "missing_documentation": [
+    "Studi Kasus Hackathon_PESERTA.pdf"
+  ],
+  "files": [
+    {
+      "filename": "bugs.csv",
+      "relative_path": "data/raw/bugs.csv",
+      "sha256": "0b7819d6141d4f4575bbb06e4bedab2d0a65436cba0e4a4a72b59e4a0ec86284",
+      "bytes": 444,
+      "encoding": "UTF-8",
+      "kind": "records",
+      "columns": [
+        "bug_id",
+        "judul",
+        "versi_terdampak",
+        "status",
+        "dibuat",
+        "selesai",
+        "fitur_terkait"
+      ],
+      "records": 4,
+      "physical_lines": 5,
+      "empty_counts": {
+        "bug_id": 0,
+        "judul": 0,
+        "versi_terdampak": 0,
+        "status": 0,
+        "dibuat": 0,
+        "selesai": 2,
+        "fitur_terkait": 0
+      },
+      "duplicate_key_groups": 0,
+      "duplicate_key_extra_records": 0,
+      "exact_duplicate_extra_records": 0,
+      "date_ranges": {
+        "dibuat": {
+          "min": "2025-11-04",
+          "max": "2026-08-21",
+          "after_snapshot": 0
+        },
+        "selesai": {
+          "min": "2025-12-02",
+          "max": "2026-05-20",
+          "after_snapshot": 0
+        }
+      }
+    },
+    {
+      "filename": "contact_employment_history.csv",
+      "relative_path": "data/raw/contact_employment_history.csv",
+      "sha256": "3303f80dd37584d3e7cd144583a35da435b93a3f84f6525e0172a168941910f5",
+      "bytes": 11996,
+      "encoding": "UTF-8",
+      "kind": "records",
+      "columns": [
+        "contact_id",
+        "account_id",
+        "organisasi",
+        "jabatan",
+        "mulai",
+        "selesai"
+      ],
+      "records": 217,
+      "physical_lines": 218,
+      "empty_counts": {
+        "contact_id": 0,
+        "account_id": 55,
+        "organisasi": 0,
+        "jabatan": 0,
+        "mulai": 0,
+        "selesai": 160
+      },
+      "duplicate_key_groups": 0,
+      "duplicate_key_extra_records": 0,
+      "exact_duplicate_extra_records": 0,
+      "date_ranges": {
+        "mulai": {
+          "min": "2012-01-01",
+          "max": "2026-09-01",
+          "after_snapshot": 0
+        },
+        "selesai": {
+          "min": "2013-06-30",
+          "max": "2026-08-15",
+          "after_snapshot": 0
+        }
+      }
+    },
+    {
+      "filename": "contracts_billing.csv",
+      "relative_path": "data/raw/contracts_billing.csv",
+      "sha256": "2c1d3df445c35aabcd04681044345e2aef25b3e7a496db712de9a6f4a986b1c5",
+      "bytes": 2932,
+      "encoding": "UTF-8",
+      "kind": "records",
+      "columns": [
+        "contract_id",
+        "account_id",
+        "paket",
+        "outlet_kontrak",
+        "batas_outlet_paket",
+        "mulai",
+        "tanggal_renewal",
+        "harga_per_outlet_bulan",
+        "diskon_pct",
+        "nilai_tahunan",
+        "keterlambatan_bayar_12bln",
+        "decision_id"
+      ],
+      "records": 40,
+      "physical_lines": 41,
+      "empty_counts": {
+        "contract_id": 0,
+        "account_id": 0,
+        "paket": 0,
+        "outlet_kontrak": 0,
+        "batas_outlet_paket": 0,
+        "mulai": 0,
+        "tanggal_renewal": 0,
+        "harga_per_outlet_bulan": 0,
+        "diskon_pct": 0,
+        "nilai_tahunan": 0,
+        "keterlambatan_bayar_12bln": 0,
+        "decision_id": 39
+      },
+      "duplicate_key_groups": 0,
+      "duplicate_key_extra_records": 0,
+      "exact_duplicate_extra_records": 0,
+      "date_ranges": {
+        "mulai": {
+          "min": "2025-09-08",
+          "max": "2026-09-07",
+          "after_snapshot": 0
+        },
+        "tanggal_renewal": {
+          "min": "2026-11-05",
+          "max": "2027-09-08",
+          "after_snapshot": 40
+        }
+      }
+    },
+    {
+      "filename": "crm_accounts.csv",
+      "relative_path": "data/raw/crm_accounts.csv",
+      "sha256": "3dc0c08341e1ca72611c6e284d2102ce9669d05fbcf4d6ecb147b3221b17e083",
+      "bytes": 3502,
+      "encoding": "UTF-8",
+      "kind": "records",
+      "columns": [
+        "account_id",
+        "nama",
+        "tipe",
+        "industri",
+        "kota",
+        "paket",
+        "jumlah_outlet",
+        "account_owner_id",
+        "champion_contact_id",
+        "nps_terakhir",
+        "health_score_dashboard"
+      ],
+      "records": 45,
+      "physical_lines": 46,
+      "empty_counts": {
+        "account_id": 0,
+        "nama": 0,
+        "tipe": 0,
+        "industri": 0,
+        "kota": 0,
+        "paket": 5,
+        "jumlah_outlet": 0,
+        "account_owner_id": 0,
+        "champion_contact_id": 5,
+        "nps_terakhir": 5,
+        "health_score_dashboard": 5
+      },
+      "duplicate_key_groups": 0,
+      "duplicate_key_extra_records": 0,
+      "exact_duplicate_extra_records": 0,
+      "date_ranges": {}
+    },
+    {
+      "filename": "crm_contacts.csv",
+      "relative_path": "data/raw/crm_contacts.csv",
+      "sha256": "142d9ecf83b682b8bf66732390c256b70cd1be560ea1a9c92b592d763c24228e",
+      "bytes": 10881,
+      "encoding": "UTF-8",
+      "kind": "records",
+      "columns": [
+        "contact_id",
+        "nama",
+        "email",
+        "account_id_saat_ini",
+        "jabatan_saat_ini"
+      ],
+      "records": 160,
+      "physical_lines": 161,
+      "empty_counts": {
+        "contact_id": 0,
+        "nama": 0,
+        "email": 0,
+        "account_id_saat_ini": 0,
+        "jabatan_saat_ini": 0
+      },
+      "duplicate_key_groups": 0,
+      "duplicate_key_extra_records": 0,
+      "exact_duplicate_extra_records": 0,
+      "date_ranges": {}
+    },
+    {
+      "filename": "crm_deals.csv",
+      "relative_path": "data/raw/crm_deals.csv",
+      "sha256": "21d8835a83b2361a9fd0d4104a758bc6c0fdab49988b73805ce9d8b2cc9c0ec1",
+      "bytes": 1829,
+      "encoding": "UTF-8",
+      "kind": "records",
+      "columns": [
+        "deal_id",
+        "account_id",
+        "tipe",
+        "stage",
+        "stage_sejak",
+        "dibuat",
+        "owner_id",
+        "outlet",
+        "nilai_tahunan",
+        "status",
+        "alasan_kalah",
+        "kompetitor"
+      ],
+      "records": 22,
+      "physical_lines": 23,
+      "empty_counts": {
+        "deal_id": 0,
+        "account_id": 0,
+        "tipe": 0,
+        "stage": 0,
+        "stage_sejak": 0,
+        "dibuat": 0,
+        "owner_id": 0,
+        "outlet": 0,
+        "nilai_tahunan": 0,
+        "status": 0,
+        "alasan_kalah": 21,
+        "kompetitor": 19
+      },
+      "duplicate_key_groups": 0,
+      "duplicate_key_extra_records": 0,
+      "exact_duplicate_extra_records": 0,
+      "date_ranges": {
+        "stage_sejak": {
+          "min": "2025-03-14",
+          "max": "2026-09-26",
+          "after_snapshot": 0
+        },
+        "dibuat": {
+          "min": "2025-01-20",
+          "max": "2026-09-26",
+          "after_snapshot": 0
+        }
+      }
+    },
+    {
+      "filename": "decision_log.csv",
+      "relative_path": "data/raw/decision_log.csv",
+      "sha256": "5a707967a82b17bde58bea5f68acfed6cfb7f5b36e49af607cbda78f48e3da17",
+      "bytes": 3294,
+      "encoding": "UTF-8",
+      "kind": "records",
+      "columns": [
+        "decision_id",
+        "tanggal",
+        "tipe",
+        "account_id",
+        "deal_id",
+        "diminta_oleh",
+        "diputuskan_oleh",
+        "keputusan",
+        "nilai",
+        "alasan",
+        "bukti_interaction_id",
+        "fitur_dijanjikan",
+        "status_janji"
+      ],
+      "records": 30,
+      "physical_lines": 31,
+      "empty_counts": {
+        "decision_id": 0,
+        "tanggal": 0,
+        "tipe": 0,
+        "account_id": 0,
+        "deal_id": 27,
+        "diminta_oleh": 0,
+        "diputuskan_oleh": 0,
+        "keputusan": 0,
+        "nilai": 2,
+        "alasan": 0,
+        "bukti_interaction_id": 29,
+        "fitur_dijanjikan": 27,
+        "status_janji": 27
+      },
+      "duplicate_key_groups": 0,
+      "duplicate_key_extra_records": 0,
+      "exact_duplicate_extra_records": 0,
+      "date_ranges": {
+        "tanggal": {
+          "min": "2024-02-12",
+          "max": "2026-09-15",
+          "after_snapshot": 0
+        }
+      }
+    },
+    {
+      "filename": "employees.csv",
+      "relative_path": "data/raw/employees.csv",
+      "sha256": "11796afdfe82395a2ae58b99b6107a60d9b10f34c4bc9f1cbafcc0aa7c2c1b4c",
+      "bytes": 562,
+      "encoding": "UTF-8",
+      "kind": "records",
+      "columns": [
+        "employee_id",
+        "nama",
+        "jabatan",
+        "email"
+      ],
+      "records": 10,
+      "physical_lines": 11,
+      "empty_counts": {
+        "employee_id": 0,
+        "nama": 0,
+        "jabatan": 0,
+        "email": 0
+      },
+      "duplicate_key_groups": 0,
+      "duplicate_key_extra_records": 0,
+      "exact_duplicate_extra_records": 0,
+      "date_ranges": {}
+    },
+    {
+      "filename": "feature_usage_monthly.csv",
+      "relative_path": "data/raw/feature_usage_monthly.csv",
+      "sha256": "c3ed0614ef6b6216902ec1e044715812b3a5abeb81722f98da45945823b0550a",
+      "bytes": 28177,
+      "encoding": "UTF-8",
+      "kind": "records",
+      "columns": [
+        "bulan",
+        "account_id",
+        "feature_id",
+        "pengguna_aktif"
+      ],
+      "records": 1178,
+      "physical_lines": 1179,
+      "empty_counts": {
+        "bulan": 0,
+        "account_id": 0,
+        "feature_id": 0,
+        "pengguna_aktif": 0
+      },
+      "duplicate_key_groups": 0,
+      "duplicate_key_extra_records": 0,
+      "exact_duplicate_extra_records": 0,
+      "date_ranges": {
+        "bulan": {
+          "min": "2025-10",
+          "max": "2026-09",
+          "after_snapshot": 0
+        }
+      }
+    },
+    {
+      "filename": "features.csv",
+      "relative_path": "data/raw/features.csv",
+      "sha256": "d2be61357b455440262ce3ea4ab774c483f14869dd4529c36a7e571f3619de43",
+      "bytes": 561,
+      "encoding": "UTF-8",
+      "kind": "records",
+      "columns": [
+        "feature_id",
+        "nama",
+        "status",
+        "target_awal",
+        "target_terkini",
+        "catatan"
+      ],
+      "records": 8,
+      "physical_lines": 9,
+      "empty_counts": {
+        "feature_id": 0,
+        "nama": 0,
+        "status": 0,
+        "target_awal": 2,
+        "target_terkini": 2,
+        "catatan": 5
+      },
+      "duplicate_key_groups": 0,
+      "duplicate_key_extra_records": 0,
+      "exact_duplicate_extra_records": 0,
+      "date_ranges": {}
+    },
+    {
+      "filename": "interactions.jsonl",
+      "relative_path": "data/raw/interactions.jsonl",
+      "sha256": "62758f9927e748bccbe4ca22876417c0637e4d4beba7056c840f3086cd83bf2d",
+      "bytes": 99517,
+      "encoding": "UTF-8",
+      "kind": "records",
+      "columns": [
+        "interaction_id",
+        "tanggal",
+        "tipe",
+        "account_id",
+        "dari",
+        "ke",
+        "peserta",
+        "subjek",
+        "isi",
+        "membalas_id"
+      ],
+      "records": 350,
+      "physical_lines": 350,
+      "empty_counts": {
+        "interaction_id": 0,
+        "tanggal": 0,
+        "tipe": 0,
+        "account_id": 1,
+        "dari": 0,
+        "ke": 71,
+        "peserta": 279,
+        "subjek": 0,
+        "isi": 0,
+        "membalas_id": 239
+      },
+      "duplicate_key_groups": 0,
+      "duplicate_key_extra_records": 0,
+      "exact_duplicate_extra_records": 0,
+      "date_ranges": {
+        "tanggal": {
+          "min": "2025-10-03",
+          "max": "2026-09-30",
+          "after_snapshot": 0
+        }
+      }
+    },
+    {
+      "filename": "outlets.csv",
+      "relative_path": "data/raw/outlets.csv",
+      "sha256": "29035033b0a8bc955dc81967416bdaf0c2e98f72dd746fc46c8112a1b2a2dbca",
+      "bytes": 16768,
+      "encoding": "UTF-8",
+      "kind": "records",
+      "columns": [
+        "outlet_id",
+        "account_id",
+        "kota",
+        "mode_offline_aktif"
+      ],
+      "records": 620,
+      "physical_lines": 621,
+      "empty_counts": {
+        "outlet_id": 0,
+        "account_id": 0,
+        "kota": 0,
+        "mode_offline_aktif": 0
+      },
+      "duplicate_key_groups": 0,
+      "duplicate_key_extra_records": 0,
+      "exact_duplicate_extra_records": 0,
+      "date_ranges": {}
+    },
+    {
+      "filename": "product_usage_daily.csv",
+      "relative_path": "data/raw/product_usage_daily.csv",
+      "sha256": "0eedc7cf88d119e8a619320660eaee5ff4e3d4f507e8b336d7f964194b5024be",
+      "bytes": 7692306,
+      "encoding": "UTF-8",
+      "kind": "records",
+      "columns": [
+        "tanggal",
+        "outlet_id",
+        "account_id",
+        "versi_aplikasi",
+        "jumlah_transaksi",
+        "transaksi_offline_tersinkron"
+      ],
+      "records": 226300,
+      "physical_lines": 226301,
+      "empty_counts": {
+        "tanggal": 0,
+        "outlet_id": 0,
+        "account_id": 0,
+        "versi_aplikasi": 0,
+        "jumlah_transaksi": 0,
+        "transaksi_offline_tersinkron": 215350
+      },
+      "duplicate_key_groups": 0,
+      "duplicate_key_extra_records": 0,
+      "exact_duplicate_extra_records": 0,
+      "date_ranges": {
+        "tanggal": {
+          "min": "2025-10-01",
+          "max": "2026-09-30",
+          "after_snapshot": 0
+        }
+      }
+    },
+    {
+      "filename": "README.md",
+      "relative_path": "data/raw/README.md",
+      "sha256": "96b0f5154f86f9f8dd50b3140c4713548ba506b6980b457970b64c4ee4db9116",
+      "bytes": 5326,
+      "encoding": "UTF-8",
+      "kind": "documentation"
+    },
+    {
+      "filename": "releases.csv",
+      "relative_path": "data/raw/releases.csv",
+      "sha256": "ecffd9f446979f16ed738de17901db8d4c958c5bee6c2c65ecb3062be137cbdb",
+      "bytes": 72,
+      "encoding": "UTF-8",
+      "kind": "records",
+      "columns": [
+        "versi",
+        "tanggal_rilis"
+      ],
+      "records": 3,
+      "physical_lines": 4,
+      "empty_counts": {
+        "versi": 0,
+        "tanggal_rilis": 0
+      },
+      "duplicate_key_groups": 0,
+      "duplicate_key_extra_records": 0,
+      "exact_duplicate_extra_records": 0,
+      "date_ranges": {
+        "tanggal_rilis": {
+          "min": "2025-09-15",
+          "max": "2026-06-29",
+          "after_snapshot": 0
+        }
+      }
+    },
+    {
+      "filename": "support_tickets.csv",
+      "relative_path": "data/raw/support_tickets.csv",
+      "sha256": "047b143e99b564d37e00f90115bece6e34b799708bcc8ce528a73d111637ed99",
+      "bytes": 75875,
+      "encoding": "UTF-8",
+      "kind": "records",
+      "columns": [
+        "ticket_id",
+        "dibuat",
+        "account_id",
+        "outlet_id",
+        "pelapor_contact_id",
+        "kategori",
+        "prioritas",
+        "status",
+        "versi_aplikasi",
+        "judul",
+        "deskripsi",
+        "bug_id",
+        "diselesaikan"
+      ],
+      "records": 640,
+      "physical_lines": 641,
+      "empty_counts": {
+        "ticket_id": 0,
+        "dibuat": 0,
+        "account_id": 0,
+        "outlet_id": 3,
+        "pelapor_contact_id": 614,
+        "kategori": 0,
+        "prioritas": 0,
+        "status": 0,
+        "versi_aplikasi": 0,
+        "judul": 0,
+        "deskripsi": 0,
+        "bug_id": 624,
+        "diselesaikan": 36
+      },
+      "duplicate_key_groups": 0,
+      "duplicate_key_extra_records": 0,
+      "exact_duplicate_extra_records": 0,
+      "date_ranges": {
+        "dibuat": {
+          "min": "2025-10-01",
+          "max": "2026-09-30",
+          "after_snapshot": 0
+        },
+        "diselesaikan": {
+          "min": "2025-10-03",
+          "max": "2026-09-26",
+          "after_snapshot": 0
+        }
+      }
+    }
+  ],
+  "issue_summary": [
+    {
+      "file": "crm_accounts.csv",
+      "field": "champion_contact_id",
+      "code": "current_champion_account_mismatch",
+      "count": 1
+    },
+    {
+      "file": "interactions.jsonl",
+      "field": "dari",
+      "code": "unresolved_email",
+      "count": 4
+    },
+    {
+      "file": "interactions.jsonl",
+      "field": "ke",
+      "code": "unresolved_email",
+      "count": 2
+    }
+  ],
+  "limitations": [
+    "Aggregate audit does not prove external activity completeness.",
+    "Email/event-date employment matching and case interpretation require manual review.",
+    "Forecasts and renewal dates after snapshot are not observed future events."
+  ],
+  "content_manifest_sha256": "e490346561725c7aa99ef104e2800fb61d2683b569baf29e88d2cbc07cd3b671"
+}

@@ -1,13 +1,13 @@
 # Development plan
 
-Authority: [AGENTS.md](../AGENTS.md), v0.3. All phases below are **planned**;
-the committed baseplate is folder initialization only. A checkbox is completed
+Authority: [AGENTS.md](../AGENTS.md), v0.3. Phase 0 source inspection is **completed**;
+Phases 1–6 remain **planned**. The baseplate is folder initialization only. A checkbox is completed
 only when its supporting validation is recorded. PRD numbering starts at `0x1`
 while implementation phase numbering starts at 0, matching AGENTS.md.
 
 | PRD | Phase | Exit deliverable | Dependency |
 | --- | --- | --- | --- |
-| [PRD-0x1](PRD-0x1.md) | 0: Source verification | Inventory, mappings, reviewed C06 source path | Baseplate |
+| [PRD-0x1](PRD-0x1.md) | 0: Source verification (completed) | Inventory, mappings, reviewed C06 source path | Baseplate |
 | [PRD-0x2](PRD-0x2.md) | 1: Deterministic evidence path | Runnable workspace, repeatable import, C06 card API | 0x1 |
 | [PRD-0x3](PRD-0x3.md) | 2: Interpretation | Validated rules/provider outputs and evaluation | 0x2 |
 | [PRD-0x4](PRD-0x4.md) | 3: Stakeholder guidance | C01 diagnosis, P01 route, C02 constraints, premise checks | 0x2; automated judgments depend on 0x3 |
@@ -51,10 +51,10 @@ and grounded Q&A; C06 alone does not complete it.
 
 ## Current handover
 
-Initialized the Section 15 folder layout with placeholders and Git ignore rules.
-Read AGENTS.md and the dataset README. The latter states a 1 October 2026
-snapshot; actual coverage, schema integrity and case evidence remain unverified.
-Existing raw inputs were left in place. The challenge PDF was not found in the
-file inventory. No runtime dependencies, schema, data import or evaluation exist.
-Next task: execute PRD-0x1, without claiming the existing case expectations are
-already verified.
+Phase 0 inspection completed on 9 October 2026. See the [PRD-0x1 results](PRD-0x1.md)
+and [source inventory](SOURCE-INVENTORY.md): 15 record sources, 229,627 records,
+confirmed documented 1 October 2026 snapshot, checksums/mappings and manually
+reviewed C06 evidence. A stale C01 champion and six historical-email occurrences
+remain explicit diagnostics. The challenge PDF is absent. Original files remain
+untouched and ignored; SQL import, runtime and model evaluation remain unimplemented.
+Next task: PRD-0x2, using the reviewed sources and limitations.
