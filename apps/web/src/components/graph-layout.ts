@@ -14,9 +14,9 @@ export function organicLayout(animate: boolean): CoseLayoutOptions {
     name: 'cose', randomize: false, animate,
     animationThreshold: 0, refresh: 16,
     fit: true, padding: 45, nodeDimensionsIncludeLabels: true,
-    nodeRepulsion: () => 24000, nodeOverlap: 24,
-    idealEdgeLength: () => 135, edgeElasticity: () => 100,
-    componentSpacing: 110, gravity: .18, numIter: 1200,
+    nodeRepulsion: () => 9000, nodeOverlap: 24,
+    idealEdgeLength: () => 60, edgeElasticity: () => 32,
+    componentSpacing: 80, gravity: .8, numIter: 1200,
     initialTemp: 200, coolingFactor: .97, minTemp: .5,
   };
 }

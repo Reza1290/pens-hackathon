@@ -421,7 +421,7 @@ export function App() {
             </div>
 
             {/* Users */}
-            <Link
+            {/* <Link
               to={scoped('/users', selected)}
               className={`w-full h-9 flex items-center justify-between px-2.5 rounded-md transition text-left text-xs ${
                 location.pathname === '/users'
@@ -437,8 +437,8 @@ export function App() {
                 </span>
                 <span>Users</span>
               </span>
-              <span className="text-[10px] font-mono text-gray-400">4 seats</span>
-            </Link>
+              <span className="text-[10px] font-mono text-gray-400"></span>
+            </Link> */}
 
             {/* Settings Menu Item */}  
             <Link
