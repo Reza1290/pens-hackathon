@@ -1,4 +1,5 @@
-import { test,expect,type APIRequestContext } from '@playwright/test';
+import { test } from './browser-session';
+import { expect,type APIRequestContext } from '@playwright/test';
 // Read-only journeys against the locally imported, source-verified snapshot.
 // These tests do not import customer data, send messages or change the database.
 async function context(request:APIRequestContext){

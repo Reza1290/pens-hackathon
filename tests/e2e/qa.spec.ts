@@ -1,4 +1,5 @@
-import { test,expect } from '@playwright/test';
+import { test } from './browser-session';
+import { expect } from '@playwright/test';
 test('C01 decline question returns premise plus actionable sourced diagnosis',async({page,request})=>{
   const {items}=await (await request.get('/api/datasets')).json();const dataset=items.find((d:{version:string})=>d.version==='kasirnusa-2026-10-01');
   expect(dataset).toBeTruthy();const accounts=await (await request.get('/api/accounts?dataset_id='+dataset.id+'&page_size=100')).json();const account=accounts.items.find((a:{externalId:string})=>a.externalId==='C01');
