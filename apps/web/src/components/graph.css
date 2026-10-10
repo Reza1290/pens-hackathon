@@ -7,6 +7,9 @@
 .graph-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; background: #fafaf9; border-bottom: 1px solid #e5e7eb; }
 .graph-toolbar > span { font: 9px ui-monospace, monospace; color: #73777e; letter-spacing: 1px; }
 .graph-toolbar > div { display: flex; gap: 5px; }
+.graph-toolbar { flex-wrap: wrap; }
+.graph-gesture-hint { margin: 0; padding: 9px 18px; font-size: 10px; color: #73777e; border-top: 1px solid #e5e7eb; background: #fafaf9; }
+.graph-canvas { cursor: grab; }.graph-canvas:active { cursor: grabbing; }
 .graph-toolbar button, .graph-source { border: 1px solid #d9dce0; background: #fff; border-radius: var(--radius-control); padding: 5px 9px; font-size: 11px; cursor: pointer; color: #4c5159; }
 .graph-toolbar button { min-width: 29px; min-height: 29px; }
 .graph-toolbar button:hover, .graph-source:hover { background: #fff4e8; border-color: #f48120; }

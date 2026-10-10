@@ -249,7 +249,7 @@ export function createApp(db:Database,allowlist=allowedDatasets,qaOptions?:{runt
   const webDist = resolve(projectRoot, 'apps/web/dist');
   if (existsSync(webDist)) {
     app.use(express.static(webDist));
-    app.get('*', (req, res, next) => {
+    app.get(/.*/, (req, res, next) => {
       if (req.path.startsWith('/api')) return next();
       res.sendFile(resolve(webDist, 'index.html'));
     });
