@@ -173,19 +173,30 @@ export function App() {
         {/* Header Left: Exactly aligns with 272px sidebar on desktop */}
         <div className="w-auto md:w-[272px] h-full md:border-r border-brand-border flex items-center justify-between px-3 md:px-3.5 shrink-0 bg-white">
           <div className="flex items-center space-x-2.5 min-w-0 flex-1">
-            {/* Brand Logo: KasirNusa Triangle */}
+            {/* Brand Logo: KasirNusa Vector Logo */}
             <Link
               to={scoped('/', selected)}
-              className="flex items-center text-brand-orange hover:opacity-90 transition shrink-0"
+              className="flex items-center text-gray-900 hover:text-black transition shrink-0"
               title="KasirNusa Expansion Workbench"
+              aria-label="KasirNusa home"
             >
-              <svg className="w-5.5 h-5.5 text-brand-orange shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2L2 19.5h20L12 2zm0 4.2l6.5 11.3H5.5L12 6.2z" />
+              <svg className="w-6 h-6 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="3" width="20" height="13" rx="2" />
+                <line x1="8" y1="21" x2="16" y2="21" />
+                <line x1="12" y1="16" x2="12" y2="21" />
+                <path d="M6 7h4M6 10h2.5" strokeWidth="1.4" />
+                <rect x="14.5" y="6.5" width="3.5" height="3.5" rx="0.75" fill="currentColor" stroke="none" />
               </svg>
-            </Link>            {/* TOP LEFT SWITCH ACCOUNT: Single Source of Truth for Customer Account Scope */}
+            </Link>
+
+            {/* TOP LEFT SWITCH ACCOUNT: Single Source of Truth for Customer Account Scope */}
             <div className="relative flex-1 min-w-0">
-              <div className="h-9 flex items-center space-x-2 text-xs text-brand-text bg-gray-50/80 border border-brand-border hover:border-gray-400 px-3 py-1.5 rounded-md transition min-w-0 shadow-2xs">
-                <span className="font-semibold text-[12px] tracking-tight text-gray-800 truncate">
+              <div className="h-9 flex items-center space-x-2 text-xs text-brand-text bg-gray-50/80 border border-brand-border hover:border-gray-400 px-2.5 py-1.5 rounded-md transition min-w-0 shadow-2xs">
+                {/* Account / Store Vector Icon */}
+                <svg className="w-3.5 h-3.5 text-gray-500 shrink-0 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.75" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                <span className="font-semibold text-[12px] tracking-tight text-gray-800 truncate flex-1 min-w-0">
                   {activeAccount ? `${activeAccount.externalId} · ${activeAccount.name}` : 'All Accounts (Global)'}
                 </span>
                 <svg className="w-3.5 h-3.5 text-gray-400 shrink-0 ml-auto pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
