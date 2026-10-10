@@ -181,11 +181,11 @@ export function App() {
               aria-label="KasirNusa home"
             >
               <svg className="w-6 h-6 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="3" width="20" height="13" rx="2" />
+                {/* <rect x="2" y="3" width="20" height="13" rx="2" />
                 <line x1="8" y1="21" x2="16" y2="21" />
                 <line x1="12" y1="16" x2="12" y2="21" />
                 <path d="M6 7h4M6 10h2.5" strokeWidth="1.4" />
-                <rect x="14.5" y="6.5" width="3.5" height="3.5" rx="0.75" fill="currentColor" stroke="none" />
+                <rect x="14.5" y="6.5" width="3.5" height="3.5" rx="0.75" fill="currentColor" stroke="none" /> */}
               </svg>
             </Link>
 
@@ -451,6 +451,25 @@ export function App() {
               <span className="text-[10px] font-mono text-gray-400"></span>
             </Link> */}
 
+            {/* About / Architecture Menu Item */}
+            <Link
+              to={scoped('/about', selected)}
+              className={`w-full h-9 flex items-center justify-between px-2.5 rounded-md transition text-left text-xs ${
+                location.pathname === '/about'
+                  ? 'bg-gray-200/70 text-brand-text font-medium'
+                  : 'text-brand-muted hover:text-brand-text hover:bg-gray-100'
+              }`}
+            >
+              <span className="flex items-center">
+                <span className="w-4 h-4 flex items-center justify-center shrink-0 mr-2.5">
+                  <svg className="w-4 h-4 text-brand-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </span>
+                <span>About & Architecture</span>
+              </span>
+            </Link>
+
             {/* Settings Menu Item */}  
             <Link
               to={scoped('/settings', selected)}
@@ -505,6 +524,7 @@ export function App() {
                   }
                 />
                 <Route path="/users" element={<UsersView currentUser={currentUser} />} />
+                <Route path="/about" element={<AboutView selected={selected} />} />
                 <Route path="/settings" element={<SettingsView selected={selected} datasets={datasets} />} />
                 <Route
                   path="/:kind/:id"
@@ -1572,6 +1592,144 @@ function UsersView({
   );
 }
 
+// ================= SYSTEM ARCHITECTURE & OVERVIEW =================
+function SystemOverviewSection() {
+  return (
+    <div className="space-y-4">
+      <div className="border border-brand-border rounded-lg bg-white p-5 space-y-4 shadow-2xs">
+        <div className="pb-3 border-b border-brand-border flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-brand-text">About KasirNusa Account Expansion Assistant</h2>
+            <p className="text-xs text-brand-subtle mt-0.5">
+              Core architecture: AI Deep Scan, Relational Context Graph, Snapshot Governance, and Hybrid LLM + Jev AI.
+            </p>
+          </div>
+          <span className="text-[10px] font-mono bg-gray-100 text-gray-700 px-2 py-0.5 rounded border border-gray-200 uppercase tracking-wider">
+            Architecture Guide
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* 1. What AI Deep Scan is for */}
+          <div className="border border-brand-border rounded-lg p-4 bg-gray-50/40 hover:bg-white transition space-y-2.5">
+            <div className="flex items-center space-x-2.5">
+              <div className="w-7 h-7 rounded-md bg-gray-900 text-white flex items-center justify-center shrink-0">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-xs font-semibold text-brand-text">What AI Deep Scan is for</h3>
+                <span className="text-[10px] font-mono text-gray-500 uppercase tracking-tight">Signal Discovery · Unrecorded Opportunities</span>
+              </div>
+            </div>
+            <p className="text-xs text-brand-subtle leading-relaxed">
+              Account managers frequently lose track of high-value expansion requests buried across emails, meeting notes, and support tickets (<code className="text-[11px] font-mono text-gray-700">interactions.jsonl</code>) that were never logged into the CRM.
+            </p>
+            <ul className="text-xs text-brand-text space-y-1.5 list-disc list-inside">
+              <li><strong className="font-medium text-gray-900">Unrecorded buying signals:</strong> Discovers explicit requests (e.g. C06 requesting 10 Jakarta outlets) absent from CRM deals.</li>
+              <li><strong className="font-medium text-gray-900">Follow-through diagnosis:</strong> Detects when a customer request received only a generic acknowledgement without a substantive quote.</li>
+              <li><strong className="font-medium text-gray-900">Response aging:</strong> Flags overdue pending requests (e.g. 43 days pending) to prompt timely sales action.</li>
+            </ul>
+          </div>
+
+          {/* 2. How Context Graph is used for Proposed Action */}
+          <div className="border border-brand-border rounded-lg p-4 bg-gray-50/40 hover:bg-white transition space-y-2.5">
+            <div className="flex items-center space-x-2.5">
+              <div className="w-7 h-7 rounded-md bg-gray-900 text-white flex items-center justify-center shrink-0">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-xs font-semibold text-brand-text">How Context Graph drives Proposed Action</h3>
+                <span className="text-[10px] font-mono text-gray-500 uppercase tracking-tight">Relational Graph · Provenance-Backed Guidance</span>
+              </div>
+            </div>
+            <p className="text-xs text-brand-subtle leading-relaxed">
+              Connects 6+ data sources (<code className="text-[11px] font-mono text-gray-700">interactions</code>, <code className="text-[11px] font-mono text-gray-700">crm_accounts</code>, <code className="text-[11px] font-mono text-gray-700">contracts_billing</code>, <code className="text-[11px] font-mono text-gray-700">employees</code>, <code className="text-[11px] font-mono text-gray-700">crm_contacts</code>, <code className="text-[11px] font-mono text-gray-700">decision_log</code>) into an evidence-backed network in PostgreSQL.
+            </p>
+            <ul className="text-xs text-brand-text space-y-1.5 list-disc list-inside">
+              <li><strong className="font-medium text-gray-900">Proposed Action node:</strong> Connects signal intent to actionable tasks (<code className="text-[11px] font-mono text-gray-700">SUGGESTS_ACTION</code>) assigned to the AM (<code className="text-[11px] font-mono text-gray-700">ASSIGNED_TO</code>).</li>
+              <li><strong className="font-medium text-gray-900">Stakeholder routing:</strong> Identifies whether to engage the decision-maker directly (<code className="text-[11px] font-mono text-gray-700">ENGAGES</code>) or prepare a business case via an operational champion.</li>
+              <li><strong className="font-medium text-gray-900">Audit trail:</strong> Every edge links to source locators and verified SHA-256 hashes for transparent verification.</li>
+            </ul>
+          </div>
+
+          {/* 3. What Snapshot is for */}
+          <div className="border border-brand-border rounded-lg p-4 bg-gray-50/40 hover:bg-white transition space-y-2.5">
+            <div className="flex items-center space-x-2.5">
+              <div className="w-7 h-7 rounded-md bg-gray-900 text-white flex items-center justify-center shrink-0">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-xs font-semibold text-brand-text">What Snapshot is for</h3>
+                <span className="text-[10px] font-mono text-gray-500 uppercase tracking-tight">Time-Travel Isolation · Auditable Governance</span>
+              </div>
+            </div>
+            <p className="text-xs text-brand-subtle leading-relaxed">
+              Enterprise revenue governance requires auditable, reproducible analysis without timeline distortion or look-ahead data leakage.
+            </p>
+            <ul className="text-xs text-brand-text space-y-1.5 list-disc list-inside">
+              <li><strong className="font-medium text-gray-900">Fixed temporal cutoff:</strong> Freezes analysis as-of an immutable date (e.g. <code className="text-[11px] font-mono text-gray-700">2026-10-01</code>), ensuring identical results across runs.</li>
+              <li><strong className="font-medium text-gray-900">Zero timeline leakage:</strong> Elapsed days, renewal risk, and stage timing are calculated strictly relative to the cutoff date, not workstation clocks.</li>
+              <li><strong className="font-medium text-gray-900">Repeatable governance:</strong> Allows uploading, switching, and comparing dataset versions with complete isolation.</li>
+            </ul>
+          </div>
+
+          {/* 4. How our LLM & Jev AI work */}
+          <div className="border border-brand-border rounded-lg p-4 bg-gray-50/40 hover:bg-white transition space-y-2.5">
+            <div className="flex items-center space-x-2.5">
+              <div className="w-7 h-7 rounded-md bg-gray-900 text-white flex items-center justify-center shrink-0">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-xs font-semibold text-brand-text">How our LLM and Jev AI work</h3>
+                <span className="text-[10px] font-mono text-gray-500 uppercase tracking-tight">Dual-Engine · Bounded Judgments & Grounded Generation</span>
+              </div>
+            </div>
+            <p className="text-xs text-brand-subtle leading-relaxed">
+              We separate bounded classification from generative synthesis to eliminate arithmetic hallucinations and unverified claims.
+            </p>
+            <ul className="text-xs text-brand-text space-y-1.5 list-disc list-inside">
+              <li><strong className="font-medium text-gray-900">Deterministic code:</strong> All financial arithmetic (ARR, monthly rates, discounts) and elapsed times are computed strictly in code and SQL, never by LLMs.</li>
+              <li><strong className="font-medium text-gray-900">TypeSafe Jev AI:</strong> System-One bounded judgments evaluate buying intent, prerequisite fulfillment (<code className="text-[11px] font-mono text-gray-700">addressed</code> / <code className="text-[11px] font-mono text-gray-700">not_addressed</code>), and authority.</li>
+              <li><strong className="font-medium text-gray-900">Generative LLM (DeepSeek / Gemini):</strong> Grounded Q&A over retrieved evidence and personalized follow-up drafts, with instant fallback to deterministic templates.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AboutView({ selected }: { selected: string }) {
+  return (
+    <section className="space-y-6 max-w-5xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-brand-border">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight text-brand-text">About & Architecture</h1>
+          <p className="text-xs text-brand-subtle mt-0.5">
+            Technical foundations and core AI engines of KasirNusa Account Expansion Assistant.
+          </p>
+        </div>
+        <Link
+          to={scoped('/settings', selected)}
+          className="text-xs font-medium text-brand-subtle hover:text-brand-text border border-brand-border px-3 py-1.5 rounded-md hover:bg-gray-50 transition"
+        >
+          Manage Snapshots in Settings →
+        </Link>
+      </div>
+
+      <SystemOverviewSection />
+    </section>
+  );
+}
+
 // ================= VIEW: SYSTEM & USER SETTINGS =================
 function SettingsView({
   selected,
@@ -1626,6 +1784,9 @@ function SettingsView({
           </p>
         </div>
       </div>
+
+      {/* System Architecture & Overview */}
+      <SystemOverviewSection />
 
       {/* Snapshot Settings Card */}
       <div className="bg-white border border-brand-border rounded-lg p-5 space-y-4 shadow-2xs">
@@ -1762,7 +1923,7 @@ function Opportunities({ dataset, onOpenScan }: { dataset: string; onOpenScan: (
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-brand-text">Dashboard</h1>
           <p className="text-xs text-brand-subtle mt-0.5">
-            Daftar peluang ekspansi, estimasi nilai, dan langkah tindak lanjut terverifikasi.
+            Expansion opportunities, estimated value, and verified next steps.
           </p>
         </div>
         <div className="flex items-center space-x-2 shrink-0">
@@ -1779,11 +1940,11 @@ function Opportunities({ dataset, onOpenScan }: { dataset: string; onOpenScan: (
         </div>
       </div>
 
-      {/* Summary Metrics: 3 Mandatory Deliverables */}
+      {/* Summary Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Metric 1: Peluang Ekspansi */}
+        {/* Metric 1: Expansion Opportunities */}
         <div className="border border-brand-border rounded-lg p-4 bg-white shadow-2xs">
-          <span className="text-xs text-brand-subtle font-medium">Peluang Ekspansi</span>
+          <span className="text-xs text-brand-subtle font-medium">Expansion Opportunities</span>
           <div className="mt-2 flex items-baseline space-x-2">
             <span className="text-2xl font-bold text-brand-text">
               {activeCount}
@@ -1791,28 +1952,25 @@ function Opportunities({ dataset, onOpenScan }: { dataset: string; onOpenScan: (
           </div>
         </div>
 
-        {/* Metric 2: Possible Revenue (Estimasi Nilai) */}
+        {/* Metric 2: Potential Revenue */}
         <div className="border border-brand-border rounded-lg p-4 bg-white shadow-2xs">
-          <span className="text-xs font-medium">Possible Revenue (Estimasi Nilai)</span>
+          <span className="text-xs text-brand-subtle font-medium">Potential Revenue</span>
           <div className="mt-2 flex items-baseline space-x-2">
-            <span className="text-2xl font-bold">
-              Rp {new Intl.NumberFormat('id-ID').format(totalPossibleRevenue)}
+            <span className="text-2xl font-bold text-brand-text">
+              IDR {new Intl.NumberFormat('id-ID').format(totalPossibleRevenue)}
             </span>
-            <span className="text-xs">/ thn</span>
+            <span className="text-xs text-brand-subtle">/ yr</span>
           </div>
-          
         </div>
 
-        {/* Metric 3: Langkah Tindak Lanjut */}
+        {/* Metric 3: Next Actions */}
         <div className="border border-brand-border rounded-lg p-4 bg-white shadow-2xs">
-          <span className="text-xs font-medium">Langkah Tindak Lanjut</span>
+          <span className="text-xs text-brand-subtle font-medium">Next Actions</span>
           <div className="mt-2 flex items-baseline space-x-2">
             <span className="text-2xl font-bold text-brand-text">
               {actionCount}
             </span>
-            <span className="text-xs"></span>
           </div>
-          
         </div>
       </div>
 
@@ -1892,9 +2050,9 @@ function Opportunities({ dataset, onOpenScan }: { dataset: string; onOpenScan: (
             <thead className="bg-brand-canvas border-b border-brand-border text-brand-subtle font-medium">
               <tr>
                 <th className="py-2.5 px-4 font-medium text-gray-500">Account</th>
-                <th className="py-2.5 px-4 font-medium text-gray-500">Estimate Revenue</th>
-                <th className="py-2.5 px-4 font-medium text-gray-500">Langkah Tindak Lanjut</th>
-                <th className="py-2.5 px-4 text-right font-medium text-gray-500 w-16">Aksi</th>
+                <th className="py-2.5 px-4 font-medium text-gray-500">Estimated Revenue</th>
+                <th className="py-2.5 px-4 font-medium text-gray-500">Next Steps</th>
+                <th className="py-2.5 px-4 text-right font-medium text-gray-500 w-16">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-brand-border text-brand-text">
@@ -1915,25 +2073,25 @@ function Opportunities({ dataset, onOpenScan }: { dataset: string; onOpenScan: (
                       </Link>
                     </td>
 
-                    {/* Estimate Revenue: flat, uniform font */}
+                    {/* Estimated Revenue: flat, uniform font */}
                     <td className="py-3 px-4 text-gray-700">
                       {card.value_scenario ? (
                         <span>
-                          Rp {amount(card.value_scenario.amount)}
+                          IDR {amount(card.value_scenario.amount)}
                         </span>
                       ) : (
                         <span className="text-gray-500">
-                          Perlu penyesuaian paket
+                          New terms required
                         </span>
                       )}
                     </td>
 
-                    {/* Langkah Tindak Lanjut: flat number, uniform font */}
+                    {/* Next Steps: flat number, uniform font */}
                     <td className="py-3 px-4 text-gray-700">
                       {stepsCount}
                     </td>
 
-                    {/* Aksi: eye icon only */}
+                    {/* Action: eye icon */}
                     <td className="py-3 px-4 text-right">
                       <Link
                         to={scoped('/opportunities/' + card.id, dataset)}
