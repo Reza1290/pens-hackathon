@@ -2180,8 +2180,8 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
         </h1>
         <p className="text-xs text-gray-500 mt-1">
           {card
-            ? `Permintaan ekspansi ${resource.signal.additional_outlets ?? ''} outlet di ${resource.signal.location ?? 'lokasi unstated'} (Target: ${resource.signal.target_period ?? 'tidak disebutkan'})`
-            : `Laporan diagnosis akun komprehensif, analisis stakeholder, dan keselarasan komersial.`}
+            ? `Expansion request: ${resource.signal.additional_outlets ?? ''} outlets in ${resource.signal.location ?? 'location unstated'} (Target: ${resource.signal.target_period ?? 'unspecified'})`
+            : `Comprehensive account diagnosis, stakeholder mapping, and commercial alignment.`}
         </p>
       </div>
 
@@ -2197,7 +2197,7 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
                 : 'border-transparent text-gray-500 hover:text-gray-900'
             }`}
           >
-            Rencana Tindak Lanjut & Analisis
+            Action Plan & Analysis
           </button>
           <button
             type="button"
@@ -2208,7 +2208,7 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
                 : 'border-transparent text-gray-500 hover:text-gray-900'
             }`}
           >
-            Context Graph
+            Relationship Graph
           </button>
           <button
             type="button"
@@ -2219,7 +2219,7 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
                 : 'border-transparent text-gray-500 hover:text-gray-900'
             }`}
           >
-            Bukti Dokumen ({resource.evidence.length})
+            Evidence Records ({resource.evidence.length})
           </button>
           <button
             type="button"
@@ -2230,7 +2230,7 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
                 : 'border-transparent text-gray-500 hover:text-gray-900'
             }`}
           >
-            Draf Pesan Follow-Up
+            Follow-Up Draft
           </button>
           <button
             type="button"
@@ -2241,36 +2241,36 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
                 : 'border-transparent text-gray-500 hover:text-gray-900'
             }`}
           >
-            Tanya Akun (Q&A)
+            Account Q&A
           </button>
         </nav>
       </div>
 
       {/* 5. TAB CONTENT */}
 
-      {/* TAB 1: Rencana Tindak Lanjut & Analisis */}
+      {/* TAB 1: Action Plan & Analysis */}
       {activeTab === 'overview' && (
         <div className="space-y-5">
-          {/* Status Sinyal & Rekonsiliasi Peluang */}
+          {/* Executive Status Strip */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 bg-gray-50 border border-brand-border rounded-lg text-xs">
             <div>
-              <span className="text-[10px] text-gray-400 font-mono uppercase block">Konteks Peluang</span>
-              <span className="font-semibold text-gray-900 mt-0.5 block">{words(resource.commercial_context)}</span>
+              <span className="text-[10px] text-gray-400 font-mono uppercase block">Opportunity Context</span>
+              <span className="font-semibold text-gray-900 mt-0.5 block capitalize">{words(resource.commercial_context)}</span>
             </div>
             <div>
-              <span className="text-[10px] text-gray-400 font-mono uppercase block">Status Sinyal</span>
-              <span className="font-semibold text-gray-900 mt-0.5 block">{words(card ? resource.signal.status : 'Aktif')}</span>
+              <span className="text-[10px] text-gray-400 font-mono uppercase block">Signal Status</span>
+              <span className="font-semibold text-gray-900 mt-0.5 block capitalize">{words(card ? resource.signal.status : 'Active')}</span>
             </div>
             <div>
-              <span className="text-[10px] text-gray-400 font-mono uppercase block">Rekonsiliasi CRM</span>
+              <span className="text-[10px] text-gray-400 font-mono uppercase block">CRM Status</span>
               <span className="font-semibold text-gray-900 mt-0.5 block">
-                {card ? (resource.reconciliation.status === 'unmatched' ? 'Belum Tercatat di CRM' : 'Tercatat di CRM') : 'Terdata di CRM'}
+                {card ? (resource.reconciliation.status === 'unmatched' ? 'Not recorded in CRM yet' : 'Recorded in CRM') : 'Logged in CRM'}
               </span>
             </div>
             <div>
-              <span className="text-[10px] text-gray-400 font-mono uppercase block">Status Respon</span>
+              <span className="text-[10px] text-gray-400 font-mono uppercase block">Response Aging</span>
               <span className="font-semibold text-gray-900 font-mono mt-0.5 block">
-                {card ? `${resource.elapsed_days} hari pending` : 'Tersinkronisasi'}
+                {card ? `${resource.elapsed_days} days pending` : 'Synchronized'}
               </span>
             </div>
           </div>
@@ -2279,9 +2279,9 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
           <section className="border border-brand-border rounded-lg p-5 bg-white space-y-4 shadow-2xs">
             <div className="flex items-center justify-between border-b border-brand-border pb-3">
               <div>
-                <h2 className="text-sm font-semibold text-gray-900">Rencana Tindak Lanjut Konkret</h2>
+                <h2 className="text-sm font-semibold text-gray-900">Recommended Next Action</h2>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Rute: <span className="font-medium text-gray-700">{words(plan.route)}</span>
+                  Route: <span className="font-medium text-gray-700 capitalize">{words(plan.route)}</span>
                 </p>
               </div>
               <button
@@ -2289,7 +2289,7 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
                 onClick={handleCopyTask}
                 className="h-7 px-2.5 text-xs font-medium rounded border border-brand-border bg-white hover:bg-gray-50 text-gray-700 transition"
               >
-                {copiedTask ? 'Tersalin' : 'Salin Tugas'}
+                {copiedTask ? 'Copied' : 'Copy Task'}
               </button>
             </div>
 
@@ -2301,7 +2301,7 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
             {/* Responsible and Recipient Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
               <div className="p-3 bg-white border border-brand-border rounded">
-                <span className="text-[10px] text-gray-400 font-medium uppercase font-mono">Penanggung Jawab Internal:</span>
+                <span className="text-[10px] text-gray-400 font-medium uppercase font-mono">Internal Account Owner:</span>
                 <div className="font-semibold text-gray-900 mt-0.5">{owner.name} ({owner.role})</div>
                 <div className="mt-1">
                   <Refs ids={owner.evidence_ids} evidence={resource.evidence} open={open} />
@@ -2309,11 +2309,11 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
               </div>
 
               <div className="p-3 bg-white border border-brand-border rounded">
-                <span className="text-[10px] text-gray-400 font-medium uppercase font-mono">Pihak Pelanggan (Target Kontak):</span>
+                <span className="text-[10px] text-gray-400 font-medium uppercase font-mono">Customer Stakeholder (Target Contact):</span>
                 <div className="font-semibold text-gray-900 mt-0.5">
                   {card && resource.people.contact
                     ? `${resource.people.contact.name} (${resource.people.contact.role})`
-                    : plan.recipient_ids.map(name).join(', ') || 'Konfirmasi stakeholder terkait'}
+                    : plan.recipient_ids.map(name).join(', ') || 'Confirm relevant stakeholder'}
                 </div>
                 {card && resource.people.contact && (
                   <div className="mt-1">
@@ -2326,7 +2326,7 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
             {/* Discussion Points */}
             <div className="pt-2">
               <h3 className="text-xs font-semibold text-gray-800 uppercase tracking-wider mb-2 font-mono">
-                Poin Diskusi untuk Pertemuan
+                Meeting Agenda & Talking Points
               </h3>
               <div className="space-y-2">
                 {plan.discussion_points.map((point, i) => (
@@ -2357,26 +2357,26 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
 
           {/* Section: Analisis Gap & Temuan Sistem */}
           <section className="border border-brand-border rounded-lg p-5 bg-white space-y-4 shadow-2xs">
-            <h2 className="text-sm font-semibold text-gray-900">Temuan Lapangan & Analisis Gap</h2>
+            <h2 className="text-sm font-semibold text-gray-900">Field Findings & CRM Reconciliation</h2>
             
             {/* CRM Reconciliation Explanation */}
             {card && (
               <div className="p-3.5 border border-brand-border rounded-md bg-white text-xs space-y-1.5">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-gray-900">
-                    Status Rekonsiliasi CRM: {resource.reconciliation.status === 'unmatched' ? 'Belum Tercatat di CRM (Unrecorded Deal)' : words(resource.reconciliation.status)}
+                    CRM Reconciliation: {resource.reconciliation.status === 'unmatched' ? 'Not Recorded in CRM Yet (Unrecorded Opportunity)' : words(resource.reconciliation.status)}
                   </span>
-                  <span className="text-[10px] font-mono bg-gray-100 text-gray-700 px-2 py-0.5 rounded border border-brand-border">
+                  <span className="text-[10px] font-mono bg-gray-100 text-gray-700 px-2 py-0.5 rounded border border-brand-border uppercase">
                     {resource.reconciliation.status}
                   </span>
                 </div>
                 <p className="text-gray-600">
                   {resource.reconciliation.status === 'unmatched'
-                    ? 'Sinyal permintaan kuotasi ekspansi ini telah tervalidasi dari komunikasi email (I0300), namun belum dibuatkan Opportunity/Deal pada CRM KasirNusa. Tindak lanjut diperlukan agar peluang ini tercatat di pipeline penjualan.'
-                    : 'Peluang ekspansi telah terhubung dengan deal yang tercatat di CRM.'}
+                    ? 'This expansion quotation request has been verified from customer communications (email I0300), but has not yet been logged as a Deal or Opportunity in CRM. Follow-up is recommended to record this into the pipeline.'
+                    : 'This expansion request matches a deal already recorded in CRM.'}
                 </p>
                 <div className="text-[11px] text-gray-400 font-mono pt-1">
-                  Pencarian memverifikasi {String(resource.reconciliation.check.total_deals ?? 22)} deal CRM ({String(resource.reconciliation.check.account_deals ?? 0)} deal pada akun {accountCode}).
+                  Verified against {String(resource.reconciliation.check.total_deals ?? 22)} CRM deals ({String(resource.reconciliation.check.account_deals ?? 0)} recorded deals for account {accountCode}).
                 </div>
               </div>
             )}
@@ -2387,7 +2387,7 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
                 <div key={i} className="p-3 border border-brand-border rounded-md bg-white text-xs space-y-1">
                   <div className="font-medium text-gray-800 flex items-center justify-between">
                     <span>{f.label}</span>
-                    <span className="text-[10px] font-mono text-gray-400">[{f.type}]</span>
+                    <span className="text-[10px] font-mono text-gray-400 uppercase">[{f.type}]</span>
                   </div>
                   <div className="pt-0.5">
                     <Refs ids={f.evidence_ids} evidence={resource.evidence} open={open} />
@@ -2399,21 +2399,21 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
 
           {/* Section: Kalkulasi Komersial Transparan */}
           <section className="border border-brand-border rounded-lg p-5 bg-white space-y-4 shadow-2xs">
-            <h2 className="text-sm font-semibold text-gray-900">Kalkulasi Nilai Komersial (Possible Revenue)</h2>
+            <h2 className="text-sm font-semibold text-gray-900">Commercial Scenario (Projected Expansion Revenue)</h2>
             {resource.value_scenario ? (
               <div className="space-y-3 text-xs">
                 <div className="p-3.5 bg-gray-50 border border-brand-border rounded-md flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <div className="text-lg font-bold font-mono text-gray-900">
-                      Rp {amount(resource.value_scenario.amount)} / tahun
+                      Rp {amount(resource.value_scenario.amount)} / year
                     </div>
                     <div className="text-[11px] text-gray-500 mt-0.5 font-mono">
-                      Inkremental tahunan (kondisional): {resource.value_scenario.formula}
+                      Conditional incremental revenue: {resource.value_scenario.formula}
                     </div>
                   </div>
                   <div className="text-right sm:text-right">
                     <span className="text-xs font-mono text-gray-600 bg-white px-2.5 py-1 rounded border border-brand-border">
-                      Rp {amount(String(Number(resource.value_scenario.amount) / 12))} / bulan
+                      Rp {amount(String(Number(resource.value_scenario.amount) / 12))} / month
                     </span>
                   </div>
                 </div>
@@ -2421,34 +2421,34 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
                 {/* Parameters Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
                   <div className="p-2.5 bg-white border border-brand-border rounded">
-                    <div className="text-[10px] text-gray-400 font-mono uppercase">Tambahan Outlet</div>
+                    <div className="text-[10px] text-gray-400 font-mono uppercase">Additional Outlets</div>
                     <div className="font-bold text-gray-800 text-sm mt-0.5">
-                      {resource.value_scenario.inputs.additional_outlets} outlet
+                      {resource.value_scenario.inputs.additional_outlets} outlets
                     </div>
                   </div>
                   <div className="p-2.5 bg-white border border-brand-border rounded">
-                    <div className="text-[10px] text-gray-400 font-mono uppercase">Tarif Acuan / Outlet</div>
+                    <div className="text-[10px] text-gray-400 font-mono uppercase">Rate / Outlet</div>
                     <div className="font-bold text-gray-800 text-sm mt-0.5 font-mono">
                       Rp {amount(resource.value_scenario.inputs.monthly_rate)}
                     </div>
                   </div>
                   <div className="p-2.5 bg-white border border-brand-border rounded">
-                    <div className="text-[10px] text-gray-400 font-mono uppercase">Diskon Efektif</div>
+                    <div className="text-[10px] text-gray-400 font-mono uppercase">Effective Discount</div>
                     <div className="font-bold text-gray-800 text-sm mt-0.5">
                       {resource.value_scenario.inputs.discount_percent}%
                     </div>
                   </div>
                   <div className="p-2.5 bg-white border border-brand-border rounded">
-                    <div className="text-[10px] text-gray-400 font-mono uppercase">Durasi Kontrak</div>
+                    <div className="text-[10px] text-gray-400 font-mono uppercase">Contract Term</div>
                     <div className="font-bold text-gray-800 text-sm mt-0.5">
-                      12 Bulan
+                      12 Months
                     </div>
                   </div>
                 </div>
 
                 {/* Assumptions List */}
                 <div className="p-3 bg-white border border-brand-border rounded space-y-1">
-                  <div className="text-[10px] text-gray-400 font-medium uppercase font-mono">Asumsi & Ketentuan:</div>
+                  <div className="text-[10px] text-gray-400 font-medium uppercase font-mono">Assumptions & Conditions:</div>
                   <ul className="list-disc list-inside text-gray-600 space-y-0.5 text-[11px]">
                     {resource.value_scenario.assumptions.map((a, i) => (
                       <li key={i}>{a}</li>
@@ -2461,9 +2461,9 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
               </div>
             ) : (
               <div className="p-4 bg-gray-50 border border-brand-border rounded-md text-xs text-gray-600 space-y-1">
-                <div className="font-medium text-gray-900">Perlu Penyesuaian Paket / Ketentuan Baru</div>
+                <div className="font-medium text-gray-900">Package Upgrade Required / New Terms Needed</div>
                 <p>
-                  Penambahan outlet melampaui batas kuota paket saat ini. Diperlukan penawaran upgrade paket atau syarat harga baru sebelum menetapkan estimasi nilai kontrak.
+                  Additional outlet request exceeds current plan capacity limits. A package upgrade quotation or revised commercial terms are required before establishing confirmed contract value.
                 </p>
               </div>
             )}
