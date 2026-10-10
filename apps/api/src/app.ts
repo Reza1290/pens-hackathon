@@ -12,7 +12,9 @@ import { jevProvider } from './ai/providers/jev.js';
 import { prepareDraft } from './modules/recommendations/drafts.js';
 import type { Database } from './db/client.js';
 import * as s from './db/schema/index.js';
-import { allowedDatasets,env } from './config/env.js';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { allowedDatasets,env,projectRoot } from './config/env.js';
 import { projectEvidence } from './modules/graph/projection.js';
 import { projectDiagnosis } from './modules/graph/diagnosis.js';
 import { diagnosisScopeKey,analyzeStakeholders } from './modules/stakeholders/service.js';
@@ -27,11 +29,21 @@ export function createApp(db:Database,allowlist=allowedDatasets,qaOptions?:{runt
   const qaRuntime=qaOptions?.runtime??new Interpreter(db,{live:env.QA_LIVE_ENABLED==='true',maxCalls:env.MODEL_MAX_CALLS,timeoutMs:env.MODEL_TIMEOUT_MS,inputRate:env.LLM_INPUT_USD_PER_MILLION,outputRate:env.LLM_OUTPUT_USD_PER_MILLION});
   const qaProvider=qaOptions?.provider??selectedGenerativeProvider();
   const plannerRuntime=qaOptions?.plannerRuntime??qaOptions?.runtime??new Interpreter(db,{live:env.QA_PLANNER_ENABLED==='true',maxCalls:env.MODEL_MAX_CALLS,timeoutMs:env.MODEL_TIMEOUT_MS});
+  const configuredHosts = (env.ALLOWED_HOSTS || '').split(',').map(h => h.trim().toLowerCase()).filter(Boolean);
+  const allowedHosts = new Set(['localhost', '127.0.0.1', '[::1]', '::1', ...configuredHosts]);
   app.use((req,res,next)=>{
-    const host=req.hostname;
-    if(!['localhost','127.0.0.1','[::1]','::1'].includes(host))return res.status(403).json({error:'Local access only'});
+    const host=req.hostname?.toLowerCase();
+    if(!allowedHosts.has(host))return res.status(403).json({error:'Local access only'});
     const origin=req.get('origin');
-    if(origin){try{const url=new URL(origin);if(url.protocol!=='http:'||!['localhost','127.0.0.1'].includes(url.hostname)||![String(env.API_PORT),String(env.WEB_PORT),'4173'].includes(url.port))return res.status(403).json({error:'Origin not allowed'});}catch{return res.status(403).json({error:'Invalid origin'});}}
+    if(origin){
+      try{
+        const url=new URL(origin);
+        const originHost=url.hostname.toLowerCase();
+        if(!allowedHosts.has(originHost))return res.status(403).json({error:'Origin not allowed'});
+      }catch{
+        return res.status(403).json({error:'Invalid origin'});
+      }
+    }
     res.set('Cache-Control','no-store');res.set('X-Content-Type-Options','nosniff');next();
   });
   app.use(express.json({limit:'8kb'}));
@@ -234,6 +246,14 @@ export function createApp(db:Database,allowlist=allowedDatasets,qaOptions?:{runt
     if(!found)throw new HttpError(404,'Source not found in selected dataset');
     res.json(sourceSchema.parse({id,dataset_id:dataset.id,as_of:dataset.asOf,filename:found.file.filename,locator:found.record.locator,external_id:found.record.externalId,payload:found.record.payload,raw_text:found.record.rawText,content_hash:found.record.contentHash}));
   });
+  const webDist = resolve(projectRoot, 'apps/web/dist');
+  if (existsSync(webDist)) {
+    app.use(express.static(webDist));
+    app.get('*', (req, res, next) => {
+      if (req.path.startsWith('/api')) return next();
+      res.sendFile(resolve(webDist, 'index.html'));
+    });
+  }
   app.use((_req,res)=>res.status(404).json({error:'Route not implemented'}));
   app.use((error:unknown,_req:express.Request,res:express.Response,_next:express.NextFunction)=>{
     if(error instanceof z.ZodError)return res.status(400).json({error:'Invalid request or response schema'});

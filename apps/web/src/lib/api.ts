@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { getSessionToken } from './session';
 import {
   cardSchema,
   datasetSchema,
@@ -15,6 +16,10 @@ import {
   type LoginRequest,
 } from '@kasirnusa/contracts';
 
+export class ApiError extends Error {
+  constructor(message: string, public status: number) { super(message); }
+}
+
 async function request<T>(
   path: string,
   schema: z.ZodType<T>,
@@ -24,7 +29,8 @@ async function request<T>(
 ): Promise<T> {
   const headers: Record<string, string> = {};
   if (body) headers['Content-Type'] = 'application/json';
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const sessionToken = token ?? (path === '/auth/login' ? null : getSessionToken());
+  if (sessionToken) headers['Authorization'] = `Bearer ${sessionToken}`;
 
   const response = await fetch('/api' + path, {
     signal,
@@ -34,7 +40,8 @@ async function request<T>(
 
   if (!response.ok) {
     const detail = await response.json().catch(() => ({}));
-    throw new Error((detail.error ?? 'Request failed') + ' (' + response.status + ')');
+    if (response.status === 401 && sessionToken && sessionToken === getSessionToken()) window.dispatchEvent(new Event('session-expired'));
+    throw new ApiError((detail.error ?? 'Request failed') + ' (' + response.status + ')', response.status);
   }
   return schema.parse(await response.json());
 }
@@ -77,7 +84,7 @@ export const api = {
   me: (token: string, signal?: AbortSignal) =>
     request('/auth/me', z.object({ user: userSchema }), signal, undefined, token),
   logout: (token: string, signal?: AbortSignal) =>
-    request('/auth/logout', z.object({ success: z.boolean() }), signal, undefined, token),
+    request('/auth/logout', z.object({ success: z.boolean() }), signal, {}, token),
   seedAuth: (signal?: AbortSignal) =>
     request('/auth/seed', z.object({ created: z.number(), existing: z.number() }), signal, {}),
 };

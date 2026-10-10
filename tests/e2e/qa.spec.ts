@@ -17,7 +17,7 @@ test('C01 decline question returns premise plus actionable sourced diagnosis',as
 });
 test('C06 question computes a value and requires clarification for cross-account references',async({page,request})=>{
   const {items}=await (await request.get('/api/datasets')).json();const dataset=items.find((d:{version:string})=>d.version==='kasirnusa-2026-10-01');
-  await page.goto('/?dataset_id='+dataset.id);await page.getByRole('link',{name:/C06 ·/}).click();const qa=page.getByRole('region',{name:'Account questions'});
+  await page.goto('/opportunities?dataset_id='+dataset.id);await page.getByRole('link',{name:/C06 ·/}).click();const qa=page.getByRole('region',{name:'Account questions'});
   await qa.getByRole('textbox',{name:'Account question',exact:true}).fill('Kalau tambah 10 outlet, berapa nilai tahunannya?');await qa.getByRole('button',{name:'Ask account question'}).click();await expect(qa).toContainText('37800000.00 IDR');
   await qa.getByRole('textbox',{name:'Account question',exact:true}).fill('Who approves for P01?');await qa.getByRole('button',{name:'Ask account question'}).click();await expect(qa).toContainText('clarification required');await expect(qa).not.toContainText('Rina');
 });

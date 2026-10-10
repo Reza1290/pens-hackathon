@@ -3,6 +3,7 @@ import { Link, Route, Routes, useLocation, useNavigate, useParams, useSearchPara
 import type { AccountDiagnosis, AiCandidateOpportunity, Evidence, OpportunityCard, QaResponse, User } from '@kasirnusa/contracts';
 import { api } from '../lib/api';
 import { AccountQA } from '../components/AccountQA';
+import { useAuth } from '../components/Auth';
 
 const Graph = lazy(() => import('../components/Graph').then((module) => ({ default: module.Graph })));
 
@@ -97,17 +98,10 @@ export function App() {
     query.get('account_id') ??
     (location.pathname.startsWith('/accounts/') ? location.pathname.split('/')[2] : '');
 
-  // Auth User state (default: Wahyu Setiawan E04)
-  const [currentUser, setCurrentUser] = useState<User>({
-    id: 'e0400000-0000-4000-8000-000000000001',
-    email: 'wahyu@kasirnusa.id',
-    name: 'Wahyu Setiawan',
-    employee_external_id: 'E04',
-    role: 'account_manager',
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  });
+  const { user, signOut } = useAuth();
+  const currentUser = user!; // RequireSession mounts the dashboard only after verification.
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState('');
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
   // Recents accordion state & localStorage sync
@@ -228,7 +222,7 @@ export function App() {
                     } else if (targetId) {
                       navigate(scoped('/accounts/' + targetId, selected));
                     } else {
-                      navigate(scoped('/', selected));
+                      navigate(scoped('/opportunities', selected));
                     }
                   }}
                   className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
@@ -286,17 +280,21 @@ export function App() {
                   </Link>
 
                   <button
-                    onClick={() => {
-                      setUserDropdownOpen(false);
-                      alert('Signed out successfully.');
+                    disabled={signingOut}
+                    onClick={async () => {
+                      setSigningOut(true); setSignOutError('');
+                      try { await signOut(); }
+                      catch { setSignOutError('Could not sign out. Please try again.'); }
+                      finally { setSigningOut(false); }
                     }}
                     className="w-full text-left px-2.5 py-1.5 rounded hover:bg-red-50 text-red-600 flex items-center space-x-2 transition text-xs font-medium"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
-                    <span>Sign out</span>
+                    <span>{signingOut ? 'Signing out…' : 'Sign out'}</span>
                   </button>
+                  {signOutError && <p role="alert" className="p-2 text-red-700">{signOutError}</p>}
                 </div>
               </>
             )}
@@ -329,7 +327,7 @@ export function App() {
           <nav className="flex-1 px-2 space-y-1">
             {/* Dashboard / Opportunities */}
             <Link
-              to={scoped('/', selected)}
+              to={scoped('/opportunities', selected)}
               className={`w-full h-9 flex items-center px-2.5 rounded-md transition text-left text-xs ${
                 isOpportunitiesRoot && !currentAccountId
                   ? 'bg-gray-200/70 text-brand-text font-medium'
@@ -484,7 +482,7 @@ export function App() {
             <>
               {accounts.error && <Pending error={accounts.error} />}
               <Routes>
-                <Route path="/" element={<Opportunities dataset={selected} onOpenScan={() => setScanModalOpen(true)} />} />
+                <Route path="/opportunities" element={<Opportunities dataset={selected} onOpenScan={() => setScanModalOpen(true)} />} />
                 <Route
                   path="/copilot"
                   element={
@@ -495,7 +493,7 @@ export function App() {
                     />
                   }
                 />
-                <Route path="/users" element={<UsersView currentUser={currentUser} onSwitchUser={setCurrentUser} />} />
+                <Route path="/users" element={<UsersView currentUser={currentUser} />} />
                 <Route path="/settings" element={<SettingsView selected={selected} datasets={datasets} />} />
                 <Route
                   path="/:kind/:id"
@@ -1407,10 +1405,8 @@ function CopilotView({
 // ================= VIEW: USERS & RBAC =================
 function UsersView({
   currentUser,
-  onSwitchUser,
 }: {
   currentUser: User;
-  onSwitchUser: (u: User) => void;
 }) {
   const usersList: Array<{
     id: string;
@@ -1530,23 +1526,7 @@ function UsersView({
                         <span>● Current User</span>
                       </span>
                     ) : (
-                      <button
-                        onClick={() => {
-                          onSwitchUser({
-                            id: u.id,
-                            email: u.email,
-                            name: u.name,
-                            employee_external_id: u.externalId,
-                            role: u.role,
-                            is_active: true,
-                            created_at: new Date().toISOString(),
-                            updated_at: new Date().toISOString(),
-                          });
-                        }}
-                        className="h-7 px-2.5 bg-white border border-brand-border hover:bg-gray-50 text-brand-text rounded text-[11px] transition"
-                      >
-                        Switch Persona
-                      </button>
+                      <span className="text-[11px] text-brand-subtle">—</span>
                     )}
                   </td>
                 </tr>
@@ -2528,18 +2508,7 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
 
       {/* TAB 2: Context Graph */}
       {activeTab === 'graph' && (
-        <section className="border border-brand-border rounded-lg p-5 bg-white space-y-3 shadow-2xs">
-          <div className="flex items-center justify-between pb-2 border-b border-brand-border">
-            <div>
-              <h2 className="text-sm font-semibold text-gray-900">Visual Relationship Path (Context Graph)</h2>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Jalur bukti relasi menghubungkan Akun, Sinyal, Kontrak, Pemilik, dan Node Aksi Rekomendasi.
-              </p>
-            </div>
-            <span className="text-[11px] font-mono text-gray-400">
-              {graph.data?.nodes.length ?? 0} node · {graph.data?.edges.length ?? 0} relasi
-            </span>
-          </div>
+        <div>
           {!graph.data ? (
             <Pending error={graph.error} />
           ) : (
@@ -2547,7 +2516,7 @@ function Detail({ dataset, action }: { dataset: string; action: boolean }) {
               <Graph graph={graph.data} onEvidence={open} />
             </Suspense>
           )}
-        </section>
+        </div>
       )}
 
       {/* TAB 3: Bukti Dokumen Terverifikasi */}

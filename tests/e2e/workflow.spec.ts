@@ -10,7 +10,7 @@ async function context(request:APIRequestContext){
 }
 test('C06 opportunity to original evidence, action and editable template',async({page,request})=>{
   const {dataset}=await context(request);const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('/?dataset_id='+dataset.id);
+  await page.goto('/opportunities?dataset_id='+dataset.id);
   await page.getByRole('link',{name:/C06 ·/}).click();
   await expect(page.getByRole('heading',{level:1})).toContainText('C06');
   await expect(page.getByRole('heading',{name:'Relationship path'})).toBeVisible();
@@ -52,7 +52,7 @@ test('unavailable resources and API failures are readable; keyboard reaches cont
   const {dataset}=await context(request);
   await page.goto('/opportunities/00000000-0000-4000-8000-000000000001?dataset_id='+dataset.id);
   await expect(page.getByRole('alert')).toContainText('404');
-  await page.goto('/?dataset_id='+dataset.id);await page.keyboard.press('Tab');await expect(page.getByRole('link',{name:'Skip to content'})).toBeFocused();
+  await page.goto('/opportunities?dataset_id='+dataset.id);await page.keyboard.press('Tab');await expect(page.getByRole('link',{name:'Skip to content'})).toBeFocused();
   await page.route('**/api/opportunities?*',route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Operation unavailable'})}));
   await page.getByRole('combobox',{name:'Status',exact:true}).selectOption('cancelled');await expect(page.getByRole('alert')).toContainText('503');
 });

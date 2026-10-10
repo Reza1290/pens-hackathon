@@ -1,0 +1,44 @@
+﻿name: kasirnusa-expansion
+services:
+  db:
+    image: postgres:18.1
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kasirnusa
+      POSTGRES_PASSWORD: local_dev_only
+      POSTGRES_DB: kasirnusa
+    ports:
+      - "127.0.0.1:54329:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kasirnusa -d kasirnusa"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://kasirnusa:local_dev_only@db:5432/kasirnusa
+      API_PORT: 3001
+      API_HOST: 0.0.0.0
+      ALLOWED_HOSTS: hackathon.tixku.com,43.173.2.7,localhost,127.0.0.1
+      DATA_ROOT: data/raw
+    env_file:
+      - .env
+    ports:
+      - "0.0.0.0:8090:3001"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./data/raw:/app/data/raw:ro
+      - ./data/processed:/app/data/processed
+      - ./artifacts:/app/artifacts
+
+volumes:
+  postgres_data:

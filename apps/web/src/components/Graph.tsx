@@ -1,262 +1,77 @@
-import { useEffect, useRef } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import cytoscape from 'cytoscape';
 import { graphSchema } from '@kasirnusa/contracts';
 import type { z } from 'zod';
+import { nodeTheme } from './graph-theme';
+import './graph.css';
 
-export function Graph({
-  graph,
-  onEvidence,
-}: {
-  graph: z.infer<typeof graphSchema>;
-  onEvidence: (id: string) => void;
-}) {
+type GraphData = z.infer<typeof graphSchema>;
+
+export function Graph({ graph, onEvidence }: { graph: GraphData; onEvidence: (id: string) => void }) {
   const container = useRef<HTMLDivElement>(null);
+  const instance = useRef<cytoscape.Core | null>(null);
+  const [selectedEdge, setSelectedEdge] = useState<string | null>(null);
+  const edge = graph.edges.find((item) => item.id === selectedEdge);
+  const name = (id: string) => graph.nodes.find((node) => node.id === id)?.label ?? id;
+  const kinds = [...new Set(graph.nodes.map((node) => node.kind))];
 
   useEffect(() => {
-    if (!container.current) return;
+    if (!container.current || !graph.nodes.length) return;
+    setSelectedEdge(null);
     const cy = cytoscape({
       container: container.current,
       elements: [
-        ...graph.nodes.map((n) => ({
-          data: { id: n.id, label: n.label, kind: n.kind },
-        })),
-        ...graph.edges.map((e) => ({
-          data: {
-            id: e.id,
-            source: e.from,
-            target: e.to,
-            label: e.relation.replaceAll('_', ' '),
-            evidence: e.evidence_ids,
-            relation: e.relation,
-          },
-        })),
+        ...graph.nodes.map((node) => {
+          const theme = nodeTheme(node.kind);
+          return { data: { id: node.id, label: `${theme.label.toUpperCase()}\n${node.label}`, height: Math.max(64, 32 + Math.ceil(node.label.length / 23) * 15), ink: theme.ink, fill: theme.fill, border: theme.border } };
+        }),
+        ...graph.edges.map((item) => ({ data: { id: item.id, source: item.from, target: item.to, label: item.relation.replaceAll('_', ' '), relation: item.relation } })),
       ],
-      layout: { name: 'breadthfirst', directed: true, padding: 32 },
+      layout: { name: 'breadthfirst', directed: true, padding: 45, spacingFactor: 1.25 },
       style: [
-        {
-          selector: 'node',
-          style: {
-            'background-color': '#475569',
-            shape: 'ellipse',
-            width: 28,
-            height: 28,
-            'border-width': 1.5,
-            'border-color': '#CBD5E1',
-            color: '#0F172A',
-            label: 'data(label)',
-            'font-family': 'Inter, system-ui, sans-serif',
-            'font-size': 10,
-            'font-weight': 600,
-            'text-wrap': 'wrap',
-            'text-max-width': '110px',
-            'text-valign': 'bottom',
-            'text-margin-y': 5,
-          },
-        },
-        {
-          selector: 'node[kind = "account"]',
-          style: {
-            'background-color': '#0F172A',
-            shape: 'round-rectangle',
-            width: 32,
-            height: 32,
-            'border-color': '#334155',
-          },
-        },
-        {
-          selector: 'node[kind = "signal"]',
-          style: {
-            'background-color': '#0D9488',
-            shape: 'diamond',
-            width: 30,
-            height: 30,
-          },
-        },
-        {
-          selector: 'node[kind = "employee"]',
-          style: {
-            'background-color': '#2563EB',
-            shape: 'ellipse',
-            width: 26,
-            height: 26,
-          },
-        },
-        {
-          selector: 'node[kind = "contact"]',
-          style: {
-            'background-color': '#64748B',
-            shape: 'ellipse',
-            width: 26,
-            height: 26,
-          },
-        },
-        {
-          selector: 'node[kind = "contract"]',
-          style: {
-            'background-color': '#475569',
-            shape: 'round-rectangle',
-            width: 26,
-            height: 26,
-          },
-        },
-        {
-          selector: 'node[kind = "decision"]',
-          style: {
-            'background-color': '#6B7280',
-            shape: 'hexagon',
-            width: 26,
-            height: 26,
-          },
-        },
-        {
-          selector: 'node[kind = "action"]',
-          style: {
-            'background-color': '#EA580C',
-            shape: 'round-rectangle',
-            width: 34,
-            height: 34,
-            'border-width': 2,
-            'border-color': '#9A3412',
-            'font-weight': 700,
-          },
-        },
-        {
-          selector: 'edge',
-          style: {
-            width: 1.5,
-            'line-color': '#CBD5E1',
-            'target-arrow-color': '#94A3B8',
-            'target-arrow-shape': 'triangle',
-            'curve-style': 'bezier',
-            label: 'data(label)',
-            'font-family': 'ui-monospace, monospace',
-            'font-size': 9,
-            'text-background-color': '#FFFFFF',
-            'text-background-opacity': 0.95,
-            'text-background-padding': '2px',
-          },
-        },
-        {
-          selector: 'edge[relation = "SUGGESTS_ACTION"]',
-          style: {
-            width: 2,
-            'line-color': '#EA580C',
-            'target-arrow-color': '#EA580C',
-          },
-        },
-        {
-          selector: 'edge[relation = "ASSIGNED_TO"]',
-          style: {
-            width: 1.8,
-            'line-color': '#2563EB',
-            'target-arrow-color': '#2563EB',
-          },
-        },
-        {
-          selector: 'edge[relation = "ENGAGES"]',
-          style: {
-            width: 1.8,
-            'line-color': '#64748B',
-            'target-arrow-color': '#64748B',
-          },
-        },
+        { selector: 'node', style: {
+          shape: 'round-rectangle', width: 156, height: 'data(height)',
+          'background-color': 'data(fill)', 'border-color': 'data(border)', 'border-width': 1,
+          color: 'data(ink)', label: 'data(label)', 'font-family': 'Inter, system-ui, sans-serif',
+          'font-size': 10, 'font-weight': 500, 'text-wrap': 'wrap', 'text-max-width': '140px',
+          'text-valign': 'center', 'text-halign': 'center', 'line-height': 1.5,
+        } },
+        { selector: 'edge', style: {
+          width: 1.2, 'line-color': '#b6b9bf', 'target-arrow-color': '#b6b9bf',
+          'target-arrow-shape': 'triangle', 'arrow-scale': .7, 'curve-style': 'bezier',
+          label: 'data(label)', color: '#626770', 'font-family': 'ui-monospace, monospace',
+          'font-size': 8, 'text-background-color': '#fafaf9', 'text-background-opacity': 1,
+          'text-background-padding': '4px', 'text-rotation': 'autorotate',
+        } },
+        { selector: 'edge[relation = "SUGGESTS_ACTION"]', style: { 'line-color': '#f48120', 'target-arrow-color': '#f48120', width: 1.8 } },
+        { selector: 'edge:selected', style: { 'line-color': '#0051c3', 'target-arrow-color': '#0051c3', color: '#0051c3', width: 2.5 } },
+        { selector: 'node:selected', style: { 'border-width': 2, 'border-color': '#f48120' } },
       ],
-      minZoom: 0.15,
-      maxZoom: 2,
+      minZoom: .08, maxZoom: 2, wheelSensitivity: .2,
     });
-
-    cy.on('tap', 'edge', (event) => {
-      const ids = event.target.data('evidence') as string[];
-      if (ids[0]) onEvidence(ids[0]);
-    });
-
-    const observer = new ResizeObserver(() => {
-      cy.resize();
-      cy.fit(undefined, 32);
-    });
+    instance.current = cy;
+    cy.on('tap', 'edge', (event) => setSelectedEdge(event.target.id()));
+    cy.on('tap', (event) => { if (event.target === cy) setSelectedEdge(null); });
+    const observer = new ResizeObserver(() => { cy.resize(); cy.fit(undefined, 45); });
     observer.observe(container.current);
+    return () => { observer.disconnect(); cy.destroy(); instance.current = null; };
+  }, [graph]);
 
-    return () => {
-      observer.disconnect();
-      cy.destroy();
-    };
-  }, [graph, onEvidence]);
+  function zoom(factor: number) {
+    const cy = instance.current;
+    if (cy) cy.zoom({ level: Math.max(cy.minZoom(), Math.min(cy.maxZoom(), cy.zoom() * factor)), renderedPosition: { x: cy.width() / 2, y: cy.height() / 2 } });
+  }
 
-  const name = (id: string) => graph.nodes.find((n) => n.id === id)?.label ?? id;
+  const sources = (ids: string[]) => ids.length ? ids.map((id) => <button key={id} type="button" className="graph-source" onClick={() => onEvidence(id)}>View source {graph.evidence.find((item) => item.source_id === id)?.source_external_id ?? 'record'} <span aria-hidden="true">↗</span></button>) : <span className="graph-no-source">No linked source record</span>;
 
-  return (
-    <section className="border border-brand-border rounded-lg bg-white p-5 space-y-3 shadow-xs">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-base font-semibold text-brand-text">Relationship path</h2>
-          <p className="text-xs text-brand-subtle">
-            Bounded to {graph.limits.max_hops} hops / {graph.limits.max_nodes} nodes.{' '}
-            {graph.limits.truncated ? 'Path truncated.' : 'Complete within these limits.'} Select an edge to inspect evidence.
-          </p>
-        </div>
-        <span className="text-[11px] font-mono bg-gray-50 border border-brand-border px-2 py-0.5 rounded text-brand-muted">
-          {graph.nodes.length} nodes · {graph.edges.length} edges
-        </span>
-      </div>
-
-      <div
-        ref={container}
-        className="graph w-full rounded-md border border-brand-border bg-slate-50/50"
-        role="img"
-        aria-label="Evidence relationship graph; equivalent relationships listed below"
-      />
-
-      {/* Clean Context Graph Legend */}
-      <div className="flex flex-wrap items-center gap-3 pt-0.5 pb-1 text-[10px] font-mono text-brand-muted border-b border-brand-border/60">
-        <span className="flex items-center space-x-1.5">
-          <span className="w-2.5 h-2.5 rounded bg-[#0F172A] inline-block" />
-          <span>Account</span>
-        </span>
-        <span className="flex items-center space-x-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#2563EB] inline-block" />
-          <span>Owner</span>
-        </span>
-        <span className="flex items-center space-x-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#64748B] inline-block" />
-          <span>Stakeholder</span>
-        </span>
-        <span className="flex items-center space-x-1.5">
-          <span className="w-2.5 h-2.5 rotate-45 bg-[#0D9488] inline-block" />
-          <span>Signal</span>
-        </span>
-        <span className="flex items-center space-x-1.5">
-          <span className="w-2.5 h-2.5 rounded bg-[#EA580C] inline-block" />
-          <span className="text-[#EA580C] font-semibold">Proposed Action</span>
-        </span>
-      </div>
-
-
-      <details className="text-xs text-brand-muted pt-1">
-        <summary className="cursor-pointer hover:text-brand-text font-medium select-none">
-          Accessible relationship list ({graph.edges.length})
-        </summary>
-        <ul className="mt-2 divide-y divide-gray-100 max-h-48 overflow-y-auto font-mono text-[11px] pl-2">
-          {graph.edges.map((e) => (
-            <li key={e.id} className="py-1 flex items-center justify-between">
-              <span>
-                {name(e.from)} <span className="text-brand-subtle">→ {e.relation.replaceAll('_', ' ')} →</span>{' '}
-                {name(e.to)}
-              </span>
-              <span className="space-x-1 shrink-0">
-                {e.evidence_ids.map((id) => (
-                  <button
-                    key={id}
-                    onClick={() => onEvidence(id)}
-                    className="h-6 px-2 text-[10px] border border-brand-border rounded bg-white hover:bg-gray-50 text-brand-blue"
-                  >
-                    View source {graph.evidence.find((v) => v.source_id === id)?.source_external_id ?? 'record'}
-                  </button>
-                ))}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </details>
-    </section>
-  );
+  return <section className="context-graph">
+    <header className="graph-header"><div><h2><span className="graph-heading-dot" />Relationship path</h2><p>Follow the connections behind this account.</p></div><span className="graph-count">{graph.nodes.length} nodes / {graph.edges.length} edges</span></header>
+    <div className="graph-toolbar"><span>CONTEXT GRAPH</span><div role="group" aria-label="Graph view controls"><button type="button" disabled={!graph.nodes.length} onClick={() => zoom(1 / 1.25)} aria-label="Zoom out">−</button><button type="button" disabled={!graph.nodes.length} onClick={() => zoom(1.25)} aria-label="Zoom in">+</button><button type="button" disabled={!graph.nodes.length} onClick={() => instance.current?.fit(undefined, 45)}>Fit view</button></div></div>
+    {graph.nodes.length ? <div ref={container} className="graph-canvas" role="img" aria-label="Evidence relationship graph. Use the relationship list below for keyboard access to all sources." /> : <div className="graph-empty">No relationships available in this evidence scope.</div>}
+    <div className="graph-legend">{kinds.map((kind) => { const theme = nodeTheme(kind); return <span key={kind}><i style={{ background: theme.fill, borderColor: theme.border }} />{theme.label}</span>; })}</div>
+    <div className="graph-inspector" aria-live="polite">{edge ? <><p><strong>{name(edge.from)}</strong><span> → {edge.relation.replaceAll('_', ' ')} → </span><strong>{name(edge.to)}</strong></p><div className="graph-source-list">{sources(edge.evidence_ids)}</div></> : <p>Select a connection to inspect its supporting evidence.</p>}</div>
+    <div className="graph-bottom"><p>Bounded to {graph.limits.max_hops} hops / {graph.limits.max_nodes} nodes. {graph.limits.truncated ? 'Path truncated; some relationships are not shown.' : 'Complete within these limits.'}</p>
+      <details><summary>Accessible relationship list ({graph.edges.length})</summary><ul>{graph.edges.map((item) => <li key={item.id}><span>{name(item.from)} <span className="graph-relation">→ {item.relation.replaceAll('_', ' ')} →</span> {name(item.to)}</span><div className="graph-source-list">{sources(item.evidence_ids)}</div></li>)}</ul></details>
+    </div>
+  </section>;
 }
