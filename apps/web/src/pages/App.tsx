@@ -1785,9 +1785,6 @@ function SettingsView({
         </div>
       </div>
 
-      {/* System Architecture & Overview */}
-      <SystemOverviewSection />
-
       {/* Snapshot Settings Card */}
       <div className="bg-white border border-brand-border rounded-lg p-5 space-y-4 shadow-2xs">
         {/* Card Header: Section name on left, only upload button on top right */}
